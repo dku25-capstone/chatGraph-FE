@@ -19,7 +19,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-
+import Link from "next/link";
 import {
   User2,
   ChevronUp,
@@ -56,8 +56,10 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>채팅목록</SidebarGroupLabel>
           <SidebarGroupAction>
-            <Plus />
-            <span className="sr-only">Add Project</span>
+            <Link href="/home">
+                <Plus />
+                <span className="sr-only">Add Project</span>
+            </Link>
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu>
