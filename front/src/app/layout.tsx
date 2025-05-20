@@ -11,13 +11,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SidebarProvider>
-          <AppSidebar />
-          <main>
+        <div className="flex h-screen">
+          <SidebarProvider>
+            <AppSidebar />
             <SidebarTrigger />
-            {children}
-          </main>
-        </SidebarProvider>
+            <main className="flex-1 flex items-center justify-center">
+              {children}
+            </main>
+          </SidebarProvider>
+        </div>
       </body>
     </html>
   );
