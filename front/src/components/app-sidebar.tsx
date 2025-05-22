@@ -25,9 +25,7 @@ import {
   ChevronUp,
   Plus,
   MoreHorizontal,
-  LayoutDashboard,
-  Settings,
-  Folder,
+
 } from "lucide-react";
 //url 대신 fetch 질문 토픽들에 대한 id를 불러와야함 id면 채팅 전체 id/graph면 채팅 조회
 
