@@ -1,15 +1,36 @@
-// app/graph/[topicId]/page.tsx
-import { graphDataMap } from "@/data"; // 여러 topic의 그래프 데이터
-import Graph from "@/components/Graph";
+"use client";
+
+import { use, useEffect, useState } from "react";
+import Graph, { GraphData } from "@/components/graph";
 
 type Props = {
-  params: { topicId: string };
+  params: Promise<{ topicId: string }>;
 };
 
-export default async function GraphPage({ params }: Props) {
-  const graphData = graphDataMap[params.topicId];
+export default function GraphPage({ params }: Props) {
+  const { topicId } = use(params);
+  const [graphData, setGraphData] = useState<GraphData | null>(null);
+  const [error, setError] = useState(false);
 
-  if (!graphData) return <p>그래프를 찾을 수 없습니다.</p>;
+  useEffect(() => {
+    fetch(`/api/graph/${topicId}`)
+      .then((res) => {
+        if (!res.ok) {
+          setError(true);
+          return null;
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data) {
+          setGraphData(data);
+        }
+      })
+      .catch(() => setError(true));
+  }, [topicId]);
+
+  if (error) return <p>그래프를 찾을 수 없습니다.</p>;
+  if (!graphData) return <p>그래프를 불러오는 중입니다...</p>;
 
   return (
     <div>

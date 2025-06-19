@@ -1,5 +1,7 @@
-export const graphDataMap = {
-  1: {
+import type { GraphData } from "@/components/graph";
+
+export const graphDataMap: Record<string, GraphData> = {
+  "1": {
     nodes: [
       { id: "1", label: "DB 정규화 방법", isRoot: true },
       { id: "q-1-1", label: "정규화란 무엇인가요?" },
@@ -16,7 +18,7 @@ export const graphDataMap = {
       { source: "1", target: "q-1-2" },
     ],
   },
-  2: {
+  "2": {
     nodes: [
       { id: "2", label: "운영체제 프로세스 스위칭 정책", isRoot: true },
       { id: "q-2-1", label: "컨텍스트 스위칭이 뭐에요?" },
@@ -33,7 +35,7 @@ export const graphDataMap = {
       { source: "2", target: "q-2-3" },
     ],
   },
-  3: {
+  "3": {
     nodes: [
       { id: "3", label: "IPv4 프로토콜 개요", isRoot: true },
       { id: "q-3-1", label: "IPv4 헤더 구조 설명해 주세요" },

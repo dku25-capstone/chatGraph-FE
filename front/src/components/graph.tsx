@@ -3,24 +3,31 @@
 import * as d3 from "d3";
 import { useEffect, useRef } from "react";
 
-type Node = { id: string; label: string; isRoot: boolean };
-type Link = { source: string; target: string };
-type GraphData = { nodes: Node[]; links: Link[] };
+export interface Node extends d3.SimulationNodeDatum {
+  id: string;
+  label: string;
+  isRoot?: boolean;
+}
+export type Link = d3.SimulationLinkDatum<Node> & {
+  source: string | Node;
+  target: string | Node;
+};
+export type GraphData = { nodes: Node[]; links: Link[] };
 
 export default function Graph({ data }: { data: GraphData }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    const svg = d3.select(svgRef.current);
+    const svg = d3.select(svgRef.current as SVGSVGElement);
     svg.selectAll("*").remove();
 
     const width = 961.6;
     const height = 776;
 
-    // ✅ 전체 요소를 담을 그룹 <g>
+    // 전체 요소를 담을 그룹 <g>
     const g = svg.append("g");
 
-    // ✅ 줌 핸들러 등록
+    // 줌 핸들러 등록
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.2, 4]) // 축소/확대 비율 범위
@@ -31,20 +38,20 @@ export default function Graph({ data }: { data: GraphData }) {
 
     svg.call(zoom); // 줌 활성화
 
-    // ✅ 시뮬레이션
+    // 시뮬레이션
     const simulation = d3
       .forceSimulation(data.nodes)
       .force(
         "link",
         d3
-          .forceLink(data.links)
-          .id((d: any) => d.id)
+          .forceLink<Node, Link>(data.links)
+          .id((d) => d.id)
           .distance(150)
       )
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2));
 
-    // ✅ 링크
+    // 링크
     const link = g
       .append("g")
       .attr("stroke", "#aaa")
@@ -54,7 +61,7 @@ export default function Graph({ data }: { data: GraphData }) {
       .append("line")
       .attr("stroke-width", 2);
 
-    // ✅ 노드
+    // 노드
     const node = g
       .append("g")
       .selectAll("circle")
@@ -62,10 +69,10 @@ export default function Graph({ data }: { data: GraphData }) {
       .enter()
       .append("circle")
       .attr("r", 20)
-      .attr("fill", (d: any) => (d.isRoot ? "red" : "#69b3a2"))
+      .attr("fill", (d: Node) => (d.isRoot ? "red" : "#69b3a2"))
       .call(
         d3
-          .drag<SVGCircleElement, any>()
+          .drag<SVGCircleElement, Node>()
           .on("start", (event, d) => {
             if (!event.active) simulation.alphaTarget(0.3).restart();
             d.fx = d.x;
@@ -82,7 +89,7 @@ export default function Graph({ data }: { data: GraphData }) {
           })
       );
 
-    // ✅ 라벨
+    // 라벨
     const label = g
       .append("g")
       .selectAll("text")
@@ -94,25 +101,27 @@ export default function Graph({ data }: { data: GraphData }) {
       .attr("text-anchor", "middle")
       .attr("dy", 35);
 
-    // ✅ 확대 배율에 따라 라벨 보이기/숨기기
+    // 확대 배율에 따라 라벨 보이기/숨기기
     function updateLabelVisibility(scale: number) {
-      label.style("opacity", scale > 1.2 ? 1 : 0);
+      label.style("opacity", scale > 0.6 ? 1 : 0);
     }
 
-    // ✅ 시뮬레이션 tick
+    // 시뮬레이션 tick
     simulation.on("tick", () => {
       link
-        .attr("x1", (d) => (d.source as any).x)
-        .attr("y1", (d) => (d.source as any).y)
-        .attr("x2", (d) => (d.target as any).x)
-        .attr("y2", (d) => (d.target as any).y);
+        .attr("x1", (d) => (d.source as Node).x!)
+        .attr("y1", (d) => (d.source as Node).y!)
+        .attr("x2", (d) => (d.target as Node).x!)
+        .attr("y2", (d) => (d.target as Node).y!);
 
       node.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
 
       label.attr("x", (d) => d.x!).attr("y", (d) => d.y!);
     });
 
-    return () => simulation.stop();
+    return () => {
+      simulation.stop();
+    };
   }, [data]);
 
   return (
