@@ -17,6 +17,8 @@ export type GraphData = { nodes: Node[]; links: Link[] };
 export default function Graph({ data }: { data: GraphData }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
+  const rootNode = data.nodes.find((n) => n.isRoot);
+
   useEffect(() => {
     const svg = d3.select(svgRef.current as SVGSVGElement);
     svg.selectAll("*").remove();
@@ -125,11 +127,26 @@ export default function Graph({ data }: { data: GraphData }) {
   }, [data]);
 
   return (
-    <svg
-      ref={svgRef}
-      width={961}
-      height={776}
-      style={{ border: "1px solid black", background: "white" }}
-    />
+    <div>
+      {/* SVG 위에 텍스트 표시 */}
+      {rootNode && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 20,
+          }}
+        >
+          {rootNode.label}
+        </div>
+      )}
+      <svg
+        ref={svgRef}
+        width={961}
+        height={700}
+        style={{ background: "white" }}
+      />
+    </div>
   );
 }
