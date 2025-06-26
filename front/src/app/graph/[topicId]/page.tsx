@@ -32,21 +32,8 @@ export default function GraphPage({ params }: Props) {
   if (error) return <p>그래프를 찾을 수 없습니다.</p>;
   if (!graphData) return <p>그래프를 불러오는 중입니다...</p>;
 
-  // 데이터에서 최상단의 노드를 정의
-  // const rootNode = graphData.nodes.find((node) => node.isRoot);
-
   return (
     <div>
-      {/* 그래프 화면 상단에 최상위 노드 질문 표시 */}
-      {/* <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        {rootNode?.label || "제목 없음"}
-      </div> */}
       {/* d3로 시각화 */}
       <Graph data={graphData} />
     </div>
