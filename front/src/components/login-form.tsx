@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 export default function LoginForm() {
   const router = useRouter();
 
-  const handelLogin = (e) => {
+  const handelLogin = (e: React.FormEvent) => {
     e.preventDefault();
     alert("로그인!");
     router.push("/home");
