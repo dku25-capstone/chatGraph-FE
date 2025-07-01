@@ -1,7 +1,6 @@
 // app/layout.tsx
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 import "./globals.css";
+import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
 
 export default function RootLayout({
   children,
@@ -12,13 +11,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="flex h-screen">
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarTrigger />
-            <main className="flex-1 flex items-center justify-center">
-              {children}
-            </main>
-          </SidebarProvider>
+          <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
         </div>
       </body>
     </html>
