@@ -26,19 +26,28 @@ export default function Graph({ data }: { data: GraphData }) {
     const width = 961.6;
     const height = 776;
 
-    // 전체 요소를 담을 그룹 <g>
+    // 전체 그룹 <g>
     const g = svg.append("g");
 
-    // 줌 핸들러 등록
+    // 줌 설정
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.2, 4]) // 축소/확대 비율 범위
+      .scaleExtent([0.2, 4])
       .on("zoom", (event) => {
-        g.attr("transform", event.transform); // g 그룹에 transform 적용
+        g.attr("transform", event.transform);
         updateLabelVisibility(event.transform.k);
       });
 
-    svg.call(zoom); // 줌 활성화
+    svg.call(zoom);
+
+    // 링크 그룹
+    const linkGroup = g.append("g").attr("stroke", "#aaa");
+
+    // 노드 그룹
+    const nodeGroup = g.append("g");
+
+    // 라벨 그룹
+    const labelGroup = g.append("g");
 
     // 시뮬레이션
     const simulation = d3
@@ -53,47 +62,83 @@ export default function Graph({ data }: { data: GraphData }) {
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2));
 
-    // 링크
-    const link = g
-      .append("g")
-      .attr("stroke", "#aaa")
+    // 노드 드래그
+    const drag = d3
+      .drag<SVGCircleElement, Node>()
+      .on("start", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on("end", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+
+        // 드래그 이동 후 종료 시 가까운 노드와 연결
+        const radius = 40;
+
+        const target = data.nodes.find(
+          (n) =>
+            n.id !== d.id &&
+            Math.hypot((n.x ?? 0) - (d.x ?? 0), (n.y ?? 0) - (d.y ?? 0)) <
+              radius &&
+            !data.links.some(
+              (l) =>
+                ((l.source as Node).id === d.id &&
+                  (l.target as Node).id === n.id) ||
+                ((l.source as Node).id === n.id &&
+                  (l.target as Node).id === d.id)
+            )
+        );
+
+        if (target) {
+          // 기존 연결 제거
+          data.links = data.links.filter(
+            (l) =>
+              (l.source as Node).id !== d.id && (l.target as Node).id !== d.id
+          );
+
+          // 새 링크 추가
+          data.links.push({ source: d.id, target: target.id });
+
+          // 링크 업데이트
+          linkGroup
+            .selectAll("line")
+            .data(data.links)
+            .join("line")
+            .attr("stroke", "#aaa")
+            .attr("stroke-width", 2);
+
+          // 시뮬레이션 반영
+          simulation.force<d3.ForceLink<Node, Link>>("link")!.links(data.links);
+          simulation.alpha(1).restart();
+        }
+      });
+
+    // 초기 링크 렌더링
+    linkGroup
       .selectAll("line")
       .data(data.links)
-      .enter()
-      .append("line")
+      .join("line")
       .attr("stroke-width", 2);
 
-    // 노드
-    const node = g
-      .append("g")
+    // 노드 렌더링
+    const node = nodeGroup
       .selectAll("circle")
       .data(data.nodes)
       .enter()
       .append("circle")
       .attr("r", 20)
-      .attr("fill", (d: Node) => (d.isRoot ? "red" : "#69b3a2"))
-      .call(
-        d3
-          .drag<SVGCircleElement, Node>()
-          .on("start", (event, d) => {
-            if (!event.active) simulation.alphaTarget(0.3).restart();
-            d.fx = d.x;
-            d.fy = d.y;
-          })
-          .on("drag", (event, d) => {
-            d.fx = event.x;
-            d.fy = event.y;
-          })
-          .on("end", (event, d) => {
-            if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
-          })
-      );
+      .attr("fill", (d) => (d.isRoot ? "red" : "#69b3a2"))
+      .call(drag);
 
-    // 라벨
-    const label = g
-      .append("g")
+    // 라벨 렌더링
+    const label = labelGroup
       .selectAll("text")
       .data(data.nodes)
       .enter()
@@ -108,9 +153,10 @@ export default function Graph({ data }: { data: GraphData }) {
       label.style("opacity", scale > 0.6 ? 1 : 0);
     }
 
-    // 시뮬레이션 tick
+    // tick 함수
     simulation.on("tick", () => {
-      link
+      linkGroup
+        .selectAll<SVGElement, Link>("line")
         .attr("x1", (d) => (d.source as Node).x!)
         .attr("y1", (d) => (d.source as Node).y!)
         .attr("x2", (d) => (d.target as Node).x!)
@@ -128,7 +174,7 @@ export default function Graph({ data }: { data: GraphData }) {
 
   return (
     <div>
-      {/* SVG 위에 텍스트 표시 */}
+      {/* 그래프 화면 상단에 최상위 질문 표시 */}
       {rootNode && (
         <div
           style={{
