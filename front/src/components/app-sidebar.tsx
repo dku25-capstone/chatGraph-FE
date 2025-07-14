@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
-import { User2, ChevronUp, Plus, MoreHorizontal } from "lucide-react";
+import { User2, ChevronUp, Plus, MoreHorizontal, Workflow } from "lucide-react";
 import { useRouter } from "next/navigation";
 //url 대신 fetch 질문 토픽들에 대한 id를 불러와야함 id면 채팅 전체 id/graph면 채팅 조회
 
@@ -72,7 +72,7 @@ export function AppSidebar() {
                             router.push(`/graph/${id}`);
                           }}
                         >
-                          📊
+                          <Workflow size={18} color="green" />
                         </button>
                         <a
                           href={project.url}

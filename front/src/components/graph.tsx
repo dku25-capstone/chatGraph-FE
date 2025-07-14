@@ -1,11 +1,14 @@
 "use client";
 
 import * as d3 from "d3";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import GraphDetailModal from "./GraphDetailModal";
+import { ExternalLink, SquareX, Trash2 } from "lucide-react";
 
 export interface Node extends d3.SimulationNodeDatum {
   id: string;
   label: string;
+  answer?: string;
   isRoot?: boolean;
 }
 export type Link = d3.SimulationLinkDatum<Node> & {
@@ -16,6 +19,7 @@ export type GraphData = { nodes: Node[]; links: Link[] };
 
 export default function Graph({ data }: { data: GraphData }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
   const rootNode = data.nodes.find((n) => n.isRoot);
 
@@ -135,6 +139,15 @@ export default function Graph({ data }: { data: GraphData }) {
       .append("circle")
       .attr("r", 20)
       .attr("fill", (d) => (d.isRoot ? "red" : "#69b3a2"))
+      .on("mouseover", function () {
+        d3.select(this).transition().duration(150).attr("r", 25);
+      })
+      .on("mouseout", function () {
+        d3.select(this).transition().duration(150).attr("r", 20);
+      })
+      .on("click", (event, d) => {
+        setSelectedNode(d); // 모달에 넘길 노드 정보 저장
+      })
       .call(drag);
 
     // 라벨 렌더링
@@ -187,6 +200,58 @@ export default function Graph({ data }: { data: GraphData }) {
           {rootNode.label}
         </div>
       )}
+      {selectedNode && (
+        <GraphDetailModal onClose={() => setSelectedNode(null)}>
+          <div className="flex flex-row justify-end space-x-2 gap-4 mr-4">
+            {/* 해당 질문 위치 이동 아이콘 우측 상단 */}
+            <div className="relative group flex justify-end">
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="text-gray-500 hover:text-black text-xl"
+              >
+                <ExternalLink size={20} />
+              </button>
+              {/* 툴팁 */}
+              <div className="absolute -top-8 -right-10  hidden group-hover:block bg-black text-white text-xs px-2 py-1 rounded z-10 whitespace-nowrap">
+                클릭하면 해당 질문으로 이동합니다.
+              </div>
+            </div>
+
+            {/* 닫기 아이콘 우측 상단 */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setSelectedNode(null)}
+                className="text-gray-500 hover:text-black text-xl"
+              >
+                <SquareX size={20} />
+              </button>
+            </div>
+          </div>
+          {/* 질문/답변 양쪽 정렬 */}
+          <div className="flex flex-col items-end mt-2 space-y-4">
+            {/* 질문: 오른쪽 정렬 */}
+            <div className="bg-gray-100 p-4 m-4 rounded shadow max-w-[60%] text-right self-end break-words">
+              <p>{selectedNode.label}</p>
+            </div>
+
+            {/* 답변: 왼쪽 정렬 */}
+            <div className="bg-gray-100 p-4 rounded shadow max-w-[60%] self-start break-words">
+              <p>{selectedNode.answer}</p>
+            </div>
+          </div>
+
+          {/* 삭제 아이콘 우측 하단 */}
+          <div className="flex justify-end">
+            <button
+              onClick={() => alert("질문을 삭제하시겠습니까?")}
+              className="text-gray-500 hover:text-black text-xl"
+            >
+              <Trash2 size={20} />
+            </button>
+          </div>
+        </GraphDetailModal>
+      )}
+
       <svg
         ref={svgRef}
         width={961}
