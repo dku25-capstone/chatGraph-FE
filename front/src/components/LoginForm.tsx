@@ -6,14 +6,34 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { api } from "@/lib/api";
 
 export default function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const router = useRouter();
 
-  const handelLogin = (e: React.FormEvent) => {
+  const handelLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("로그인!");
-    router.push("/home");
+
+    try {
+      const res = await api.post("/login", {
+        email,
+        password,
+      });
+
+      if (res.status === 200) {
+        alert("로그인!");
+        router.push("/home");
+      } else {
+        alert("로그인 실패");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("로그인 오류 발생!");
+    }
   };
 
   return (
@@ -28,7 +48,7 @@ export default function LoginForm() {
       />
       <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
       <form className="w-full max-w-md space-y-4">
-        <div>
+        {/* <div>
           <Label htmlFor="아이디" className="mb-2 pt-4 ml-1">
             아이디
           </Label>
@@ -37,6 +57,19 @@ export default function LoginForm() {
             placeholder="아이디"
             type="text"
             className="w-80 text-[10px]! border border-gray-500 focus:outline-none focus:ring-2! focus:ring-[#A599FF]! focus:border-[#A599FF]!"
+          />
+        </div> */}
+        <div>
+          <Label htmlFor="email" className="mb-2 pt-4 ml-1">
+            이메일
+          </Label>
+          <Input
+            id="email"
+            placeholder="ex) 123@gmail.com"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-80 text-[10px] border border-gray-500 focus:outline-none focus:ring-2 focus:ring-[#A599FF] focus:border-[#A599FF]"
           />
         </div>
         <div>
@@ -47,6 +80,8 @@ export default function LoginForm() {
             id="비밀번호"
             placeholder="비밀번호"
             type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-80 text-[10px]! border border-gray-500 focus:outline-none focus:ring-2! focus:ring-[#A599FF]! focus:border-[#A599FF]!"
           />
         </div>
