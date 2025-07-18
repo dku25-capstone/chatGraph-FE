@@ -20,7 +20,7 @@ export const BreadcrumbNavigation = ({ currentPath, navigateToQuestion }: Breadc
               onClick={() => navigateToQuestion(question, index)}
               className="max-w-[200px] truncate text-xs"
             >
-              {question.question}
+              {question.question.length > 10 ? `${question.question.substring(0, 10)}...` : question.question}
             </Button>
             {index < currentPath.length - 1 && <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />}
           </div>
