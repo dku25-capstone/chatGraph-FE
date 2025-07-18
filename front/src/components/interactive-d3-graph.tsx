@@ -1,0 +1,270 @@
+import { useRef, useEffect, useState } from "react"
+import * as d3 from "d3"
+import { Question } from "@/lib/data"
+
+interface InteractiveD3GraphProps {
+  data: Question
+  onNodeClick: (question: Question) => void
+  currentPath: Question[]
+}
+
+export function InteractiveD3Graph({
+  data,
+  onNodeClick,
+  currentPath,
+}: InteractiveD3GraphProps) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!svgRef.current) return
+
+    // Clear previous content
+    d3.select(svgRef.current).selectAll("*").remove()
+
+    // Convert data to D3 hierarchy
+    const root = d3.hierarchy(data, (d) => d.children)
+    const nodes = root.descendants()
+    const links = root.links()
+
+    // SVG dimensions and setup
+    const width = 1000
+    const height = 700
+    const svg = d3
+      .select(svgRef.current)
+      .attr("width", width)
+      .attr("height", height)
+      .attr("viewBox", `0 0 ${width} ${height}`)
+
+    // Create main group for zoom/pan
+    const g = svg.append("g")
+
+    // Zoom behavior
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 3])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform)
+      })
+
+    svg.call(zoom)
+
+    // Create force simulation
+    const simulation = d3
+      .forceSimulation(nodes as any)
+      .force(
+        "link",
+        d3
+          .forceLink(links)
+          .id((d: any) => d.data.id)
+          .distance(120)
+          .strength(0.8),
+      )
+      .force("charge", d3.forceManyBody().strength(-400))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collision", d3.forceCollide().radius(50))
+
+    // Create arrow markers for directed edges
+    const defs = g.append("defs")
+    defs
+      .append("marker")
+      .attr("id", "arrowhead")
+      .attr("viewBox", "0 -5 10 10")
+      .attr("refX", 25)
+      .attr("refY", 0)
+      .attr("orient", "auto")
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .append("path")
+      .attr("d", "M0,-5L10,0L0,5")
+      .attr("fill", "#666")
+
+    // Create links
+    const link = g
+      .append("g")
+      .selectAll("line")
+      .data(links)
+      .enter()
+      .append("line")
+      .attr("stroke", "#999")
+      .attr("stroke-opacity", 0.6)
+      .attr("stroke-width", 2)
+      .attr("marker-end", "url(#arrowhead)")
+
+    // Create node groups
+    const node = g
+      .append("g")
+      .selectAll("g")
+      .data(nodes)
+      .enter()
+      .append("g")
+      .attr("class", "node")
+      .style("cursor", "pointer")
+
+    // Add circles for nodes
+    const circles = node
+      .append("circle")
+      .attr("r", (d) => {
+        const baseRadius = 25
+        const textLength = d.data.question.length
+        return Math.max(baseRadius, Math.min(45, baseRadius + textLength / 10))
+      })
+      .attr("fill", (d) => {
+        const isInCurrentPath = currentPath.some((q) => q.id === d.data.id)
+        const depth = d.depth
+        const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+        const baseColor = colors[depth % colors.length]
+        return isInCurrentPath ? "#1d4ed8" : baseColor
+      })
+      .attr("stroke", (d) => {
+        const isInCurrentPath = currentPath.some((q) => q.id === d.data.id)
+        return isInCurrentPath ? "#1e40af" : "#fff"
+      })
+      .attr("stroke-width", (d) => {
+        const isInCurrentPath = currentPath.some((q) => q.id === d.data.id)
+        return isInCurrentPath ? 4 : 2
+      })
+
+    // Add text labels
+    const labels = node
+      .append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("fill", "white")
+      .attr("font-size", "11px")
+      .attr("font-weight", "600")
+      .attr("pointer-events", "none")
+      .text((d) => {
+        const text = d.data.question
+        if (text.length <= 20) return text
+        return text.substring(0, 18) + "..."
+      })
+
+    // Add child count badges
+    node
+      .filter((d) => d.data.children.length > 0)
+      .append("circle")
+      .attr("cx", 20)
+      .attr("cy", -20)
+      .attr("r", 10)
+      .attr("fill", "#ef4444")
+      .attr("stroke", "#fff")
+      .attr("stroke-width", 2)
+
+    node
+      .filter((d) => d.data.children.length > 0)
+      .append("text")
+      .attr("x", 20)
+      .attr("y", -20)
+      .attr("text-anchor", "middle")
+      .attr("dy", "0.35em")
+      .attr("fill", "white")
+      .attr("font-size", "10px")
+      .attr("font-weight", "bold")
+      .attr("pointer-events", "none")
+      .text((d) => d.data.children.length)
+
+    // Enhanced tooltip
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", "graph-tooltip")
+      .style("position", "absolute")
+      .style("visibility", "hidden")
+      .style("background", "rgba(0, 0, 0, 0.9)")
+      .style("color", "white")
+      .style("padding", "12px")
+      .style("border-radius", "8px")
+      .style("font-size", "12px")
+      .style("max-width", "300px")
+      .style("box-shadow", "0 4px 12px rgba(0, 0, 0, 0.3)")
+      .style("z-index", "1000")
+      .style("line-height", "1.4")
+
+    // Node interactions
+    node
+      .on("mouseover", function (event, d) {
+        d3.select(this)
+          .select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", (d: any) => {
+            const baseRadius = 25
+            const textLength = d.data.question.length
+            return Math.max(baseRadius, Math.min(45, baseRadius + textLength / 10)) + 5
+          })
+
+        tooltip.style("visibility", "visible").html(`
+            <div style="font-weight: bold; margin-bottom: 8px;">${d.data.question}</div>
+            <div style="font-size: 11px; opacity: 0.9;">${d.data.answer.substring(0, 150)}${d.data.answer.length > 150 ? "..." : ""}</div>
+            ${d.data.children.length > 0 ? `<div style="margin-top: 8px; font-size: 10px; color: #fbbf24;">${d.data.children.length} sub-questions</div>` : ""}
+          `)
+      })
+      .on("mousemove", (event) => {
+        tooltip.style("top", event.pageY - 10 + "px").style("left", event.pageX + 10 + "px")
+      })
+      .on("mouseout", function (event, d) {
+        d3.select(this)
+          .select("circle")
+          .transition()
+          .duration(200)
+          .attr("r", (d: any) => {
+            const baseRadius = 25
+            const textLength = d.data.question.length
+            return Math.max(baseRadius, Math.min(45, baseRadius + textLength / 10))
+          })
+
+        tooltip.style("visibility", "hidden")
+      })
+      .on("click", function (event, d) {
+        setSelectedNode(d.data.id)
+        onNodeClick(d.data)
+
+        // Visual feedback
+        circles.attr("stroke-width", 2)
+        d3.select(this).select("circle").attr("stroke-width", 4).attr("stroke", "#1e40af")
+      })
+
+    // Drag behavior
+    const drag = d3
+      .drag<SVGGElement, any>()
+      .on("start", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart()
+        d.fx = d.x
+        d.fy = d.y
+      })
+      .on("drag", (event, d) => {
+        d.fx = event.x
+        d.fy = event.y
+      })
+      .on("end", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0)
+        d.fx = null
+        d.fy = null
+      })
+
+    node.call(drag)
+
+    // Update positions on simulation tick
+    simulation.on("tick", () => {
+      link
+        .attr("x1", (d: any) => d.source.x)
+        .attr("y1", (d: any) => d.source.y)
+        .attr("x2", (d: any) => d.target.x)
+        .attr("y2", (d: any) => d.target.y)
+
+      node.attr("transform", (d: any) => `translate(${d.x},${d.y})`)
+    })
+
+    // Cleanup function
+    return () => {
+      tooltip.remove()
+    }
+  }, [data, onNodeClick, currentPath])
+
+  return (
+    <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border">
+      <svg ref={svgRef} className="w-full h-full"></svg>
+    </div>
+  )
+}
