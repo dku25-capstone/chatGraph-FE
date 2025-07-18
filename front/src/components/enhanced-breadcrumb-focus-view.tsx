@@ -116,7 +116,7 @@ export function EnhancedBreadcrumbFocusView({
         children: [],
       }
 
-      // Update data
+      // Update data in the parent component
       const updateData = (root: Question): Question => {
         if (root.id === currentQuestion.id) {
           return {
@@ -129,16 +129,18 @@ export function EnhancedBreadcrumbFocusView({
           children: root.children.map(updateData),
         }
       }
-
       const updatedData = updateData(data)
       onDataChange(updatedData)
 
-      // Update current path
-      const updatedCurrentQuestion = findQuestionById(currentQuestion.id)
-      if (updatedCurrentQuestion) {
-        const newPath = [...currentPath.slice(0, -1), updatedCurrentQuestion]
-        setCurrentPath(newPath)
-      }
+      // Immediately update the local state to reflect the new question, immutably.
+      setCurrentPath(prevPath => {
+        const lastQuestion = prevPath[prevPath.length - 1];
+        const updatedLastQuestion = {
+          ...lastQuestion,
+          children: [...lastQuestion.children, newQuestionObj]
+        };
+        return [...prevPath.slice(0, -1), updatedLastQuestion];
+      });
 
       setPrompt("")
 
@@ -153,7 +155,7 @@ export function EnhancedBreadcrumbFocusView({
     } finally {
       setIsLoading(false)
     }
-  }, [prompt, currentQuestion, data, onDataChange, findQuestionById, currentPath, simulateAIResponse])
+  }, [prompt, currentQuestion, data, onDataChange, simulateAIResponse])
 
   // Handle edit question
   const handleEditQuestion = useCallback((question: Question) => {

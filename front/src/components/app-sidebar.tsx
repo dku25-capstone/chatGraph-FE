@@ -54,7 +54,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>채팅목록</SidebarGroupLabel>
           <SidebarGroupAction>
-            <Link href="/home">
+            <Link href="/">
                 <Plus />
                 <span className="sr-only">Add Project</span>
             </Link>
