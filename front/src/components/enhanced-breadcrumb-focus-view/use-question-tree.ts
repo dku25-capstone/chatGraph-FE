@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { Question, mockQuestionData } from '@/lib/data';
+import { Question } from '@/lib/data';
 
 export const useQuestionTree = (initialData: Question, onDataChange: (newData: Question) => void) => {
   const [currentPath, setCurrentPath] = useState<Question[]>([initialData]);

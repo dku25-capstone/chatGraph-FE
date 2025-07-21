@@ -6,7 +6,7 @@ export interface Question {
   children: Question[]
 }
 
-export let mockQuestionData: { [key: string]: Question } = {
+export const mockQuestionData: { [key: string]: Question } = {
   "root": {
     id: "root",
     question: "How does artificial intelligence learn and adapt?",
