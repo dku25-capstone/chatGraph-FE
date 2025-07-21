@@ -6,8 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageBubble } from "@/components/message-bubble"
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph"
 import { Question } from "@/lib/data"
-import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp } from "lucide-react";
+
 
 import { useQuestionTree } from "./use-question-tree";
 import { FocusViewHeader } from "./focus-view-header";

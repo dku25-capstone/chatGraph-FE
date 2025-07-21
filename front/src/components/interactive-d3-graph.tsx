@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect } from "react"
 import * as d3 from "d3"
 import { Question } from "@/lib/data"
 
@@ -14,7 +14,7 @@ export function InteractiveD3Graph({
   currentPath,
 }: InteractiveD3GraphProps) {
   const svgRef = useRef<SVGSVGElement>(null)
-  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  
 
   useEffect(() => {
     if (!svgRef.current) return
@@ -51,12 +51,12 @@ export function InteractiveD3Graph({
 
     // Create force simulation
     const simulation = d3
-      .forceSimulation(nodes as any)
+      .forceSimulation(nodes as d3.SimulationNodeDatum[])
       .force(
         "link",
         d3
           .forceLink(links)
-          .id((d: any) => d.data.id)
+          .id(d => (d as d3.HierarchyNode<Question>).data.id)
           .distance(120)
           .strength(0.8),
       )
@@ -126,7 +126,7 @@ export function InteractiveD3Graph({
       })
 
     // Add text labels
-    const labels = node
+    node
       .append("text")
       .attr("text-anchor", "middle")
       .attr("dy", "0.35em")
@@ -188,7 +188,7 @@ export function InteractiveD3Graph({
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", (d: any) => {
+          .attr("r", () => {
             const baseRadius = 25
             const textLength = d.data.question.length
             return Math.max(baseRadius, Math.min(45, baseRadius + textLength / 10)) + 5
@@ -208,7 +208,7 @@ export function InteractiveD3Graph({
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", (d: any) => {
+          .attr("r", () => {
             const baseRadius = 25
             const textLength = d.data.question.length
             return Math.max(baseRadius, Math.min(45, baseRadius + textLength / 10))
@@ -217,7 +217,6 @@ export function InteractiveD3Graph({
         tooltip.style("visibility", "hidden")
       })
       .on("click", function (event, d) {
-        setSelectedNode(d.data.id)
         onNodeClick(d.data)
 
         // Visual feedback
@@ -227,7 +226,7 @@ export function InteractiveD3Graph({
 
     // Drag behavior
     const drag = d3
-      .drag<SVGGElement, any>()
+      .drag<SVGGElement, d3.HierarchyNode<Question> & d3.SimulationNodeDatum>()
       .on("start", (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart()
         d.fx = d.x
@@ -243,17 +242,18 @@ export function InteractiveD3Graph({
         d.fy = null
       })
 
-    node.call(drag)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    node.call(drag as any)
 
     // Update positions on simulation tick
     simulation.on("tick", () => {
       link
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y)
+        .attr("x1", d => (d.source as d3.SimulationNodeDatum & { x: number; y: number }).x)
+        .attr("y1", d => (d.source as d3.SimulationNodeDatum & { x: number; y: number }).y)
+        .attr("x2", d => (d.target as d3.SimulationNodeDatum & { x: number; y: number }).x)
+        .attr("y2", d => (d.target as d3.SimulationNodeDatum & { x: number; y: number }).y)
 
-      node.attr("transform", (d: any) => `translate(${d.x},${d.y})`)
+      node.attr("transform", d => `translate(${(d as d3.SimulationNodeDatum).x},${(d as d3.SimulationNodeDatum).y})`)
     })
 
     // Cleanup function
