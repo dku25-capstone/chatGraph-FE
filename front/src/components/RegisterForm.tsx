@@ -4,11 +4,10 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
-export default function SignupForm() {
+export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +40,8 @@ export default function SignupForm() {
 
       if (res.status === 200) {
         alert("가입 완료!");
-        router.push("/login");
+        onSuccess?.();
+        router.push("/");
       } else {
         alert("회원가입에 실패했습니다");
       }
@@ -55,17 +55,11 @@ export default function SignupForm() {
     // }
   };
 
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4">
-      <Image
-        src="/chat-logo.png"
-        alt="로고"
-        width={100}
-        height={100}
-        className="mb-8"
-        priority
-      />
-      <h1 className="text-2xl font-bold mb-6 text-center">회원가입</h1>
+    <div className="flex flex-col items-center px-4 py-12">
+      
+      
 
       <form onSubmit={handleSignup} className="w-full max-w-md space-y-4">
         {/* <div>

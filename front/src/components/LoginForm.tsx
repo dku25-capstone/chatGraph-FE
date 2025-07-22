@@ -1,17 +1,16 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { api } from "@/lib/api";
+import Link from 'next/link';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { api } from '@/lib/api';
 
-export default function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const router = useRouter();
 
@@ -19,7 +18,7 @@ export default function LoginForm() {
     e.preventDefault();
 
     try {
-      const res = await api.post("/login", {
+      const res = await api.post('/login', {
         email,
         password,
       });
@@ -27,30 +26,24 @@ export default function LoginForm() {
       if (res.status === 200) {
         const token = res.data.token;
         if (token) {
-          localStorage.setItem("token", token);
-          alert("로그인!");
-          router.push("/home");
+          localStorage.setItem('token', token);
+          alert('로그인!');
+          onSuccess?.();
+          router.push('/');
         }
       } else {
-        alert("로그인 실패");
+        alert('로그인 실패');
       }
     } catch (err) {
       console.error(err);
-      alert("로그인 오류 발생!");
+      alert('로그인 오류 발생!');
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4">
-      <Image
-        src="/chat-logo.png"
-        alt="로고"
-        width={100}
-        height={100}
-        className="mb-12"
-        priority
-      />
-      <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
+    <div className="flex flex-col items-center px-4 py-12">
+      
+      
       <form className="w-full max-w-md space-y-4">
         {/* <div>
           <Label htmlFor="아이디" className="mb-2 pt-4 ml-1">
@@ -103,3 +96,4 @@ export default function LoginForm() {
     </div>
   );
 }
+
