@@ -41,15 +41,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import LoginForm from "./LoginForm";
-import RegisterForm from "./RegisterForm";
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -223,44 +214,20 @@ export function AppSidebar() {
           ) : (
             <>
               <SidebarMenuItem>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <SidebarMenuButton>
-                      <LogIn />
-                      {state === "expanded" && <span>로그인</span>}
-                    </SidebarMenuButton>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>로그인</DialogTitle>
-                    </DialogHeader>
-                    <LoginForm
-                      onSuccess={() => {
-                        setIsLoggedIn(true);
-                      }}
-                    />
-                  </DialogContent>
-                </Dialog>
+                <SidebarMenuButton asChild>
+                  <Link href="/login">
+                    <LogIn />
+                    {state === "expanded" && <span>로그인</span>}
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <SidebarMenuButton>
-                      <UserPlus />
-                      {state === "expanded" && <span>회원가입</span>}
-                    </SidebarMenuButton>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>회원가입</DialogTitle>
-                    </DialogHeader>
-                    <RegisterForm
-                      onSuccess={() => {
-                        setIsLoggedIn(true);
-                      }}
-                    />
-                  </DialogContent>
-                </Dialog>
+                <SidebarMenuButton asChild>
+                  <Link href="/register">
+                    <UserPlus />
+                    {state === "expanded" && <span>회원가입</span>}
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </>
           )}
