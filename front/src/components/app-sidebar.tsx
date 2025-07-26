@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarHeader,
@@ -16,15 +16,15 @@ import {
   SidebarTrigger,
   useSidebar,
   SidebarInput,
-} from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
-import Link from "next/link"
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 import {
   User2,
   ChevronUp,
@@ -33,12 +33,25 @@ import {
   Search,
   MessageSquare,
   PanelLeftOpen,
-} from "lucide-react"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+  LogIn,
+  UserPlus,
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function AppSidebar() {
-  const { state, toggleSidebar } = useSidebar()
-  const [isSearchVisible, setIsSearchVisible] = useState(false)
+  const { state, toggleSidebar } = useSidebar();
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
   const allProjects = [
     {
       name: "DB 정규화 방법",
@@ -52,24 +65,30 @@ export function AppSidebar() {
       name: "IPv4 프로토콜 개요",
       url: "/3",
     },
-  ]
+  ];
 
-  const [projects, setProjects] = useState(allProjects)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [projects, setProjects] = useState(allProjects);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const term = event.target.value.toLowerCase()
-    setSearchTerm(term)
+    const term = event.target.value.toLowerCase();
+    setSearchTerm(term);
     if (term) {
       setProjects(
         allProjects.filter((project) =>
           project.name.toLowerCase().includes(term)
         )
-      )
+      );
     } else {
-      setProjects(allProjects)
+      setProjects(allProjects);
     }
-  }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    alert("로그아웃 되었습니다.");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -108,7 +127,7 @@ export function AppSidebar() {
               <Search />
               <span>Search</span>
             </SidebarMenuButton>
-            {isSearchVisible && state === 'expanded' && (
+            {isSearchVisible && state === "expanded" && (
               <div className="mt-2">
                 <SidebarInput
                   placeholder="Search..."
@@ -166,33 +185,54 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-2">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <User2 />
-                  {state === "expanded" && <span>Username</span>}
-                  {state === "expanded" && <ChevronUp className="ml-auto" />}
+          {isLoggedIn ? (
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton>
+                    <User2 />
+                    {state === "expanded" && <span>Username</span>}
+                    {state === "expanded" && <ChevronUp className="ml-auto" />}
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  className="w-[--radix-popper-anchor-width]"
+                >
+                  <DropdownMenuItem>
+                    <span>Account</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <span>Billing</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          ) : (
+            <>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/login">
+                    <LogIn />
+                    {state === "expanded" && <span>로그인</span>}
+                  </Link>
                 </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-[--radix-popper-anchor-width]"
-              >
-                <DropdownMenuItem>
-                  <span>Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <span>Billing</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/register">
+                    <UserPlus />
+                    {state === "expanded" && <span>회원가입</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </>
+          )}
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
