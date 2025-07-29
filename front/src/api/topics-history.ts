@@ -7,6 +7,6 @@ export interface TopicHistoryItem {
 }
 
 export const getTopicsHistory = async (): Promise<TopicHistoryItem[]> => {
-  const response = await api.get<TopicHistoryItem[]>('/topics/history');
+  const response = await api.get<TopicHistoryItem[]>('/api/topics/history');
   return response.data;
 };

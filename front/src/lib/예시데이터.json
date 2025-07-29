@@ -1,0 +1,101 @@
+{
+    "root": "topic-123",
+    "nodes": {
+      "topic-123": {
+        "topicName": "프론트엔드 개발",
+        "children": ["question-e31bd8c6-6e47-4fab-8e52-5f253995dbdc"]
+      },
+      "question-e31bd8c6-6e47-4fab-8e52-5f253995dbdc": {
+        "question": "ㅎㅇ",
+        "answer": "안녕하세요! 어떻게 도와드릴까요?",
+        "level": 1,
+        "children": ["question-4658a4b7-7385-45b9-99fe-2ca29b9c71b5"]
+      },
+      "question-4658a4b7-7385-45b9-99fe-2ca29b9c71b5": {
+        "question": "이건 질문 2번째",
+        "answer": "안녕하세요! 두 번째 질문이 있으시군요. 무엇을 도와드릴까요?",
+        "level": 2,
+        "children": ["question-c0fd5e6e-9723-464c-881d-e09ada608526"]
+      },
+      "question-c0fd5e6e-9723-464c-881d-e09ada608526": {
+        "question": "이건 몇번째?",
+        "answer": "이것은 세 번째 질문입니다.",
+        "level": 3,
+        "children": []
+      }
+    }
+  }
+  
+
+📎 예시 1: 첫 질문
+
+Request
+{
+  "question": "JavaScript는 무슨 언어인가요?"
+}
+
+Response
+{
+  "root": "topic-001",
+  "nodes": {
+    "topic-001": {
+      "topicName": "새 채팅",
+      "children": ["question-001"]
+    },
+    "question-001": {
+      "question": "JavaScript는 무슨 언어인가요?",
+      "answer": "JavaScript는 웹에서 주로 사용하는 프로그래밍 언어입니다.",
+      "level": 1,
+      "children": []
+    }
+  }
+}
+
+
+📎 예시 2: 이어지는 질문
+Request
+{
+  "question": "그럼 타입스크립트는 뭐에요?",
+  "parentId": "question-001"
+}
+Response
+{
+  "root": "topic-001",
+  "nodes": {
+    "question-002": {
+      "question": "그럼 타입스크립트는 뭐에요?",
+      "answer": "TypeScript는 JavaScript에 타입을 추가한 언어입니다.",
+      "level": 2,
+      "children": []
+    }
+  }
+}
+
+
+{
+  "topic": "topic-2244c4ba-1eed-4704-a5e0-2d8870ba6e42",
+  "nodes": {
+      "topic-2244c4ba-1eed-4704-a5e0-2d8870ba6e42": {
+          "topicId": "topic-2244c4ba-1eed-4704-a5e0-2d8870ba6e42",
+          "topicName": "New Chat",
+          "createdAt": "2025-07-28T13:55:06.182337503",
+          "children": [
+              "question-8484d16d-e2d4-4c1d-8c05-2d8e31232935"
+          ]
+      },
+      "question-8484d16d-e2d4-4c1d-8c05-2d8e31232935": {
+          "questionId": "question-8484d16d-e2d4-4c1d-8c05-2d8e31232935",
+          "question": "똥 시원하게 잘싸는법",
+          "level": 1,
+          "answerId": "answer-cdee7fe0-0460-4669-8462-e8f356e7c947",
+          "answer": "배변을 더 쉽게 하고 시원하게 해결하기 위한 몇 가지 방법을 소개할게요:\n\n1. 충분한 수분 섭취: 하루에 적어도 8잔 이상의 물을 마셔서 변이 부드럽게 나오게 도와주세요.\n2. 섬유질 섭취 늘리기: 과일, 채소, 통곡물, 콩류 등 섬유질이 풍부한 음식을 먹으면 배변이 원활해집니다.\n3. 규칙적인 식사와 배변 습관: 일정한 시간에 식사하고, 배변 시간을 정해두면 몸이 자연스럽게 적응됩니다.\n4. 적절한 운동하기: 가벼운 운동이나 산책이 장운동을 촉진시켜 배변을 쉽게 합니다.\n5. 배변 자세 개선: 발을 약간 높이고 무릎을 구부린 자세로 앉으면 배변이 더 수월해질 수 있어요.\n6. 긴장 풀기: 스트레스를 줄이고 편안한 상태에서 배변하는 것이 좋아요.\n7. 참고로, 만약 변비가 지속되거나 심한 통증이 있다면 병원 상담을 받는 것이 필요합니다.\n\n꼭 건강한 생활습관을 유지하셔서 배변이 편안하게 되시길 바랍니다!",
+          "createdAt": "2025-07-28T13:55:06.182300065",
+          "children": []
+      }
+  }
+}
+
+해야할 것!
+1. 리덕스를 이용해서 다이나믹 라우트에 전달할 것
+2. 계층화된 표현을 어떻게 표시할 것인가
+3. 그래프로 보기 버튼 만들기

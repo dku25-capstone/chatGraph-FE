@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -5,11 +6,14 @@ import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { ArrowUp } from "lucide-react"
-import { addQuestionTopic } from "@/lib/data"
+import { useDispatch } from 'react-redux';
+import { setQuestionData } from '@/lib/store/chatSlice';
+import { askQuestion } from "@/api/questions";
 
 export function StartNewTopicForm() {
   const [prompt, setPrompt] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const dispatch = useDispatch()
   const router = useRouter()
 
   const handleStartNewTopic = async () => {
@@ -17,21 +21,9 @@ export function StartNewTopicForm() {
 
     setIsLoading(true)
     try {
-      // Simulate AI response for the initial question
-      const initialAnswer = `This is the start of a new discussion about: "${prompt}". I'm ready to explore this topic with you.`
-      const newId = `topic-${Date.now()}`
-
-      const newTopic = {
-        id: newId,
-        question: prompt,
-        answer: initialAnswer,
-        timestamp: new Date().toISOString(),
-        children: [],
-      }
-
-      addQuestionTopic(newTopic)
-
-      router.push(`/${newId}`)
+      const response = await askQuestion({ question: prompt })
+      dispatch(setQuestionData(response)) // API 응답을 Redux 스토어에 직접 저장
+      router.push(`/${response.topic}`)   // 동적 라우팅
     } catch (error) {
       console.error("Error starting new topic:", error)
     } finally {

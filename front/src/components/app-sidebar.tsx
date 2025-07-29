@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -60,6 +61,7 @@ export function AppSidebar() {
         try {
           setLoadingTopics(true);
           const fetchedTopics = await getTopicsHistory();
+          console.log(fetchedTopics)
           setTopics(fetchedTopics);
         } catch (error) {
           console.error("Failed to fetch topics:", error);
