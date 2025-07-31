@@ -1,12 +1,11 @@
-"use client"
+"use client";
 
 import { useState } from "react";
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { MessageBubble } from "@/components/message-bubble"
-import { InteractiveD3Graph } from "@/components/interactive-d3-graph"
-import { Question } from "@/lib/data"
-
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageBubble } from "@/components/message-bubble";
+import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
+import { TopicTreeResponse } from "@/lib/data-transformer";
 
 import { useQuestionTree } from "./use-question-tree";
 import { FocusViewHeader } from "./focus-view-header";
@@ -16,11 +15,14 @@ import { NewQuestionForm } from "./new-question-form";
 import { EditQuestionDialog } from "./edit-question-dialog";
 
 interface EnhancedBreadcrumbFocusViewProps {
-  data: ViewData
-  onDataChange: (newData: ViewData) => void
+  initialResponse: TopicTreeResponse;
+  onDataChange: (newResponse: TopicTreeResponse) => void;
 }
 
-export function EnhancedBreadcrumbFocusView({ data, onDataChange }: EnhancedBreadcrumbFocusViewProps) {
+export function EnhancedBreadcrumbFocusView({
+  initialResponse,
+  onDataChange,
+}: EnhancedBreadcrumbFocusViewProps) {
   const {
     currentPath,
     viewMode,
@@ -44,9 +46,17 @@ export function EnhancedBreadcrumbFocusView({ data, onDataChange }: EnhancedBrea
     handleEditQuestion,
     handleSaveEdit,
     handleDeleteQuestion,
-  } = useQuestionTree(data, onDataChange);
+  } = useQuestionTree(initialResponse, onDataChange);
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
+
+  if (!currentQuestion) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
+  }
 
   if (viewMode === "graph") {
     return (
@@ -58,10 +68,14 @@ export function EnhancedBreadcrumbFocusView({ data, onDataChange }: EnhancedBrea
           pathLength={currentPath.length}
         />
         <div className="flex-1 p-4">
-          <InteractiveD3Graph data={data} onNodeClick={handleGraphNodeClick} currentPath={currentPath} />
+          <InteractiveD3Graph
+            data={initialResponse}
+            onNodeClick={handleGraphNodeClick}
+            currentPath={currentPath}
+          />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -73,16 +87,25 @@ export function EnhancedBreadcrumbFocusView({ data, onDataChange }: EnhancedBrea
           goHome={goHome}
           pathLength={currentPath.length}
         />
-        <BreadcrumbNavigation currentPath={currentPath} navigateToQuestion={navigateToQuestion} />
+        <BreadcrumbNavigation
+          currentPath={currentPath}
+          navigateToQuestion={navigateToQuestion}
+        />
         <div className="max-w-4xl mx-auto">
-          <MessageBubble 
-            question={currentQuestion.question} 
-            answer={currentQuestion.answer} 
-            isToggleable={true}
-            isAnswerVisible={isMainAnswerVisible}
-            onToggleAnswer={() => setIsMainAnswerVisible(!isMainAnswerVisible)}
-          />
-          <Separator className="my-0" />
+          {currentPath.length > 1 && (
+            <>
+              <MessageBubble
+                question={currentQuestion.question}
+                answer={currentQuestion.answer}
+                isToggleable={true}
+                isAnswerVisible={isMainAnswerVisible}
+                onToggleAnswer={() =>
+                  setIsMainAnswerVisible(!isMainAnswerVisible)
+                }
+              />
+              <Separator className="my-0" />
+            </>
+          )}
         </div>
       </div>
 
@@ -95,6 +118,7 @@ export function EnhancedBreadcrumbFocusView({ data, onDataChange }: EnhancedBrea
                 addToPath={addToPath}
                 handleEditQuestion={handleEditQuestion}
                 handleDeleteQuestion={handleDeleteQuestion}
+                showTitle={currentPath.length > 1}
               />
             )}
           </div>
@@ -119,5 +143,5 @@ export function EnhancedBreadcrumbFocusView({ data, onDataChange }: EnhancedBrea
         setEditingQuestion={setEditingQuestion}
       />
     </div>
-  )
+  );
 }

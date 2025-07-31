@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Question } from "@/lib/data";
+import { ViewData } from "@/lib/data-transformer";
 
 interface EditQuestionDialogProps {
   editingQuestion: ViewData | null;

@@ -2,7 +2,7 @@ import { api } from "@/lib/api";
 
 export interface QuestionRequest {
   question: string;
-  parentId?: string; // 없으면 첫 질문
+  parentQuestionId?: string; // 없으면 첫 질문
 }
 
 // 응답 타입 정의

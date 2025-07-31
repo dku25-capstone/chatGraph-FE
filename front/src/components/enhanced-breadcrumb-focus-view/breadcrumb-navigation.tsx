@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronRight } from "lucide-react";
-import { Question } from "@/lib/data";
+import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
 
 interface BreadcrumbNavigationProps {
   currentPath: ViewData[];
@@ -13,7 +13,7 @@ export const BreadcrumbNavigation = ({ currentPath, navigateToQuestion }: Breadc
     <ScrollArea className="w-full">
       <div className="flex items-center gap-2 min-w-max">
         {currentPath.map((question, index) => (
-          <div key={question.id} className="flex items-center gap-2">
+          <div key={`${question.id}-${index}`} className="flex items-center gap-2"> {/* 더 안전한 key 값 */}
             <Button
               variant={index === currentPath.length - 1 ? "default" : "ghost"}
               size="sm"

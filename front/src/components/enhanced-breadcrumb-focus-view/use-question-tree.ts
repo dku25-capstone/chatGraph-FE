@@ -1,14 +1,10 @@
 
 import { useState, useEffect, useRef } from 'react';
-interface ViewData {
-  id: string;
-  question: string;
-  answer: string;
-  children: ViewData[];
-}
+import { askQuestion } from '@/api/questions';
+import { ViewData, TopicTreeResponse, transformApiDataToViewData } from '@/lib/data-transformer';
 
-export const useQuestionTree = (initialData: ViewData, onDataChange: (newData: ViewData) => void) => {
-  const [currentPath, setCurrentPath] = useState<ViewData[]>([initialData]);
+export const useQuestionTree = (initialResponse: TopicTreeResponse, onDataChange: (newResponse: TopicTreeResponse) => void) => {
+  const [currentPath, setCurrentPath] = useState<ViewData[]>([]);
   const [viewMode, setViewMode] = useState<'chat' | 'graph'>('chat');
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,11 +13,12 @@ export const useQuestionTree = (initialData: ViewData, onDataChange: (newData: V
   const [newAnswer, setNewAnswer] = useState('');
   const scrollAreaRef = useRef<any>(null);
 
-  const currentQuestion = currentPath[currentPath.length - 1];
-
   useEffect(() => {
-    setCurrentPath([initialData]);
-  }, [initialData]);
+    const initialViewData = transformApiDataToViewData(initialResponse);
+    setCurrentPath([initialViewData]);
+  }, [initialResponse]);
+
+  const currentQuestion = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null;
 
   const navigateToQuestion = (question: ViewData, index: number) => {
     setCurrentPath(currentPath.slice(0, index + 1));
@@ -32,7 +29,7 @@ export const useQuestionTree = (initialData: ViewData, onDataChange: (newData: V
   };
 
   const goHome = () => {
-    setCurrentPath([currentPath[0]]);
+    setCurrentPath(currentPath.slice(0, 1));
   };
 
   const handleGraphNodeClick = (node: any) => {
@@ -41,27 +38,36 @@ export const useQuestionTree = (initialData: ViewData, onDataChange: (newData: V
   };
 
   const handleAddQuestion = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || !currentQuestion) return;
     setIsLoading(true);
 
-    // TODO: API 호출로 질문을 서버에 저장해야 합니다.
-    // 현재는 클라이언트 측에서만 데이터를 수정합니다.
-    const newQuestionNode: ViewData = {
-      id: `question-${Date.now()}`,
-      question: prompt,
-      answer: "This is a new answer.", // 실제로는 AI의 답변을 받아야 함
-      children: [],
-    };
+    try {
+      const response = await askQuestion({ 
+        question: prompt, 
+        parentQuestionId: currentQuestion.id 
+      });
+      onDataChange(response);
+      
+      // Find the newly added question and update the path
+      const oldNodeIds = Object.keys(initialResponse.nodes);
+      const newNodeIds = Object.keys(response.nodes);
+      const newQuestionId = newNodeIds.find(id => !oldNodeIds.includes(id));
 
-    const updatedData = { ...initialData }; // 전체 데이터 복사
-    const parentNode = findNodeById(updatedData, currentQuestion.id);
-    if (parentNode) {
-      parentNode.children.push(newQuestionNode);
+      if (newQuestionId) {
+        const newViewData = transformApiDataToViewData(response);
+        const newQuestionNode = findNodeById(newViewData, newQuestionId);
+        if (newQuestionNode) {
+          addToPath(newQuestionNode);
+        }
+      }
+
+    } catch (error) {
+      console.error("Failed to add question:", error);
+      // 여기에 에러 처리 로직 추가 (e.g., toast message)
+    } finally {
+      setPrompt('');
+      setIsLoading(false);
     }
-
-    onDataChange(updatedData);
-    setPrompt('');
-    setIsLoading(false);
   };
 
   const handleEditQuestion = (question: ViewData) => {
@@ -72,25 +78,16 @@ export const useQuestionTree = (initialData: ViewData, onDataChange: (newData: V
 
   const handleSaveEdit = () => {
     if (!editingQuestion) return;
-
-    const updatedData = { ...initialData };
-    const nodeToUpdate = findNodeById(updatedData, editingQuestion.id);
-    if (nodeToUpdate) {
-      nodeToUpdate.question = newQuestion;
-      nodeToUpdate.answer = newAnswer;
-    }
-
-    onDataChange(updatedData);
+    // This part needs to be updated to work with TopicTreeResponse
+    // For now, it will not work as expected.
+    console.log("Save edit is not implemented for TopicTreeResponse yet.");
     setEditingQuestion(null);
   };
 
   const handleDeleteQuestion = (id: string) => {
-    const updatedData = { ...initialData };
-    removeNodeById(updatedData, id);
-    onDataChange(updatedData);
-    // 현재 경로에 삭제된 노드가 포함되어 있다면 경로를 수정해야 합니다.
-    const newPath = currentPath.filter(q => q.id !== id);
-    setCurrentPath(newPath.length > 0 ? newPath : [initialData]);
+    // This part needs to be updated to work with TopicTreeResponse
+    // For now, it will not work as expected.
+    console.log("Delete question is not implemented for TopicTreeResponse yet.");
   };
 
   // Helper functions to find and manipulate nodes in the tree
@@ -101,13 +98,6 @@ export const useQuestionTree = (initialData: ViewData, onDataChange: (newData: V
       if (found) return found;
     }
     return null;
-  };
-
-  const removeNodeById = (node: ViewData, id: string) => {
-    node.children = node.children.filter(child => child.id !== id);
-    for (const child of node.children) {
-      removeNodeById(child, id);
-    }
   };
 
   return {
