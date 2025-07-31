@@ -5,13 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Question } from "@/lib/data";
 
 interface EditQuestionDialogProps {
-  editingQuestion: Question | null;
+  editingQuestion: ViewData | null;
   newQuestion: string;
   newAnswer: string;
   setNewQuestion: (question: string) => void;
   setNewAnswer: (answer: string) => void;
   handleSaveEdit: () => void;
-  setEditingQuestion: (question: Question | null) => void;
+  setEditingQuestion: (question: ViewData | null) => void;
 }
 
 export const EditQuestionDialog = ({ editingQuestion, newQuestion, newAnswer, setNewQuestion, setNewAnswer, handleSaveEdit, setEditingQuestion }: EditQuestionDialogProps) => (

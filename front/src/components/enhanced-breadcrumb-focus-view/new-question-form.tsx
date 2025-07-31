@@ -4,7 +4,7 @@ import { ArrowUp } from "lucide-react";
 import { Question } from "@/lib/data";
 
 interface NewQuestionFormProps {
-  currentQuestion: Question;
+  currentQuestion: ViewData;
   prompt: string;
   setPrompt: (prompt: string) => void;
   handleAddQuestion: () => void;

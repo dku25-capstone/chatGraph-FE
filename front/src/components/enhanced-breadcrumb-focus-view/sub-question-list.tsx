@@ -6,9 +6,9 @@ import { MessageSquare, Edit, Trash2, Eye, ChevronDown, ChevronUp } from "lucide
 import { Question } from "@/lib/data";
 
 interface SubQuestionListProps {
-  questions: Question[];
-  addToPath: (question: Question) => void;
-  handleEditQuestion: (question: Question) => void;
+  questions: ViewData[];
+  addToPath: (question: ViewData) => void;
+  handleEditQuestion: (question: ViewData) => void;
   handleDeleteQuestion: (id: string) => void;
 }
 

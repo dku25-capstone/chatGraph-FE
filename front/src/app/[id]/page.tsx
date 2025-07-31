@@ -1,55 +1,77 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { getTopicById } from '@/api/questions'; // 수정된 API 함수 임포트
+import { getTopicById } from '@/api/questions';
+import { EnhancedBreadcrumbFocusView } from '@/components/enhanced-breadcrumb-focus-view';
 
-// Node 타입을 명시적으로 정의
+// API 응답 타입 (questions.ts에서 가져오거나 여기에 정의)
+interface TopicNode {
+  topicId: string;
+  topicName: string;
+  createdAt: string;
+  children: string[];
+}
 interface QuestionNode {
   questionId: string;
   question: string;
   answer: string;
+  level: number;
+  createdAt: string;
   children: string[];
 }
-
-interface TopicNode {
-  topicId: string;
-  topicName: string;
-  children: string[];
+interface TopicTreeResponse {
+  topic: string;
+  nodes: { [id: string]: TopicNode | QuestionNode };
 }
 
-interface Nodes {
-  [id: string]: TopicNode | QuestionNode;
+// EnhancedBreadcrumbFocusView가 요구하는 데이터 타입
+interface ViewData {
+  id: string;
+  question: string;
+  answer: string;
+  children: ViewData[];
 }
 
-// 질문과 답변을 재귀적으로 렌더링하는 컴포넌트
-const QuestionAnswer = ({ questionId, nodes }: { questionId: string, nodes: Nodes }) => {
-  const node = nodes[questionId] as QuestionNode;
-  if (!node) return null;
+/**
+ * API 응답 (TopicTreeResponse)을 EnhancedBreadcrumbFocusView가 사용하는
+ * 재귀적인 ViewData 형태로 변환하는 함수.
+ */
+const transformApiDataToViewData = (apiData: TopicTreeResponse): ViewData => {
+  const { topic: rootId, nodes } = apiData;
 
-  return (
-    <div className="ml-6 mt-4 p-4 border-l-2 border-gray-200">
-      <div className="mb-2">
-        <p className="font-semibold text-lg">Q: {node.question}</p>
-        <p className="text-gray-700">A: {node.answer}</p>
-      </div>
-      {node.children && node.children.length > 0 && (
-        <div>
-          {node.children.map(childId => (
-            <QuestionAnswer key={childId} questionId={childId} nodes={nodes} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const buildTree = (nodeId: string): ViewData => {
+    const node = nodes[nodeId];
+    let questionText = '';
+    let answerText = '';
+
+    if ('topicName' in node) { // TopicNode
+      questionText = node.topicName;
+      answerText = `This is the root of the topic: ${node.topicName}`;
+    } else { // QuestionNode
+      questionText = node.question;
+      answerText = node.answer;
+    }
+
+    const children = ('children' in node && node.children) ? node.children.map(buildTree) : [];
+
+    return {
+      id: nodeId,
+      question: questionText,
+      answer: answerText,
+      children: children,
+    };
+  };
+
+  return buildTree(rootId);
 };
 
 export default function ChatPage() {
   const params = useParams();
   const topicId = params.id as string;
 
-  const [topicNode, setTopicNode] = useState<TopicNode | null>(null);
-  const [nodes, setNodes] = useState<Nodes | null>(null);
+  const [viewData, setViewData] = useState<ViewData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,12 +79,11 @@ export default function ChatPage() {
       const fetchData = async () => {
         try {
           setLoading(true);
-          const response = await getTopicById(topicId);
-          setTopicNode(response.nodes[response.topic] as TopicNode);
-          setNodes(response.nodes);
+          const apiResponse = await getTopicById(topicId);
+          const transformedData = transformApiDataToViewData(apiResponse);
+          setViewData(transformedData);
         } catch (error) {
-          console.error("Failed to fetch topic data:", error);
-          // 에러 처리 (예: 404 페이지로 리디렉션)
+          console.error("Failed to fetch and transform topic data:", error);
         } finally {
           setLoading(false);
         }
@@ -71,22 +92,22 @@ export default function ChatPage() {
     }
   }, [topicId]);
 
+  const handleDataChange = (newData: ViewData) => {
+    setViewData(newData);
+  };
+
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  if (!topicNode || !nodes) {
-    return <div>Topic not found.</div>;
+  if (!viewData) {
+    return <div className="flex items-center justify-center h-screen">Topic not found.</div>;
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">{topicNode.topicName}</h1>
-      <div>
-        {topicNode.children.map(questionId => (
-          <QuestionAnswer key={questionId} questionId={questionId} nodes={nodes} />
-        ))}
-      </div>
-    </div>
+    <EnhancedBreadcrumbFocusView 
+      data={viewData} 
+      onDataChange={handleDataChange} 
+    />
   );
 }

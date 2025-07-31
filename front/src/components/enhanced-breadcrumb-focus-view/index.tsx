@@ -16,8 +16,8 @@ import { NewQuestionForm } from "./new-question-form";
 import { EditQuestionDialog } from "./edit-question-dialog";
 
 interface EnhancedBreadcrumbFocusViewProps {
-  data: Question
-  onDataChange: (newData: Question) => void
+  data: ViewData
+  onDataChange: (newData: ViewData) => void
 }
 
 export function EnhancedBreadcrumbFocusView({ data, onDataChange }: EnhancedBreadcrumbFocusViewProps) {

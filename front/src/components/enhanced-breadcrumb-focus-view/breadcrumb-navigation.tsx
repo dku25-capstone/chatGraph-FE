@@ -4,8 +4,8 @@ import { ChevronRight } from "lucide-react";
 import { Question } from "@/lib/data";
 
 interface BreadcrumbNavigationProps {
-  currentPath: Question[];
-  navigateToQuestion: (question: Question, index: number) => void;
+  currentPath: ViewData[];
+  navigateToQuestion: (question: ViewData, index: number) => void;
 }
 
 export const BreadcrumbNavigation = ({ currentPath, navigateToQuestion }: BreadcrumbNavigationProps) => (
