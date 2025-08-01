@@ -37,7 +37,7 @@ export const transformApiDataToViewData = (apiData: TopicTreeResponse): ViewData
   const { topic: rootId, nodes } = apiData;
 
   const rootNode = nodes[rootId] as TopicNode;
-  const allNodeIds = Object.keys(nodes);
+  
 
   const buildTree = (nodeId: string): ViewData => {
     const node = nodes[nodeId];

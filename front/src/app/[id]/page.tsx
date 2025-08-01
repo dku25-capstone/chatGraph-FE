@@ -3,9 +3,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { getTopicById } from '@/api/questions';
+import { TopicTreeResponse } from "@/lib/data-transformer";
+import { getTopicById } from "@/api/questions";
 import { EnhancedBreadcrumbFocusView } from '@/components/enhanced-breadcrumb-focus-view';
-import { ViewData, transformApiDataToViewData } from '@/lib/data-transformer';
+
 
 export default function ChatPage() {
   const params = useParams();
@@ -31,9 +32,7 @@ export default function ChatPage() {
     }
   }, [topicId]);
 
-  const handleDataChange = (newResponse: TopicTreeResponse) => {
-    setApiResponse(newResponse);
-  };
+  
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
@@ -46,7 +45,6 @@ export default function ChatPage() {
   return (
     <EnhancedBreadcrumbFocusView 
       initialResponse={apiResponse} 
-      onDataChange={handleDataChange} 
     />
   );
 }

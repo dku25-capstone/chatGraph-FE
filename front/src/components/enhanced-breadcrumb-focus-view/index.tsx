@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "@/components/message-bubble";
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
-import { TopicTreeResponse } from "@/lib/data-transformer";
+import { transformApiDataToViewData, TopicTreeResponse } from "@/lib/data-transformer";
 
 import { useQuestionTree } from "./use-question-tree";
 import { FocusViewHeader } from "./focus-view-header";
@@ -16,12 +16,10 @@ import { EditQuestionDialog } from "./edit-question-dialog";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
-  onDataChange: (newResponse: TopicTreeResponse) => void;
 }
 
 export function EnhancedBreadcrumbFocusView({
   initialResponse,
-  onDataChange,
 }: EnhancedBreadcrumbFocusViewProps) {
   const {
     currentPath,
@@ -46,8 +44,9 @@ export function EnhancedBreadcrumbFocusView({
     handleEditQuestion,
     handleSaveEdit,
     handleDeleteQuestion,
-  } = useQuestionTree(initialResponse, onDataChange);
+  } = useQuestionTree(initialResponse);
 
+  const viewData = transformApiDataToViewData(initialResponse);
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
 
   if (!currentQuestion) {
@@ -69,7 +68,7 @@ export function EnhancedBreadcrumbFocusView({
         />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
-            data={initialResponse}
+            data={viewData}
             onNodeClick={handleGraphNodeClick}
             currentPath={currentPath}
           />

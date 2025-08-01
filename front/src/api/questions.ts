@@ -22,7 +22,7 @@ interface TopicNode {
   children: string[];
 }
 
-interface QuestionNode {
+export interface QuestionNode {
   questionId: string;
   question: string;
   level: number;
@@ -52,23 +52,4 @@ export const getTopicById = async (topicId: string): Promise<TopicTreeResponse> 
   return response.data;
 };
 
-// 트리를 평탄화해서 QuestionAnswer[] 형태로 변환
-const parseTreeToQAList = (response: TopicTreeResponse): QuestionAnswer[] => {
-  const { nodes } = response;
-  const result: QuestionAnswer[] = [];
 
-  Object.values(nodes).forEach((node) => {
-    if ("questionId" in node) {
-      result.push({
-        questionId: node.questionId,
-        questionText: node.question,
-        level: node.level,
-        answerId: node.answerId,
-        answerText: node.answer,
-        createdAt: node.createdAt,
-      });
-    }
-  });
-
-  return result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-};

@@ -9,7 +9,7 @@ interface SubQuestionListProps {
   questions: ViewData[];
   addToPath: (question: ViewData) => void;
   handleEditQuestion: (question: ViewData) => void;
-  handleDeleteQuestion: (id: string) => void;
+  handleDeleteQuestion: () => void;
   showTitle: boolean;
 }
 
@@ -82,7 +82,7 @@ export const SubQuestionList = ({ questions, addToPath, handleEditQuestion, hand
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteQuestion(child.id);
+                      handleDeleteQuestion();
                     }}
                     className="text-red-500 hover:text-red-700"
                   >

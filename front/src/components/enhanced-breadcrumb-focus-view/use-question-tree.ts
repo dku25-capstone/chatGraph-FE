@@ -1,9 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { askQuestion } from '@/api/questions';
+import { askQuestion, QuestionNode } from '@/api/questions';
 import { ViewData, TopicTreeResponse, transformApiDataToViewData } from '@/lib/data-transformer';
 
-export const useQuestionTree = (initialResponse: TopicTreeResponse, onDataChange: (newResponse: TopicTreeResponse) => void) => {
+export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   const [currentPath, setCurrentPath] = useState<ViewData[]>([]);
   const [viewMode, setViewMode] = useState<'chat' | 'graph'>('chat');
   const [prompt, setPrompt] = useState('');
@@ -11,7 +11,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse, onDataChange
   const [editingQuestion, setEditingQuestion] = useState<ViewData | null>(null);
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
-  const scrollAreaRef = useRef<any>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initialViewData = transformApiDataToViewData(initialResponse);
@@ -32,7 +32,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse, onDataChange
     setCurrentPath(currentPath.slice(0, 1));
   };
 
-  const handleGraphNodeClick = (node: any) => {
+  const handleGraphNodeClick = (node: ViewData) => {
     // D3 그래프 노드 클릭 시 해당 경로로 이동하는 로직 (구현 필요)
     console.log("Graph node clicked:", node);
   };
@@ -54,7 +54,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse, onDataChange
       if (!newQuestionId) {
         throw new Error("New question not found in the API response.");
       }
-      const newQuestionNode = response.nodes[newQuestionId] as any; // Type assertion
+      const newQuestionNode = response.nodes[newQuestionId] as QuestionNode;
 
       // Optimistically update the UI
       const newViewDataNode: ViewData = {
@@ -117,20 +117,10 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse, onDataChange
     setEditingQuestion(null);
   };
 
-  const handleDeleteQuestion = (id: string) => {
+  const handleDeleteQuestion = () => {
     // This part needs to be updated to work with TopicTreeResponse
     // For now, it will not work as expected.
     console.log("Delete question is not implemented for TopicTreeResponse yet.");
-  };
-
-  // Helper functions to find and manipulate nodes in the tree
-  const findNodeById = (node: ViewData, id: string): ViewData | null => {
-    if (node.id === id) return node;
-    for (const child of node.children) {
-      const found = findNodeById(child, id);
-      if (found) return found;
-    }
-    return null;
   };
 
   return {
