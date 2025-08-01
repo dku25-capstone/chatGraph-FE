@@ -114,6 +114,7 @@ export function EnhancedBreadcrumbFocusView({
           <div className="max-w-4xl mx-auto">
             {currentQuestion.children.length > 0 && (
               <SubQuestionList
+                key={currentQuestion.id} // Add key prop here
                 questions={currentQuestion.children}
                 addToPath={addToPath}
                 handleEditQuestion={handleEditQuestion}

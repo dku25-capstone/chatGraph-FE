@@ -36,44 +36,64 @@ export interface TopicTreeResponse {
 export const transformApiDataToViewData = (apiData: TopicTreeResponse): ViewData => {
   const { topic: rootId, nodes } = apiData;
 
+  const rootNode = nodes[rootId] as TopicNode;
+  const allNodeIds = Object.keys(nodes);
+
   const buildTree = (nodeId: string): ViewData => {
     const node = nodes[nodeId];
 
     if (!node) {
-      console.error(`Node with ID ${nodeId} not found in API response. Returning empty ViewData. This might indicate a data inconsistency where a child node is referenced but not provided.`);
+      console.error(`Missing node: ${nodeId}`);
       return {
         id: nodeId,
-        question: "Error: Node not found",
-        answer: "This node could not be loaded due to missing data.",
+        question: "Error: Missing node",
+        answer: "This node is missing from the response.",
         children: [],
       };
     }
 
+    let viewDataId = '';
     let questionText = '';
     let answerText = '';
-    let viewDataId = '';
 
-    if ('topicName' in node) { // TopicNode
+    if ('topicName' in node) {
+      viewDataId = node.topicId;
       questionText = node.topicName;
       answerText = `This is the root of the topic: ${node.topicName}`;
-      viewDataId = node.topicId;
-    } else { // QuestionNode
+    } else {
+      viewDataId = node.questionId;
       questionText = node.question;
       answerText = node.answer;
-      viewDataId = node.questionId;
     }
 
-    const children = ('children' in node && node.children)
-      ? node.children.map(buildTree).filter(Boolean) // Filter out null children
-      : [];
+    const children = node.children?.map(buildTree) || [];
 
     return {
       id: viewDataId,
       question: questionText,
       answer: answerText,
-      children: children,
+      children,
     };
   };
 
-  return buildTree(rootId);
+  // 1. topic.children로부터 트리 구성
+  const directChildren = rootNode.children.map(buildTree);
+
+  // 2. 명시적으로 children으로 연결되지 않았지만 level === 1 인 질문 노드 찾기
+  const referencedIds = new Set(
+    Object.values(nodes)
+      .flatMap(n => ('children' in n ? n.children : []))
+  );
+  const additionalTopLevelQuestions = Object.values(nodes)
+    .filter((node): node is QuestionNode => 'questionId' in node)
+    .filter(q => q.level === 1 && !referencedIds.has(q.questionId));
+
+  const additionalChildren = additionalTopLevelQuestions.map(q => buildTree(q.questionId));
+
+  return {
+    id: rootNode.topicId,
+    question: rootNode.topicName,
+    answer: `This is the root of the topic: ${rootNode.topicName}`,
+    children: [...directChildren, ...additionalChildren],
+  };
 };

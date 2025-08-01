@@ -42,33 +42,66 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse, onDataChange
     setIsLoading(true);
 
     try {
-      const response = await askQuestion({ 
-        question: prompt, 
-        parentQuestionId: currentQuestion.id 
-      });
-      onDataChange(response);
-      
-      // Find the newly added question and update the path
-      const oldNodeIds = Object.keys(initialResponse.nodes);
-      const newNodeIds = Object.keys(response.nodes);
-      const newQuestionId = newNodeIds.find(id => !oldNodeIds.includes(id));
+      const parentId = currentQuestion.id;
 
-      if (newQuestionId) {
-        const newViewData = transformApiDataToViewData(response);
-        const newQuestionNode = findNodeById(newViewData, newQuestionId);
-        if (newQuestionNode) {
-          addToPath(newQuestionNode);
-        }
+      const response = await askQuestion({
+        question: prompt,
+        parentQuestionId: parentId,
+      });
+
+      // Find the new question node from the response
+      const newQuestionId = Object.keys(response.nodes).find(id => id.startsWith('question-'));
+      if (!newQuestionId) {
+        throw new Error("New question not found in the API response.");
       }
+      const newQuestionNode = response.nodes[newQuestionId] as any; // Type assertion
+
+      // Optimistically update the UI
+      const newViewDataNode: ViewData = {
+        id: newQuestionNode.questionId,
+        question: newQuestionNode.question,
+        answer: newQuestionNode.answer,
+        children: [],
+      };
+
+      // Find the parent node in the current state and add the new node
+      const updateNode = (node: ViewData): ViewData => {
+        if (node.id === parentId) {
+          return {
+            ...node,
+            children: [...node.children, newViewDataNode],
+          };
+        }
+        return {
+          ...node,
+          children: node.children.map(updateNode),
+        };
+      };
+      
+      const newPath = currentPath.map(updateNode);
+
+      // If the current question is a topic, we don't add the new question to the path
+      // but we need to update the data.
+      if (currentQuestion.id.startsWith("topic")) {
+        setCurrentPath(newPath);
+      } else {
+        setCurrentPath([...newPath, newViewDataNode]);
+      }
+
+      // Notify parent of the change with the new node
+      // This part might need adjustment based on how you want to handle the state update in the parent
+      // For now, we'll just log it.
+      console.log("New question added:", newQuestionNode);
+
 
     } catch (error) {
       console.error("Failed to add question:", error);
-      // 여기에 에러 처리 로직 추가 (e.g., toast message)
     } finally {
       setPrompt('');
       setIsLoading(false);
     }
   };
+  
 
   const handleEditQuestion = (question: ViewData) => {
     setEditingQuestion(question);

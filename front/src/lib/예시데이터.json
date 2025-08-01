@@ -99,3 +99,44 @@ Response
 1. 리덕스를 이용해서 다이나믹 라우트에 전달할 것
 2. 계층화된 표현을 어떻게 표시할 것인가
 3. 그래프로 보기 버튼 만들기
+
+
+첫질문
+{
+  "topic": "topic-99c6fa0d-5b98-4574-9386-f0c0fd158a11",
+  "nodes": {
+      "topic-99c6fa0d-5b98-4574-9386-f0c0fd158a11": {
+          "topicId": "topic-99c6fa0d-5b98-4574-9386-f0c0fd158a11",
+          "topicName": "New Chat",
+          "createdAt": "2025-07-28T21:21:20.355816",
+          "children": [
+              "question-57cf235b-5b5a-4277-94c1-590a4a6d1d90"
+          ]
+      },
+      "question-57cf235b-5b5a-4277-94c1-590a4a6d1d90": {
+          "questionId": "question-57cf235b-5b5a-4277-94c1-590a4a6d1d90",
+          "question": "1번 질문",
+          "level": 1,
+          "answerId": "answer-3082d64e-b498-42ad-99cd-bacbba689a24",
+          "answer": "물론입니다! \"1번 질문\"에 대해 구체적으로 어떤 내용을 원하시는지 알려주시면 도움이 되도록 답변드리겠습니다.",
+          "createdAt": "2025-07-28T21:21:20.355754",
+          "children": []
+      }
+  }
+}
+
+후속질문
+{
+  "topic": "topic-99c6fa0d-5b98-4574-9386-f0c0fd158a11",
+  "nodes": {
+      "question-d51f243c-5b94-4579-a4ee-4687274629c0": {
+          "questionId": "question-d51f243c-5b94-4579-a4ee-4687274629c0",
+          "question": "그럼 이건?",
+          "level": 2,
+          "answerId": "answer-e27905a0-960c-46dd-a2be-71cd6c9e336e",
+          "answer": "안녕하세요! 요청하신 내용을 좀 더 구체적으로 말씀해 주시면 좋을 것 같습니다. \"1번 질문\"이나 \"이건\"이 어떤 내용을 의미하는지 알려주시면 더 정확하고 도움이 되는 답변을 드릴 수 있습니다. 추가 정보를 주시겠어요?",
+          "createdAt": "2025-07-28T21:21:48.431612",
+          "children": []
+      }
+  }
+}
