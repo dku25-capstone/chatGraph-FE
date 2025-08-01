@@ -2,16 +2,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Question } from "@/lib/data";
+import { ViewData } from "@/lib/data-transformer";
 
 interface EditQuestionDialogProps {
-  editingQuestion: Question | null;
+  editingQuestion: ViewData | null;
   newQuestion: string;
   newAnswer: string;
   setNewQuestion: (question: string) => void;
   setNewAnswer: (answer: string) => void;
   handleSaveEdit: () => void;
-  setEditingQuestion: (question: Question | null) => void;
+  setEditingQuestion: (question: ViewData | null) => void;
 }
 
 export const EditQuestionDialog = ({ editingQuestion, newQuestion, newAnswer, setNewQuestion, setNewAnswer, handleSaveEdit, setEditingQuestion }: EditQuestionDialogProps) => (

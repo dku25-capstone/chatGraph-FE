@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -41,53 +42,46 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
+import { toast } from "sonner";
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [topics, setTopics] = useState<TopicHistoryItem[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
-  }, []);
 
-  const allProjects = [
-    {
-      name: "DB 정규화 방법",
-      url: "/1",
-    },
-    {
-      name: "운영체제 프로세스 스위칭 정책",
-      url: "/2",
-    },
-    {
-      name: "IPv4 프로토콜 개요",
-      url: "/3",
-    },
-  ];
+    const fetchTopics = async () => {
+      if (!!token) {
+        try {
+          setLoadingTopics(true);
+          const fetchedTopics = await getTopicsHistory();
+          console.log(fetchedTopics)
+          setTopics(fetchedTopics);
+        } catch (error) {
+          console.error("Failed to fetch topics:", error);
+          toast.error("토픽 목록을 불러오는데 실패했습니다.");
+        } finally {
+          setLoadingTopics(false);
+        }
+      } else {
+        setTopics([]);
+        setLoadingTopics(false);
+      }
+    };
 
-  const [projects, setProjects] = useState(allProjects);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const term = event.target.value.toLowerCase();
-    setSearchTerm(term);
-    if (term) {
-      setProjects(
-        allProjects.filter((project) =>
-          project.name.toLowerCase().includes(term)
-        )
-      );
-    } else {
-      setProjects(allProjects);
-    }
-  };
+    fetchTopics();
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
-    alert("로그아웃 되었습니다.");
+    toast.success("로그아웃 되었습니다.");
   };
 
   return (
@@ -131,8 +125,6 @@ export function AppSidebar() {
               <div className="mt-2">
                 <SidebarInput
                   placeholder="Search..."
-                  value={searchTerm}
-                  onChange={handleSearch}
                 />
               </div>
             )}
@@ -151,33 +143,39 @@ export function AppSidebar() {
           <SidebarGroup className="mt-4">
             <SidebarGroupLabel>채팅목록</SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {projects.map((project) => (
-                  <SidebarMenuItem key={project.name}>
-                    <SidebarMenuButton asChild>
-                      <a href={project.url} className="flex items-center gap-2">
-                        <span>{project.name}</span>
-                      </a>
-                    </SidebarMenuButton>
+              {loadingTopics ? (
+                <div className="text-center text-sm text-gray-500">로딩 중...</div>
+              ) : topics.length > 0 ? (
+                <SidebarMenu>
+                  {topics.map((topic) => (
+                    <SidebarMenuItem key={topic.topicId}>
+                      <SidebarMenuButton asChild>
+                        <Link href={`/${topic.topicId}`} className="flex items-center gap-2">
+                          <span>{topic.topicName}</span>
+                        </Link>
+                      </SidebarMenuButton>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction>
-                          <MoreHorizontal />
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent side="right" align="start">
-                        <DropdownMenuItem>
-                          <span>Edit {project.name}</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <span>Delete {project.name}</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction>
+                            <MoreHorizontal />
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="right" align="start">
+                          <DropdownMenuItem>
+                            <span>Edit {topic.topicName}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <span>Delete {topic.topicName}</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              ) : (
+                <div className="text-center text-sm text-gray-500">저장된 채팅이 없습니다.</div>
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
         )}

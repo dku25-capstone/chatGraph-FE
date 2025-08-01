@@ -17,11 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SidebarProvider> {/* SidebarProvider가 전체 flex 컨테이너를 감쌉니다. */}
+        <SidebarProvider>
+          {" "}
+          {/* SidebarProvider가 전체 flex 컨테이너를 감쌉니다. */}
           <div className="flex w-full h-screen">
-            {showSidebar && (
-              <AppSidebar /> 
-            )}
+            {showSidebar && <AppSidebar />}
             <main className="flex-1 items-center">{children}</main>
           </div>
         </SidebarProvider>

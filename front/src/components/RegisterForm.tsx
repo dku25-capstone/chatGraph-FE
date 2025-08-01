@@ -34,7 +34,7 @@ export default function SignupForm() {
     setIsLoading(true);
 
     try {
-      const res = await api.post("/signup", {
+      const res = await api.post("/api/signup", {
         email,
         password,
       });

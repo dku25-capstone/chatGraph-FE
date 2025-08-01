@@ -1,11 +1,11 @@
 import { useRef, useEffect } from "react"
 import * as d3 from "d3"
-import { Question } from "@/lib/data"
+import { ViewData } from "@/lib/data-transformer"
 
 interface InteractiveD3GraphProps {
-  data: Question
-  onNodeClick: (question: Question) => void
-  currentPath: Question[]
+  data: ViewData
+  onNodeClick: (question: ViewData) => void
+  currentPath: ViewData[]
 }
 
 export function InteractiveD3Graph({
@@ -56,7 +56,7 @@ export function InteractiveD3Graph({
         "link",
         d3
           .forceLink(links)
-          .id(d => (d as d3.HierarchyNode<Question>).data.id)
+          .id(d => (d as d3.HierarchyNode<ViewData>).data.id)
           .distance(120)
           .strength(0.8),
       )
@@ -226,7 +226,7 @@ export function InteractiveD3Graph({
 
     // Drag behavior
     const drag = d3
-      .drag<SVGGElement, d3.HierarchyNode<Question> & d3.SimulationNodeDatum>()
+      .drag<SVGGElement, d3.HierarchyNode<ViewData> & d3.SimulationNodeDatum>()
       .on("start", (event, d) => {
         if (!event.active) simulation.alphaTarget(0.3).restart()
         d.fx = d.x

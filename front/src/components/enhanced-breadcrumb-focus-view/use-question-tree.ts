@@ -1,143 +1,127 @@
-import { useState, useCallback, useRef } from 'react';
-import { Question } from '@/lib/data';
 
-export const useQuestionTree = (initialData: Question, onDataChange: (newData: Question) => void) => {
-  const [currentPath, setCurrentPath] = useState<Question[]>([initialData]);
+import { useState, useEffect, useRef } from 'react';
+import { askQuestion, QuestionNode } from '@/api/questions';
+import { ViewData, TopicTreeResponse, transformApiDataToViewData } from '@/lib/data-transformer';
+
+export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
+  const [currentPath, setCurrentPath] = useState<ViewData[]>([]);
   const [viewMode, setViewMode] = useState<'chat' | 'graph'>('chat');
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [editingQuestion, setEditingQuestion] = useState<ViewData | null>(null);
   const [newQuestion, setNewQuestion] = useState('');
   const [newAnswer, setNewAnswer] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const currentQuestion = currentPath[currentPath.length - 1];
+  useEffect(() => {
+    const initialViewData = transformApiDataToViewData(initialResponse);
+    setCurrentPath([initialViewData]);
+  }, [initialResponse]);
 
-  const simulateAIResponse = useCallback(async (prompt: string): Promise<string> => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    const responses = [
-      `Great question about "${prompt}". This is a fascinating topic that involves multiple interconnected concepts. Let me break this down for you with detailed explanations and practical examples.`,
-      `Excellent inquiry regarding "${prompt}". This subject has been extensively researched and has significant implications across various domains. Here's a comprehensive overview of the key aspects.`,
-      `That's a thoughtful question about "${prompt}". Understanding this concept requires examining both theoretical foundations and real-world applications. Let me provide you with a thorough explanation.`,
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  }, []);
+  const currentQuestion = currentPath.length > 0 ? currentPath[currentPath.length - 1] : null;
 
-  const navigateToQuestion = useCallback((question: Question, pathIndex: number) => {
-    setCurrentPath(currentPath.slice(0, pathIndex + 1));
-  }, [currentPath]);
+  const navigateToQuestion = (question: ViewData, index: number) => {
+    setCurrentPath(currentPath.slice(0, index + 1));
+  };
 
-  const addToPath = useCallback((question: Question) => {
+  const addToPath = (question: ViewData) => {
     setCurrentPath([...currentPath, question]);
-  }, [currentPath]);
+  };
 
-  const goHome = useCallback(() => {
-    setCurrentPath([initialData]);
-  }, [initialData]);
+  const goHome = () => {
+    setCurrentPath(currentPath.slice(0, 1));
+  };
 
-  const findPathToQuestion = useCallback((root: Question, targetId: string, path: Question[] = []): Question[] | null => {
-    const currentPath = [...path, root];
-    if (root.id === targetId) return currentPath;
-    for (const child of root.children) {
-      const result = findPathToQuestion(child, targetId, currentPath);
-      if (result) return result;
-    }
-    return null;
-  }, []);
+  const handleGraphNodeClick = (node: ViewData) => {
+    // D3 그래프 노드 클릭 시 해당 경로로 이동하는 로직 (구현 필요)
+    console.log("Graph node clicked:", node);
+  };
 
-  const handleGraphNodeClick = useCallback((question: Question) => {
-    const path = findPathToQuestion(initialData, question.id);
-    if (path) {
-      setCurrentPath(path);
-      setViewMode('chat');
-    }
-  }, [initialData, findPathToQuestion]);
-
-  const handleAddQuestion = useCallback(async () => {
-    if (!prompt.trim()) return;
+  const handleAddQuestion = async () => {
+    if (!prompt.trim() || !currentQuestion) return;
     setIsLoading(true);
+
     try {
-      const answer = await simulateAIResponse(prompt);
-      const newId = `${currentQuestion.id}-${Date.now()}`;
-      const newQuestionObj: Question = {
-        id: newId,
+      const parentId = currentQuestion.id;
+
+      const response = await askQuestion({
         question: prompt,
-        answer: answer,
-        timestamp: new Date().toISOString(),
+        parentQuestionId: parentId,
+      });
+
+      // Find the new question node from the response
+      const newQuestionId = Object.keys(response.nodes).find(id => id.startsWith('question-'));
+      if (!newQuestionId) {
+        throw new Error("New question not found in the API response.");
+      }
+      const newQuestionNode = response.nodes[newQuestionId] as QuestionNode;
+
+      // Optimistically update the UI
+      const newViewDataNode: ViewData = {
+        id: newQuestionNode.questionId,
+        question: newQuestionNode.question,
+        answer: newQuestionNode.answer,
         children: [],
       };
 
-      const updateData = (root: Question): Question => {
-        if (root.id === currentQuestion.id) {
-          return { ...root, children: [...root.children, newQuestionObj] };
+      // Find the parent node in the current state and add the new node
+      const updateNode = (node: ViewData): ViewData => {
+        if (node.id === parentId) {
+          return {
+            ...node,
+            children: [...node.children, newViewDataNode],
+          };
         }
-        return { ...root, children: root.children.map(updateData) };
+        return {
+          ...node,
+          children: node.children.map(updateNode),
+        };
       };
+      
+      const newPath = currentPath.map(updateNode);
 
-      const updatedData = updateData(initialData);
-      onDataChange(updatedData);
+      // If the current question is a topic, we don't add the new question to the path
+      // but we need to update the data.
+      if (currentQuestion.id.startsWith("topic")) {
+        setCurrentPath(newPath);
+      } else {
+        setCurrentPath([...newPath, newViewDataNode]);
+      }
 
-      setCurrentPath(prevPath => {
-        const lastQuestion = prevPath[prevPath.length - 1];
-        const updatedLastQuestion = { ...lastQuestion, children: [...lastQuestion.children, newQuestionObj] };
-        return [...prevPath.slice(0, -1), updatedLastQuestion];
-      });
+      // Notify parent of the change with the new node
+      // This part might need adjustment based on how you want to handle the state update in the parent
+      // For now, we'll just log it.
+      console.log("New question added:", newQuestionNode);
 
-      setPrompt('');
-      setTimeout(() => {
-        if (scrollAreaRef.current) {
-          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-        }
-      }, 100);
+
     } catch (error) {
-      console.error('Error adding question:', error);
+      console.error("Failed to add question:", error);
     } finally {
+      setPrompt('');
       setIsLoading(false);
     }
-  }, [prompt, currentQuestion, initialData, onDataChange, simulateAIResponse]);
+  };
+  
 
-  const handleEditQuestion = useCallback((question: Question) => {
+  const handleEditQuestion = (question: ViewData) => {
     setEditingQuestion(question);
     setNewQuestion(question.question);
     setNewAnswer(question.answer);
-  }, []);
+  };
 
-  const handleSaveEdit = useCallback(() => {
+  const handleSaveEdit = () => {
     if (!editingQuestion) return;
-
-    const updateData = (root: Question): Question => {
-      if (root.id === editingQuestion.id) {
-        return { ...root, question: newQuestion, answer: newAnswer };
-      }
-      return { ...root, children: root.children.map(updateData) };
-    };
-
-    const updatedData = updateData(initialData);
-    onDataChange(updatedData);
-
-    const updatedPath = currentPath.map((q) =>
-      q.id === editingQuestion.id ? { ...q, question: newQuestion, answer: newAnswer } : q
-    );
-    setCurrentPath(updatedPath);
-
+    // This part needs to be updated to work with TopicTreeResponse
+    // For now, it will not work as expected.
+    console.log("Save edit is not implemented for TopicTreeResponse yet.");
     setEditingQuestion(null);
-    setNewQuestion('');
-    setNewAnswer('');
-  }, [editingQuestion, newQuestion, newAnswer, initialData, onDataChange, currentPath]);
+  };
 
-  const handleDeleteQuestion = useCallback((questionId: string) => {
-    const updateData = (root: Question): Question => {
-      return { ...root, children: root.children.filter((child) => child.id !== questionId).map(updateData) };
-    };
-
-    const updatedData = updateData(initialData);
-    onDataChange(updatedData);
-
-    const deletedIndex = currentPath.findIndex((q) => q.id === questionId);
-    if (deletedIndex !== -1) {
-      setCurrentPath(currentPath.slice(0, deletedIndex));
-    }
-  }, [initialData, onDataChange, currentPath]);
+  const handleDeleteQuestion = () => {
+    // This part needs to be updated to work with TopicTreeResponse
+    // For now, it will not work as expected.
+    console.log("Delete question is not implemented for TopicTreeResponse yet.");
+  };
 
   return {
     currentPath,

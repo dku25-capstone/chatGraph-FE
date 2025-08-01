@@ -1,40 +1,50 @@
-"use client"
 
-import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import { mockQuestionData, Question } from "@/lib/data"
-import { EnhancedBreadcrumbFocusView } from "@/components/enhanced-breadcrumb-focus-view"
+"use client";
 
-export default function EnhancedQuestionTreeApp() {
-  const params = useParams()
-  const { id } = params
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { TopicTreeResponse } from "@/lib/data-transformer";
+import { getTopicById } from "@/api/questions";
+import { EnhancedBreadcrumbFocusView } from '@/components/enhanced-breadcrumb-focus-view';
 
-  const [questionData, setQuestionData] = useState<Question | null>(null)
+
+export default function ChatPage() {
+  const params = useParams();
+  const topicId = params.id as string;
+
+  const [apiResponse, setApiResponse] = useState<TopicTreeResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("Current ID from URL:", id)
-    if (id) {
-      const foundQuestion = mockQuestionData[id as string]
-      console.log("Found question for ID:", foundQuestion)
-      if (foundQuestion) {
-        setQuestionData(foundQuestion)
-      } else {
-        console.error(`Question with ID ${id} not found. Falling back to root.`) // Updated error message
-        setQuestionData(mockQuestionData["root"]) // Fallback to root
-      }
-    } else {
-      console.log("No ID in URL, setting to root question.")
-      setQuestionData(mockQuestionData["root"])
+    if (topicId) {
+      const fetchData = async () => {
+        try {
+          setLoading(true);
+          const response = await getTopicById(topicId);
+          setApiResponse(response);
+        } catch (error) {
+          console.error("Failed to fetch topic data:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
     }
-  }, [id])
+  }, [topicId]);
 
-  if (!questionData) {
-    return <div>Loading...</div> // Or a loading spinner
+  
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
+  if (!apiResponse) {
+    return <div className="flex items-center justify-center h-screen">Topic not found.</div>;
   }
 
   return (
-    <div className="w-full h-screen">
-      <EnhancedBreadcrumbFocusView data={questionData} onDataChange={setQuestionData} />
-    </div>
-  )
+    <EnhancedBreadcrumbFocusView 
+      initialResponse={apiResponse} 
+    />
+  );
 }

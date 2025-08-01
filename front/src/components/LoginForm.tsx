@@ -23,7 +23,7 @@ export default function LoginForm() {
     setIsLoading(true); // 로딩 시작
 
     try {
-      const res = await api.post('/login', {
+      const res = await api.post('/api/login', {
         email,
         password,
       });
