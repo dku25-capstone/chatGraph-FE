@@ -20,8 +20,8 @@ export const NewQuestionForm = ({
   isLoading,
 }: NewQuestionFormProps) => {
   const placeholderText = currentQuestion
-    ? `"${currentQuestion.question.substring(0, 50)}${
-        currentQuestion.question.length > 50 ? "..." : ""
+    ? `"${currentQuestion.questionText.substring(0, 50)}${
+        currentQuestion.questionText.length > 50 ? "..." : ""
       }" 의 하위 질문을 입력해주세요`
     : "Ask a question...";
 

@@ -59,7 +59,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
       const parentId = currentQuestion.id;
 
       const response = await askQuestion({
-        question: prompt,
+        questionText: prompt,
         parentQuestionId: parentId,
       });
 
@@ -75,8 +75,8 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
       // follow-up 질문을 즉시 UI에 반영하기 위한 낙관적 업데이트
       const newViewDataNode: ViewData = {
         id: newQuestionNode.questionId,
-        question: newQuestionNode.question,
-        answer: newQuestionNode.answer,
+        questionText: newQuestionNode.questionText,
+        answerText: newQuestionNode.answerText,
         children: [],
       };
 
@@ -108,8 +108,8 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   // 질문 수정 함수(현재 UI만 변경)
   const handleEditQuestion = (question: ViewData) => {
     setEditingQuestion(question);
-    setNewQuestion(question.question);
-    setNewAnswer(question.answer);
+    setNewQuestion(question.questionText);
+    setNewAnswer(question.answerText);
   };
 
   // 질문 저장 함수

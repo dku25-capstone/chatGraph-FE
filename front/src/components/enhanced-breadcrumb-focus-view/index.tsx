@@ -144,8 +144,8 @@ export function EnhancedBreadcrumbFocusView({
           {currentPath.length > 1 && (
             <>
               <MessageBubble
-                question={currentQuestion.question}
-                answer={currentQuestion.answer}
+                questionText={currentQuestion.questionText}
+                answer={currentQuestion.answerText}
                 isToggleable={true}
                 isAnswerVisible={isMainAnswerVisible}
                 onToggleAnswer={() =>

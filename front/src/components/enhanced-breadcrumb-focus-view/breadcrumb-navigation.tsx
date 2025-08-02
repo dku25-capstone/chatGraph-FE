@@ -30,9 +30,9 @@ export const BreadcrumbNavigation = ({
               className="max-w-[200px] truncate text-xs"
             >
               {/* 질문 길이 늘어나면 생략 */}
-              {question.question.length > 10
-                ? `${question.question.substring(0, 10)}...`
-                : question.question}
+              {question.questionText.length > 10
+                ? `${question.questionText.substring(0, 10)}...`
+                : question.questionText}
             </Button>
             {/* 현재 렌더링 중인 노드가 마지막 노드가 아니면 구분자 넣음 */}
             {index < currentPath.length - 1 && (

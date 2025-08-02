@@ -24,11 +24,11 @@ export default function QuestionDetailModal({
       <DialogContent className="w-full max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">
-            {question?.question}
+            {question?.questionText}
           </DialogTitle>
         </DialogHeader>
         <div className="prose max-h-[60vh] overflow-y-auto">
-          <ReactMarkdown>{question?.answer || ""}</ReactMarkdown>
+          <ReactMarkdown>{question?.answerText || ""}</ReactMarkdown>
         </div>
         <div className="flex justify-end mt-4">
           <Button onClick={onJumpToChat}>질문 페이지로 이동</Button>

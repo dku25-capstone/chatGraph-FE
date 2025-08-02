@@ -17,7 +17,7 @@ export function StartNewTopicForm() {
 
     setIsLoading(true);
     try {
-      const response = await askQuestion({ question: prompt });
+      const response = await askQuestion({ questionText: prompt });
       router.push(`/${response.topic}`); // 동적 라우팅
     } catch (error) {
       console.error("Error starting new topic:", error);

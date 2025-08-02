@@ -62,24 +62,9 @@ export function InteractiveD3Graph({
           .distance(120)
           .strength(0.8)
       )
-      .force("charge", d3.forceManyBody().strength(-400))
+      .force("charge", d3.forceManyBody().strength(-1000))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collision", d3.forceCollide().radius(50));
-
-    // Create arrow markers for directed edges
-    const defs = g.append("defs");
-    defs
-      .append("marker")
-      .attr("id", "arrowhead")
-      .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 25)
-      .attr("refY", 0)
-      .attr("orient", "auto")
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .append("path")
-      .attr("d", "M0,-5L10,0L0,5")
-      .attr("fill", "#666");
 
     // Create links
     const link = g
@@ -104,13 +89,11 @@ export function InteractiveD3Graph({
       .style("cursor", "pointer");
 
     // Add circles for nodes
+    const fixedRadius = 25;
+
     const circles = node
       .append("circle")
-      .attr("r", (d) => {
-        const baseRadius = 25;
-        const textLength = d.data.question.length;
-        return Math.max(baseRadius, Math.min(45, baseRadius + textLength / 10));
-      })
+      .attr("r", fixedRadius)
       .attr("fill", (d) => {
         const isInCurrentPath = currentPath.some((q) => q.id === d.data.id);
         const depth = d.depth;
@@ -144,7 +127,7 @@ export function InteractiveD3Graph({
       .attr("font-weight", "600")
       .attr("pointer-events", "none")
       .text((d) => {
-        const text = d.data.question;
+        const text = d.data.questionText;
         if (text.length <= 20) return text;
         return text.substring(0, 30) + "...";
       });
@@ -175,34 +158,20 @@ export function InteractiveD3Graph({
 
     // Node interactions
     node
-      .on("mouseover", function (event, d) {
+      .on("mouseover", function () {
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", () => {
-            const baseRadius = 25;
-            const textLength = d.data.question.length;
-            return (
-              Math.max(baseRadius, Math.min(45, baseRadius + textLength / 10)) +
-              5
-            );
-          });
+          .attr("r", fixedRadius + 5);
       })
       .on("mousemove", () => {})
-      .on("mouseout", function (event, d) {
+      .on("mouseout", function () {
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", () => {
-            const baseRadius = 25;
-            const textLength = d.data.question.length;
-            return Math.max(
-              baseRadius,
-              Math.min(45, baseRadius + textLength / 10)
-            );
-          });
+          .attr("r", fixedRadius);
       })
       .on("click", function (event, d) {
         onNodeClick(d.data);

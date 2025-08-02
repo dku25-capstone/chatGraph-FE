@@ -1,8 +1,8 @@
 // EnhancedBreadcrumbFocusView가 요구하는 데이터 타입
 export interface ViewData {
   id: string;
-  question: string;
-  answer: string;
+  questionText: string;
+  answerText: string;
   children: ViewData[];
 }
 
@@ -16,8 +16,8 @@ export interface TopicNode {
 
 export interface QuestionNode {
   questionId: string;
-  question: string;
-  answer: string;
+  questionText: string;
+  answerText: string;
   level: number;
   createdAt: string;
   children: string[];
@@ -48,8 +48,8 @@ export const transformApiDataToViewData = (
       console.error(`Missing node: ${nodeId}`);
       return {
         id: nodeId,
-        question: "Error: Missing node",
-        answer: "This node is missing from the response.",
+        questionText: "Error: Missing node",
+        answerText: "This node is missing from the response.",
         children: [],
       };
     }
@@ -65,16 +65,16 @@ export const transformApiDataToViewData = (
       answerText = `This is the root of the topic: ${node.topicName}`;
     } else {
       viewDataId = node.questionId;
-      questionText = node.question;
-      answerText = node.answer;
+      questionText = node.questionText;
+      answerText = node.answerText;
     }
 
     const children = node.children?.map(buildTree) || [];
 
     return {
       id: viewDataId,
-      question: questionText,
-      answer: answerText,
+      questionText: questionText,
+      answerText: answerText,
       children,
     };
   };
@@ -96,8 +96,8 @@ export const transformApiDataToViewData = (
 
   return {
     id: rootNode.topicId,
-    question: rootNode.topicName,
-    answer: `This is the root of the topic: ${rootNode.topicName}`,
+    questionText: rootNode.topicName,
+    answerText: `This is the root of the topic: ${rootNode.topicName}`,
     children: [...directChildren, ...additionalChildren],
   };
 };

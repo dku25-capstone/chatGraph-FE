@@ -76,12 +76,12 @@ export const SubQuestionList = ({
                       )}
                     </Button>
                     <h4 className="font-medium text-blue-600 hover:text-blue-800">
-                      {child.question}
+                      {child.questionText}
                     </h4>
                   </div>
                   {expanded[child.id] && (
                     <p className="text-sm text-gray-600 mb-3 pl-10">
-                      {child.answer}
+                      {child.answerText}
                     </p> // 답변 들여쓰기
                   )}
                   <div className="flex items-center gap-2 pl-10">
