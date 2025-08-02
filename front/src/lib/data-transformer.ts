@@ -1,4 +1,3 @@
-
 // EnhancedBreadcrumbFocusView가 요구하는 데이터 타입
 export interface ViewData {
   id: string;
@@ -33,12 +32,15 @@ export interface TopicTreeResponse {
  * API 응답 (TopicTreeResponse)을 EnhancedBreadcrumbFocusView가 사용하는
  * 재귀적인 ViewData 형태로 변환하는 함수.
  */
-export const transformApiDataToViewData = (apiData: TopicTreeResponse): ViewData => {
+// API 응답에서 topicId를 루트 노드, 자식 노드를 ViewData 형태로 반환
+export const transformApiDataToViewData = (
+  apiData: TopicTreeResponse
+): ViewData => {
   const { topic: rootId, nodes } = apiData;
 
   const rootNode = nodes[rootId] as TopicNode;
-  
 
+  // 해당 id의 노드를 찾아 ViewData로 반환
   const buildTree = (nodeId: string): ViewData => {
     const node = nodes[nodeId];
 
@@ -52,13 +54,14 @@ export const transformApiDataToViewData = (apiData: TopicTreeResponse): ViewData
       };
     }
 
-    let viewDataId = '';
-    let questionText = '';
-    let answerText = '';
+    let viewDataId = "";
+    let questionText = "";
+    let answerText = "";
 
-    if ('topicName' in node) {
+    // node 객체가 TopicNode인지 QuestionNode인지 구분
+    if ("topicName" in node) {
       viewDataId = node.topicId;
-      questionText = node.topicName;
+      questionText = node.topicName; // 토픽 제목
       answerText = `This is the root of the topic: ${node.topicName}`;
     } else {
       viewDataId = node.questionId;
@@ -81,14 +84,15 @@ export const transformApiDataToViewData = (apiData: TopicTreeResponse): ViewData
 
   // 2. 명시적으로 children으로 연결되지 않았지만 level === 1 인 질문 노드 찾기
   const referencedIds = new Set(
-    Object.values(nodes)
-      .flatMap(n => ('children' in n ? n.children : []))
+    Object.values(nodes).flatMap((n) => ("children" in n ? n.children : []))
   );
   const additionalTopLevelQuestions = Object.values(nodes)
-    .filter((node): node is QuestionNode => 'questionId' in node)
-    .filter(q => q.level === 1 && !referencedIds.has(q.questionId));
+    .filter((node): node is QuestionNode => "questionId" in node)
+    .filter((q) => q.level === 1 && !referencedIds.has(q.questionId));
 
-  const additionalChildren = additionalTopLevelQuestions.map(q => buildTree(q.questionId));
+  const additionalChildren = additionalTopLevelQuestions.map((q) =>
+    buildTree(q.questionId)
+  );
 
   return {
     id: rootNode.topicId,

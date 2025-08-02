@@ -30,17 +30,14 @@ export function StartNewTopicForm() {
     <div className="flex flex-col items-center justify-center h-full p-4">
       <div className="max-w-2xl w-full text-center space-y-6">
         <h1 className="text-4xl font-bold text-gray-900">
-          Start a New Question Tree
+          새로운 질문을 시작해보세요
         </h1>
-        <p className="text-lg text-gray-600">
-          Enter your initial question to begin a new topic and explore related
-          concepts.
-        </p>
+        <p className="text-lg text-gray-600">새로운 토픽을 생성해주세요</p>
         <div className="relative">
           <div className="flex items-end gap-3 p-3 border rounded-lg bg-gray-50">
             <div className="flex-1">
               <Input
-                placeholder="Type your first question here..."
+                placeholder="질문을 입력해주세요"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyPress={(e) => {
@@ -66,9 +63,6 @@ export function StartNewTopicForm() {
               )}
             </Button>
           </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            Press Enter to start a new topic
-          </p>
         </div>
       </div>
     </div>

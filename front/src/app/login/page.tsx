@@ -1,6 +1,7 @@
 import LoginForm from "@/components/LoginForm";
 import Link from "next/link";
 
+// 로그인 페이지
 export default function LoginPage() {
   return (
     <div className="flex flex-col min-h-screen bg-white text-gray-900">

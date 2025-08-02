@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ViewData } from "@/lib/data-transformer";
 
 interface EditQuestionDialogProps {
@@ -14,35 +19,47 @@ interface EditQuestionDialogProps {
   setEditingQuestion: (question: ViewData | null) => void;
 }
 
-export const EditQuestionDialog = ({ editingQuestion, newQuestion, newAnswer, setNewQuestion, setNewAnswer, handleSaveEdit, setEditingQuestion }: EditQuestionDialogProps) => (
-  <Dialog open={!!editingQuestion} onOpenChange={() => setEditingQuestion(null)}>
+// 질문 수정 모달
+export const EditQuestionDialog = ({
+  editingQuestion,
+  newQuestion,
+  newAnswer,
+  setNewQuestion,
+  setNewAnswer,
+  handleSaveEdit,
+  setEditingQuestion,
+}: EditQuestionDialogProps) => (
+  <Dialog
+    open={!!editingQuestion}
+    onOpenChange={() => setEditingQuestion(null)}
+  >
     <DialogContent className="max-w-2xl">
       <DialogHeader>
-        <DialogTitle>Edit Question & Answer</DialogTitle>
+        <DialogTitle>질문 수정</DialogTitle>
       </DialogHeader>
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium mb-2 block">Question</label>
+          <label className="text-sm font-medium mb-2 block">질문</label>
           <Input
             value={newQuestion}
             onChange={(e) => setNewQuestion(e.target.value)}
-            placeholder="Enter your question"
+            placeholder="질문을 입력하세요"
           />
         </div>
         <div>
-          <label className="text-sm font-medium mb-2 block">Answer</label>
+          <label className="text-sm font-medium mb-2 block">답변</label>
           <Textarea
             value={newAnswer}
             onChange={(e) => setNewAnswer(e.target.value)}
-            placeholder="Enter the answer"
+            placeholder="답변을 입력하세요"
             rows={6}
           />
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setEditingQuestion(null)}>
-            Cancel
+            취소
           </Button>
-          <Button onClick={handleSaveEdit}>Save Changes</Button>
+          <Button onClick={handleSaveEdit}>저장</Button>
         </div>
       </div>
     </DialogContent>
