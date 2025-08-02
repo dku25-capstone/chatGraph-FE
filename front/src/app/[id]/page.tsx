@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { TopicTreeResponse } from "@/lib/data-transformer"; // API 응답 타입
 import { getTopicById } from "@/api/questions"; // 특정 topicId에 해당하는 질문 트리 데이터를 가져오는 API 함수
@@ -16,22 +16,23 @@ export default function ChatPage() {
   );
   const [loading, setLoading] = useState(true); // 로딩 상태
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (topicId) {
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          const response = await getTopicById(topicId);
-          setApiResponse(response); // 응답 데이터를 상태에 저장
-        } catch (error) {
-          console.error("Failed to fetch topic data:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchData();
+      try {
+        setLoading(true);
+        const response = await getTopicById(topicId);
+        setApiResponse(response); // 응답 데이터를 상태에 저장
+      } catch (error) {
+        console.error("Failed to fetch topic data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [topicId]); // topicId가 바뀔때마다 다시 호출
+  }, [topicId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // 로딩중
   if (loading) {
@@ -53,6 +54,7 @@ export default function ChatPage() {
   return (
     <EnhancedBreadcrumbFocusView
       initialResponse={apiResponse} // 초기 질문 트리 데이터를 전달
+      // onQuestionAdded={fetchData}
     />
   );
 }

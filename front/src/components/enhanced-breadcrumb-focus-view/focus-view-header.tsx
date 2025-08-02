@@ -7,6 +7,7 @@ interface FocusViewHeaderProps {
   setViewMode: (mode: "chat" | "graph") => void;
   goHome: () => void;
   pathLength: number;
+  onGraphViewClick?: () => void;
 }
 
 export const FocusViewHeader = ({
@@ -14,6 +15,7 @@ export const FocusViewHeader = ({
   setViewMode,
   goHome,
   pathLength,
+  onGraphViewClick,
 }: FocusViewHeaderProps) => {
   if (viewMode === "graph") {
     return (
@@ -25,9 +27,6 @@ export const FocusViewHeader = ({
           </Button>
           <h1 className="text-xl font-semibold">질문 그래프</h1>
         </div>
-        <Badge variant="secondary" className="px-3 py-1">
-          {pathLength} levels deep
-        </Badge>
       </div>
     );
   }
@@ -38,7 +37,13 @@ export const FocusViewHeader = ({
         <Button variant="ghost" size="sm" onClick={goHome}>
           <Home className="h-4 w-4" />
         </Button>
-        <Button variant="outline" onClick={() => setViewMode("graph")}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (onGraphViewClick) onGraphViewClick();
+            setViewMode("graph");
+          }}
+        >
           <Network className="h-4 w-4 mr-2" />
           그래프로 보기
         </Button>

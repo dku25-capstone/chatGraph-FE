@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "@/components/message-bubble";
@@ -8,6 +8,7 @@ import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
 import {
   transformApiDataToViewData,
   TopicTreeResponse,
+  ViewData,
 } from "@/lib/data-transformer";
 
 import { useQuestionTree } from "./use-question-tree";
@@ -18,6 +19,7 @@ import { NewQuestionForm } from "./new-question-form";
 import { EditQuestionDialog } from "./edit-question-dialog";
 import QuestionDetailModal from "../QuestionDetailModal";
 import { findPathToNode } from "@/lib/utils";
+import { getTopicById } from "@/api/questions";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -27,6 +29,7 @@ export function EnhancedBreadcrumbFocusView({
   initialResponse,
 }: EnhancedBreadcrumbFocusViewProps) {
   const {
+    viewData,
     currentPath,
     setCurrentPath,
     viewMode,
@@ -58,22 +61,35 @@ export function EnhancedBreadcrumbFocusView({
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
 
-  const viewData = useMemo(
-    () => transformApiDataToViewData(initialResponse),
-    [initialResponse]
-  );
+  const [graphData, setGraphData] = useState<ViewData | null>(null);
+
+  useEffect(() => {
+    setGraphData(viewData);
+  }, [viewData]);
+
+  const handleGraphViewClick = async () => {
+    try {
+      const topicId = initialResponse.topic;
+      const updated = await getTopicById(topicId);
+      setGraphData(transformApiDataToViewData(updated));
+    } catch (e) {
+      console.error("그래프 데이터 요청 실패", e);
+    }
+  };
 
   useEffect(() => {
     if (viewMode === "chat" && focusedNodeId) {
-      const path = findPathToNode(viewData, focusedNodeId);
-      if (path) {
-        setCurrentPath(path);
+      if (viewData && focusedNodeId) {
+        const path = findPathToNode(viewData, focusedNodeId);
+        if (path) {
+          setCurrentPath(path);
+        }
       }
       setFocusedNodeId(null);
     }
   }, [viewMode, focusedNodeId, viewData, setCurrentPath, setFocusedNodeId]);
 
-  if (!currentQuestion) {
+  if (!currentQuestion || !viewData) {
     return (
       <div className="flex items-center justify-center h-screen">
         Loading...
@@ -89,10 +105,11 @@ export function EnhancedBreadcrumbFocusView({
           setViewMode={setViewMode}
           goHome={goHome}
           pathLength={currentPath.length}
+          onGraphViewClick={handleGraphViewClick}
         />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
-            data={viewData}
+            data={graphData ?? viewData} // 항상 최신 viewData를 사용
             onNodeClick={handleGraphNodeClick}
             currentPath={currentPath}
           />

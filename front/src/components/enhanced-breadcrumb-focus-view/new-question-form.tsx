@@ -7,7 +7,7 @@ interface NewQuestionFormProps {
   currentQuestion: ViewData | null; // 현재 질문
   prompt: string; // 입력된 follow-up 질문
   setPrompt: (prompt: string) => void;
-  handleAddQuestion: () => void; // 질문 전송 함수
+  handleAddQuestion: () => Promise<void>; // 질문 전송 함수
   isLoading: boolean;
 }
 

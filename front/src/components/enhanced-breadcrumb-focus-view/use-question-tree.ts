@@ -5,9 +5,11 @@ import {
   TopicTreeResponse,
   transformApiDataToViewData,
 } from "@/lib/data-transformer";
+import { findPathToNode } from "@/lib/utils";
 
 // 상태 및 동작 커스텀 훅
 export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
+  const [viewData, setViewData] = useState<ViewData | null>(null);
   const [currentPath, setCurrentPath] = useState<ViewData[]>([]); // 현재 선택된 질문까지의 경로
   const [viewMode, setViewMode] = useState<"chat" | "graph">("chat");
   const [prompt, setPrompt] = useState(""); // follow-up 입력값
@@ -22,6 +24,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   // 시작 질문 노드를 currentPath의 첫 요소로 등록
   useEffect(() => {
     const initialViewData = transformApiDataToViewData(initialResponse);
+    setViewData(initialViewData);
     setCurrentPath([initialViewData]);
   }, [initialResponse]);
 
@@ -37,7 +40,9 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   };
 
   const goHome = () => {
-    setCurrentPath(currentPath.slice(0, 1));
+    if (viewData) {
+      setCurrentPath([viewData]);
+    }
   };
 
   const handleGraphNodeClick = (node: ViewData) => {
@@ -47,7 +52,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   };
 
   const handleAddQuestion = async () => {
-    if (!prompt.trim() || !currentQuestion) return;
+    if (!prompt.trim() || !currentQuestion || !viewData) return;
     setIsLoading(true);
 
     try {
@@ -75,30 +80,22 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
         children: [],
       };
 
-      // 새로 추가된 follow-up 질문을 현재 질문 트리(currentPath)에 반영
-      const updateNode = (node: ViewData): ViewData => {
+      // 전체 viewData를 업데이트
+      const updateData = (node: ViewData): ViewData => {
         if (node.id === parentId) {
-          return {
-            ...node,
-            children: [...node.children, newViewDataNode],
-          };
+          return { ...node, children: [...node.children, newViewDataNode] };
         }
-        return {
-          ...node,
-          children: node.children.map(updateNode),
-        };
+        return { ...node, children: node.children.map(updateData) };
       };
+      const newViewData = updateData(viewData);
+      setViewData(newViewData);
 
-      // 트리 구조를 새로운 상태이트로 업데이트한 결과를 newPath에 저장
-      const newPath = currentPath.map(updateNode);
-
-      // 현재 질문이 루트 노드이면 새 질문을 트리에는 추가하지만, currentPath에는 추가 하지 않음
-      if (currentQuestion.id.startsWith("topic")) {
-        setCurrentPath(newPath);
-      } else {
-        // 그 외는 자식 노드인 새 질문도 경로에 포함
+      // 새로운 경로를 찾아서 업데이트
+      const newPath = findPathToNode(newViewData, parentId);
+      if (newPath) {
         setCurrentPath([...newPath, newViewDataNode]);
       }
+
       console.log("New question added:", newQuestionNode);
     } catch (error) {
       console.error("Failed to add question:", error);
@@ -132,6 +129,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   };
 
   return {
+    viewData,
     currentPath,
     setCurrentPath,
     viewMode,
