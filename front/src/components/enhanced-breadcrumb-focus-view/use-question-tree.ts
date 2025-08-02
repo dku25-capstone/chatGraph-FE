@@ -16,6 +16,8 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   const [newQuestion, setNewQuestion] = useState("");
   const [newAnswer, setNewAnswer] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [selectedNode, setSelectedNode] = useState<ViewData | null>(null);
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
   // 시작 질문 노드를 currentPath의 첫 요소로 등록
   useEffect(() => {
@@ -41,6 +43,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
   const handleGraphNodeClick = (node: ViewData) => {
     // D3 그래프 노드 클릭 시 해당 경로로 이동하는 로직 (구현 필요)
     console.log("Graph node clicked:", node);
+    setSelectedNode(node);
   };
 
   const handleAddQuestion = async () => {
@@ -130,6 +133,7 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
 
   return {
     currentPath,
+    setCurrentPath,
     viewMode,
     prompt,
     isLoading,
@@ -151,5 +155,9 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
     handleEditQuestion,
     handleSaveEdit,
     handleDeleteQuestion,
+    selectedNode,
+    setSelectedNode,
+    focusedNodeId,
+    setFocusedNodeId,
   };
 };

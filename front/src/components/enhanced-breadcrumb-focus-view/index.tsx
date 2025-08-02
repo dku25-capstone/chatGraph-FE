@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "@/components/message-bubble";
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
-import { transformApiDataToViewData, TopicTreeResponse } from "@/lib/data-transformer";
+import {
+  transformApiDataToViewData,
+  TopicTreeResponse,
+} from "@/lib/data-transformer";
 
 import { useQuestionTree } from "./use-question-tree";
 import { FocusViewHeader } from "./focus-view-header";
@@ -13,6 +16,8 @@ import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
 import { EditQuestionDialog } from "./edit-question-dialog";
+import QuestionDetailModal from "../QuestionDetailModal";
+import { findPathToNode } from "@/lib/utils";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -23,6 +28,7 @@ export function EnhancedBreadcrumbFocusView({
 }: EnhancedBreadcrumbFocusViewProps) {
   const {
     currentPath,
+    setCurrentPath,
     viewMode,
     prompt,
     isLoading,
@@ -44,10 +50,28 @@ export function EnhancedBreadcrumbFocusView({
     handleEditQuestion,
     handleSaveEdit,
     handleDeleteQuestion,
+    selectedNode,
+    setSelectedNode,
+    focusedNodeId,
+    setFocusedNodeId,
   } = useQuestionTree(initialResponse);
 
-  const viewData = transformApiDataToViewData(initialResponse);
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
+
+  const viewData = useMemo(
+    () => transformApiDataToViewData(initialResponse),
+    [initialResponse]
+  );
+
+  useEffect(() => {
+    if (viewMode === "chat" && focusedNodeId) {
+      const path = findPathToNode(viewData, focusedNodeId);
+      if (path) {
+        setCurrentPath(path);
+      }
+      setFocusedNodeId(null);
+    }
+  }, [viewMode, focusedNodeId, viewData, setCurrentPath, setFocusedNodeId]);
 
   if (!currentQuestion) {
     return (
@@ -71,6 +95,15 @@ export function EnhancedBreadcrumbFocusView({
             data={viewData}
             onNodeClick={handleGraphNodeClick}
             currentPath={currentPath}
+          />
+          <QuestionDetailModal
+            question={selectedNode}
+            onClose={() => setSelectedNode(null)}
+            onJumpToChat={() => {
+              setFocusedNodeId(selectedNode?.id || null);
+              setSelectedNode(null);
+              setViewMode("chat");
+            }}
           />
         </div>
       </div>

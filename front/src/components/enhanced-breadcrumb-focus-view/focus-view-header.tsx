@@ -23,7 +23,7 @@ export const FocusViewHeader = ({
             <List className="h-4 w-4 mr-2" />
             채팅으로 이동
           </Button>
-          <h1 className="text-xl font-semibold">Question Tree Graph</h1>
+          <h1 className="text-xl font-semibold">질문 그래프</h1>
         </div>
         <Badge variant="secondary" className="px-3 py-1">
           {pathLength} levels deep
