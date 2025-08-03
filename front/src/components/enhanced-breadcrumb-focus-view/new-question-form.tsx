@@ -1,19 +1,16 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUp } from "lucide-react";
-import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
+import { useQuestionTreeContext } from "./QuestionTreeContext";
 
-interface NewQuestionFormProps {
-  currentQuestion: ViewData | null; // null 가능성 추가
-  prompt: string;
-  setPrompt: (prompt: string) => void;
-  handleAddQuestion: () => void;
-  isLoading: boolean;
-}
+// follow-up 질문 입력하고 전송하는 입력 UI 컴포넌트
+export const NewQuestionForm = () => {
+  const { currentQuestion, prompt, setPrompt, handleAddQuestion, isLoading } = useQuestionTreeContext();
 
-export const NewQuestionForm = ({ currentQuestion, prompt, setPrompt, handleAddQuestion, isLoading }: NewQuestionFormProps) => {
   const placeholderText = currentQuestion
-    ? `Ask a follow-up question about "${currentQuestion.question.substring(0, 50)}${currentQuestion.question.length > 50 ? "..." : ""}"`
+    ? `"${currentQuestion.questionText.substring(0, 50)}${
+        currentQuestion.questionText.length > 50 ? "..." : ""
+      }" 의 하위 질문을 입력해주세요`
     : "Ask a question...";
 
   return (
@@ -26,7 +23,7 @@ export const NewQuestionForm = ({ currentQuestion, prompt, setPrompt, handleAddQ
                 placeholder={placeholderText}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && !isLoading) {
                     e.preventDefault();
                     handleAddQuestion();
@@ -49,9 +46,6 @@ export const NewQuestionForm = ({ currentQuestion, prompt, setPrompt, handleAddQ
               )}
             </Button>
           </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            Press Enter to send • This will create a sub-question under the current topic
-          </p>
         </div>
       </div>
     </div>

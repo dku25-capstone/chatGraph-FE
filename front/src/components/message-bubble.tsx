@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface MessageBubbleProps {
-  question?: string;
+  questionText?: string;
   answer?: string;
   isUser?: boolean;
   isToggleable?: boolean;
@@ -11,7 +11,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({
-  question,
+  questionText,
   answer,
   isUser = false,
   isToggleable = false,
@@ -34,8 +34,8 @@ export function MessageBubble({
         </div>
       )}
       <div className="flex-1 space-y-2">
-        {question && (
-          <div className="font-medium text-gray-900">{question}</div>
+        {questionText && (
+          <div className="font-medium text-gray-900">{questionText}</div>
         )}
         {isAnswerVisible && answer && (
           <div className="text-gray-700 leading-relaxed">{answer}</div>

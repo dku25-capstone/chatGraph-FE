@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -32,7 +31,6 @@ import {
   Plus,
   MoreHorizontal,
   Search,
-  MessageSquare,
   PanelLeftOpen,
   LogIn,
   UserPlus,
@@ -44,6 +42,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -61,7 +60,7 @@ export function AppSidebar() {
         try {
           setLoadingTopics(true);
           const fetchedTopics = await getTopicsHistory();
-          console.log(fetchedTopics)
+          console.log(fetchedTopics);
           setTopics(fetchedTopics);
         } catch (error) {
           console.error("Failed to fetch topics:", error);
@@ -91,8 +90,18 @@ export function AppSidebar() {
           <div className="flex items-center gap-2">
             {state === "expanded" ? (
               <>
-                <MessageSquare className="h-6 w-6" />
-                <span className="font-semibold">ChatGraph</span>
+                <Image
+                  src="/chatlogo.png" // public 폴더 기준
+                  alt="Chat Logo"
+                  width={30}
+                  height={30}
+                  className="h-6 w-6"
+                />
+                <Link href="/">
+                  <span className="font-semibold cursor-pointer">
+                    ChatGraph
+                  </span>
+                </Link>
               </>
             ) : (
               <Tooltip>
@@ -115,22 +124,20 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip="Search"
+              tooltip="검색"
               onClick={() => setIsSearchVisible(!isSearchVisible)}
             >
               <Search />
-              <span>Search</span>
+              <span>검색</span>
             </SidebarMenuButton>
             {isSearchVisible && state === "expanded" && (
               <div className="mt-2">
-                <SidebarInput
-                  placeholder="Search..."
-                />
+                <SidebarInput placeholder="검색" />
               </div>
             )}
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="New Chat" asChild>
+            <SidebarMenuButton tooltip="새 채팅" asChild>
               <Link href="/">
                 <Plus />
                 <span>새 채팅 만들기</span>
@@ -144,13 +151,18 @@ export function AppSidebar() {
             <SidebarGroupLabel>채팅목록</SidebarGroupLabel>
             <SidebarGroupContent>
               {loadingTopics ? (
-                <div className="text-center text-sm text-gray-500">로딩 중...</div>
+                <div className="text-center text-sm text-gray-500">
+                  로딩 중...
+                </div>
               ) : topics.length > 0 ? (
                 <SidebarMenu>
                   {topics.map((topic) => (
                     <SidebarMenuItem key={topic.topicId}>
                       <SidebarMenuButton asChild>
-                        <Link href={`/${topic.topicId}`} className="flex items-center gap-2">
+                        <Link
+                          href={`/${topic.topicId}`}
+                          className="flex items-center gap-2"
+                        >
                           <span>{topic.topicName}</span>
                         </Link>
                       </SidebarMenuButton>
@@ -174,7 +186,9 @@ export function AppSidebar() {
                   ))}
                 </SidebarMenu>
               ) : (
-                <div className="text-center text-sm text-gray-500">저장된 채팅이 없습니다.</div>
+                <div className="text-center text-sm text-gray-500">
+                  저장된 채팅이 없습니다.
+                </div>
               )}
             </SidebarGroupContent>
           </SidebarGroup>

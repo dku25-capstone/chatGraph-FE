@@ -1,18 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "@/components/message-bubble";
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
-import { transformApiDataToViewData, TopicTreeResponse } from "@/lib/data-transformer";
+import { TopicTreeResponse } from "@/lib/data-transformer";
 
-import { useQuestionTree } from "./use-question-tree";
+import {
+  QuestionTreeProvider,
+  useQuestionTreeContext,
+} from "./QuestionTreeContext";
 import { FocusViewHeader } from "./focus-view-header";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
 import { EditQuestionDialog } from "./edit-question-dialog";
+import QuestionDetailModal from "../QuestionDetailModal";
+import { findPathToNode } from "@/lib/utils";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -21,35 +26,57 @@ interface EnhancedBreadcrumbFocusViewProps {
 export function EnhancedBreadcrumbFocusView({
   initialResponse,
 }: EnhancedBreadcrumbFocusViewProps) {
+  const topicId = initialResponse.topic; // Extract topicId here
+  return (
+    <QuestionTreeProvider initialResponse={initialResponse} topicId={topicId}>
+      <EnhancedBreadcrumbFocusViewContent initialResponse={initialResponse} />
+    </QuestionTreeProvider>
+  );
+}
+
+function EnhancedBreadcrumbFocusViewContent({}: // initialResponse,
+EnhancedBreadcrumbFocusViewProps) {
   const {
+    viewData,
     currentPath,
+    setCurrentPath,
     viewMode,
-    prompt,
-    isLoading,
     editingQuestion,
     newQuestion,
     newAnswer,
     scrollAreaRef,
     currentQuestion,
     setViewMode,
-    setPrompt,
     setEditingQuestion,
     setNewQuestion,
     setNewAnswer,
     navigateToQuestion,
     addToPath,
-    goHome,
     handleGraphNodeClick,
-    handleAddQuestion,
     handleEditQuestion,
     handleSaveEdit,
     handleDeleteQuestion,
-  } = useQuestionTree(initialResponse);
+    selectedNode,
+    setSelectedNode,
+    focusedNodeId,
+    setFocusedNodeId,
+  } = useQuestionTreeContext();
 
-  const viewData = transformApiDataToViewData(initialResponse);
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
 
-  if (!currentQuestion) {
+  useEffect(() => {
+    if (viewMode === "chat" && focusedNodeId) {
+      if (viewData && focusedNodeId) {
+        const path = findPathToNode(viewData, focusedNodeId);
+        if (path) {
+          setCurrentPath(path);
+        }
+      }
+      setFocusedNodeId(null);
+    }
+  }, [viewMode, focusedNodeId, viewData, setCurrentPath, setFocusedNodeId]);
+
+  if (!currentQuestion || !viewData) {
     return (
       <div className="flex items-center justify-center h-screen">
         Loading...
@@ -60,17 +87,20 @@ export function EnhancedBreadcrumbFocusView({
   if (viewMode === "graph") {
     return (
       <div className="h-screen flex flex-col bg-white">
-        <FocusViewHeader
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          goHome={goHome}
-          pathLength={currentPath.length}
-        />
+        <FocusViewHeader />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
-            data={viewData}
+            data={viewData} // Use viewData directly
             onNodeClick={handleGraphNodeClick}
-            currentPath={currentPath}
+          />
+          <QuestionDetailModal
+            question={selectedNode}
+            onClose={() => setSelectedNode(null)}
+            onJumpToChat={() => {
+              setFocusedNodeId(selectedNode?.id || null);
+              setSelectedNode(null);
+              setViewMode("chat");
+            }}
           />
         </div>
       </div>
@@ -80,12 +110,7 @@ export function EnhancedBreadcrumbFocusView({
   return (
     <div className="h-screen flex flex-col bg-white">
       <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-sm">
-        <FocusViewHeader
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          goHome={goHome}
-          pathLength={currentPath.length}
-        />
+        <FocusViewHeader />
         <BreadcrumbNavigation
           currentPath={currentPath}
           navigateToQuestion={navigateToQuestion}
@@ -94,8 +119,8 @@ export function EnhancedBreadcrumbFocusView({
           {currentPath.length > 1 && (
             <>
               <MessageBubble
-                question={currentQuestion.question}
-                answer={currentQuestion.answer}
+                questionText={currentQuestion.questionText}
+                answer={currentQuestion.answerText}
                 isToggleable={true}
                 isAnswerVisible={isMainAnswerVisible}
                 onToggleAnswer={() =>
@@ -125,13 +150,7 @@ export function EnhancedBreadcrumbFocusView({
         </ScrollArea>
       </div>
 
-      <NewQuestionForm
-        currentQuestion={currentQuestion}
-        prompt={prompt}
-        setPrompt={setPrompt}
-        handleAddQuestion={handleAddQuestion}
-        isLoading={isLoading}
-      />
+      <NewQuestionForm />
 
       <EditQuestionDialog
         editingQuestion={editingQuestion}

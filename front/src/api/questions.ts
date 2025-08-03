@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 
 export interface QuestionRequest {
-  question: string;
+  questionText: string;
   parentQuestionId?: string; // 없으면 첫 질문
 }
 
@@ -24,10 +24,10 @@ interface TopicNode {
 
 export interface QuestionNode {
   questionId: string;
-  question: string;
+  questionText: string;
   level: number;
   answerId: string;
-  answer: string;
+  answerText: string;
   createdAt: string;
   children: string[];
   parentId?: string;
