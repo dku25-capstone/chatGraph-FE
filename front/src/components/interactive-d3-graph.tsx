@@ -1,20 +1,20 @@
 import { useRef, useEffect } from "react";
 import * as d3 from "d3";
 import { ViewData } from "@/lib/data-transformer";
+import { useQuestionTreeContext } from "./enhanced-breadcrumb-focus-view/QuestionTreeContext";
 
 interface InteractiveD3GraphProps {
   data: ViewData;
   onNodeClick: (question: ViewData) => void;
-  currentPath: ViewData[];
 }
 
 export function InteractiveD3Graph({
   data,
   onNodeClick,
-  currentPath,
 }: InteractiveD3GraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { currentPath } = useQuestionTreeContext();
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
@@ -93,17 +93,21 @@ export function InteractiveD3Graph({
 
     const circles = node
       .append("circle")
-      .attr("r", fixedRadius)
+      .attr("r", (d) => (d.depth === 0 ? fixedRadius + 5 : fixedRadius))
       .attr("fill", (d) => {
         const isInCurrentPath = currentPath.some((q) => q.id === d.data.id);
         const depth = d.depth;
         const colors = [
-          "#3b82f6",
-          "#10b981",
-          "#f59e0b",
-          "#ef4444",
-          "#8b5cf6",
-          "#06b6d4",
+          "#3b82f6", // blue-500
+          "#10b981", // emerald-500
+          "#f59e0b", // amber-500
+          "#ef4444", // red-500
+          "#8b5cf6", // violet-500
+          "#06b6d4", // cyan-500
+          "#f43f5e", // rose-500
+          "#22c55e", // green-500
+          "#eab308", // yellow-500
+          "#0ea5e9", // sky-500
         ];
         const baseColor = colors[depth % colors.length];
         return isInCurrentPath ? "#1d4ed8" : baseColor;
@@ -121,11 +125,11 @@ export function InteractiveD3Graph({
     node
       .append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", "37")
+      .attr("dy", (d) => (d.depth === 0 ? "45" : "37"))
       .attr("fill", "black")
-      .attr("font-size", "11px")
+      .attr("font-size", (d) => (d.depth === 0 ? "13px" : "11px"))
       .attr("font-weight", "600")
-      .attr("pointer-events", "none")
+      .attr("pointer-events", "bold")
       .text((d) => {
         const text = d.data.questionText;
         if (text.length <= 20) return text;
@@ -158,20 +162,22 @@ export function InteractiveD3Graph({
 
     // Node interactions
     node
-      .on("mouseover", function () {
+      .on("mouseover", function (event, d) {
+        const baseRadius = d.depth === 0 ? fixedRadius + 5 : fixedRadius;
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", fixedRadius + 5);
+          .attr("r", baseRadius + 5);
       })
       .on("mousemove", () => {})
-      .on("mouseout", function () {
+      .on("mouseout", function (event, d) {
+        const baseRadius = d.depth === 0 ? fixedRadius + 5 : fixedRadius;
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", fixedRadius);
+          .attr("r", baseRadius);
       })
       .on("click", function (event, d) {
         onNodeClick(d.data);

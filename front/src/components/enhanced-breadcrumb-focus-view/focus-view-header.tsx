@@ -1,22 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Home, Network, List } from "lucide-react";
+import { useQuestionTreeContext } from "./QuestionTreeContext";
 
-interface FocusViewHeaderProps {
-  viewMode: "chat" | "graph";
-  setViewMode: (mode: "chat" | "graph") => void;
-  goHome: () => void;
-  pathLength: number;
-  onGraphViewClick?: () => void;
-}
+export const FocusViewHeader = () => {
+  const { viewMode, setViewMode, goHome, currentPath, refreshViewData } = useQuestionTreeContext();
 
-export const FocusViewHeader = ({
-  viewMode,
-  setViewMode,
-  goHome,
-  pathLength,
-  onGraphViewClick,
-}: FocusViewHeaderProps) => {
   if (viewMode === "graph") {
     return (
       <div className="flex items-center justify-between p-4 border-b bg-white">
@@ -40,7 +29,7 @@ export const FocusViewHeader = ({
         <Button
           variant="outline"
           onClick={() => {
-            if (onGraphViewClick) onGraphViewClick();
+            refreshViewData();
             setViewMode("graph");
           }}
         >
@@ -50,7 +39,7 @@ export const FocusViewHeader = ({
       </div>
       <div className="flex items-center gap-2">
         <Badge variant="secondary" className="px-3 py-1">
-          Level {pathLength}
+          Level {currentPath.length}
         </Badge>
       </div>
     </div>

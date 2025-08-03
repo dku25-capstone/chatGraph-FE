@@ -1,24 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUp } from "lucide-react";
-import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
-
-interface NewQuestionFormProps {
-  currentQuestion: ViewData | null; // 현재 질문
-  prompt: string; // 입력된 follow-up 질문
-  setPrompt: (prompt: string) => void;
-  handleAddQuestion: () => Promise<void>; // 질문 전송 함수
-  isLoading: boolean;
-}
+import { useQuestionTreeContext } from "./QuestionTreeContext";
 
 // follow-up 질문 입력하고 전송하는 입력 UI 컴포넌트
-export const NewQuestionForm = ({
-  currentQuestion,
-  prompt,
-  setPrompt,
-  handleAddQuestion,
-  isLoading,
-}: NewQuestionFormProps) => {
+export const NewQuestionForm = () => {
+  const { currentQuestion, prompt, setPrompt, handleAddQuestion, isLoading } = useQuestionTreeContext();
+
   const placeholderText = currentQuestion
     ? `"${currentQuestion.questionText.substring(0, 50)}${
         currentQuestion.questionText.length > 50 ? "..." : ""

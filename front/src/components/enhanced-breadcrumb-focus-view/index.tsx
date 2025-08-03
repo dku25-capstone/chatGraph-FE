@@ -11,7 +11,7 @@ import {
   ViewData,
 } from "@/lib/data-transformer";
 
-import { useQuestionTree } from "./use-question-tree";
+import { QuestionTreeProvider, useQuestionTreeContext } from "./QuestionTreeContext";
 import { FocusViewHeader } from "./focus-view-header";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
@@ -28,6 +28,15 @@ interface EnhancedBreadcrumbFocusViewProps {
 export function EnhancedBreadcrumbFocusView({
   initialResponse,
 }: EnhancedBreadcrumbFocusViewProps) {
+  const topicId = initialResponse.topic; // Extract topicId here
+  return (
+    <QuestionTreeProvider initialResponse={initialResponse} topicId={topicId}>
+      <EnhancedBreadcrumbFocusViewContent initialResponse={initialResponse} />
+    </QuestionTreeProvider>
+  );
+}
+
+function EnhancedBreadcrumbFocusViewContent({ initialResponse }: EnhancedBreadcrumbFocusViewProps) {
   const {
     viewData,
     currentPath,
@@ -57,24 +66,20 @@ export function EnhancedBreadcrumbFocusView({
     setSelectedNode,
     focusedNodeId,
     setFocusedNodeId,
-  } = useQuestionTree(initialResponse);
+    refreshViewData, // Add refreshViewData here
+  } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
 
-  const [graphData, setGraphData] = useState<ViewData | null>(null);
+  // Remove graphData and its useEffect
+  // const [graphData, setGraphData] = useState<ViewData | null>(null);
+  // useEffect(() => {
+  //   setGraphData(viewData);
+  // }, [viewData]);
 
-  useEffect(() => {
-    setGraphData(viewData);
-  }, [viewData]);
-
+  // Modify handleGraphViewClick to use refreshViewData
   const handleGraphViewClick = async () => {
-    try {
-      const topicId = initialResponse.topic;
-      const updated = await getTopicById(topicId);
-      setGraphData(transformApiDataToViewData(updated));
-    } catch (e) {
-      console.error("그래프 데이터 요청 실패", e);
-    }
+    await refreshViewData();
   };
 
   useEffect(() => {
@@ -105,11 +110,10 @@ export function EnhancedBreadcrumbFocusView({
           setViewMode={setViewMode}
           goHome={goHome}
           pathLength={currentPath.length}
-          onGraphViewClick={handleGraphViewClick}
         />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
-            data={graphData ?? viewData} // 항상 최신 viewData를 사용
+            data={viewData} // Use viewData directly
             onNodeClick={handleGraphNodeClick}
             currentPath={currentPath}
           />
@@ -195,3 +199,4 @@ export function EnhancedBreadcrumbFocusView({
     </div>
   );
 }
+

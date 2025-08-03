@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { askQuestion, QuestionNode } from "@/api/questions";
+import { askQuestion, getTopicById, QuestionNode } from "@/api/questions";
 import {
   ViewData,
   TopicTreeResponse,
@@ -8,7 +8,10 @@ import {
 import { findPathToNode } from "@/lib/utils";
 
 // 상태 및 동작 커스텀 훅
-export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
+export const useQuestionTree = (
+  initialResponse: TopicTreeResponse,
+  topicId: string
+) => {
   const [viewData, setViewData] = useState<ViewData | null>(null);
   const [currentPath, setCurrentPath] = useState<ViewData[]>([]); // 현재 선택된 질문까지의 경로
   const [viewMode, setViewMode] = useState<"chat" | "graph">("chat");
@@ -27,6 +30,15 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
     setViewData(initialViewData);
     setCurrentPath([initialViewData]);
   }, [initialResponse]);
+
+  // viewMode가 graph로 변경될 때 currentPath를 초기화
+  useEffect(() => {
+    if (viewMode === "graph") {
+      if (viewData && currentPath.length > 1) {
+        setCurrentPath([viewData]);
+      }
+    }
+  }, [viewMode, viewData, currentPath.length, setCurrentPath]);
 
   const currentQuestion =
     currentPath.length > 0 ? currentPath[currentPath.length - 1] : null;
@@ -49,6 +61,23 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
     // D3 그래프 노드 클릭 시 해당 경로로 이동하는 로직 (구현 필요)
     console.log("Graph node clicked:", node);
     setSelectedNode(node);
+  };
+
+  const refreshViewData = async () => {
+    if (!topicId) return;
+    setIsLoading(true);
+    try {
+      const updatedResponse = await getTopicById(topicId);
+      const newViewData = transformApiDataToViewData(updatedResponse);
+      setViewData(newViewData);
+      // Optionally, reset currentPath or adjust it based on the new viewData
+      // For now, let's keep it simple and assume initial path is sufficient or will be re-calculated
+      setCurrentPath([newViewData]); // Reset to root of the new data
+    } catch (error) {
+      console.error("Failed to refresh topic data:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddQuestion = async () => {
@@ -157,5 +186,6 @@ export const useQuestionTree = (initialResponse: TopicTreeResponse) => {
     setSelectedNode,
     focusedNodeId,
     setFocusedNodeId,
+    refreshViewData,
   };
 };
