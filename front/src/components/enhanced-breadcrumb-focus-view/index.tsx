@@ -5,13 +5,12 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "@/components/message-bubble";
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
-import {
-  transformApiDataToViewData,
-  TopicTreeResponse,
-  ViewData,
-} from "@/lib/data-transformer";
+import { TopicTreeResponse } from "@/lib/data-transformer";
 
-import { QuestionTreeProvider, useQuestionTreeContext } from "./QuestionTreeContext";
+import {
+  QuestionTreeProvider,
+  useQuestionTreeContext,
+} from "./QuestionTreeContext";
 import { FocusViewHeader } from "./focus-view-header";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
@@ -19,7 +18,6 @@ import { NewQuestionForm } from "./new-question-form";
 import { EditQuestionDialog } from "./edit-question-dialog";
 import QuestionDetailModal from "../QuestionDetailModal";
 import { findPathToNode } from "@/lib/utils";
-import { getTopicById } from "@/api/questions";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -36,29 +34,25 @@ export function EnhancedBreadcrumbFocusView({
   );
 }
 
-function EnhancedBreadcrumbFocusViewContent({ initialResponse }: EnhancedBreadcrumbFocusViewProps) {
+function EnhancedBreadcrumbFocusViewContent({}: // initialResponse,
+EnhancedBreadcrumbFocusViewProps) {
   const {
     viewData,
     currentPath,
     setCurrentPath,
     viewMode,
-    prompt,
-    isLoading,
     editingQuestion,
     newQuestion,
     newAnswer,
     scrollAreaRef,
     currentQuestion,
     setViewMode,
-    setPrompt,
     setEditingQuestion,
     setNewQuestion,
     setNewAnswer,
     navigateToQuestion,
     addToPath,
-    goHome,
     handleGraphNodeClick,
-    handleAddQuestion,
     handleEditQuestion,
     handleSaveEdit,
     handleDeleteQuestion,
@@ -66,21 +60,9 @@ function EnhancedBreadcrumbFocusViewContent({ initialResponse }: EnhancedBreadcr
     setSelectedNode,
     focusedNodeId,
     setFocusedNodeId,
-    refreshViewData, // Add refreshViewData here
   } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
-
-  // Remove graphData and its useEffect
-  // const [graphData, setGraphData] = useState<ViewData | null>(null);
-  // useEffect(() => {
-  //   setGraphData(viewData);
-  // }, [viewData]);
-
-  // Modify handleGraphViewClick to use refreshViewData
-  const handleGraphViewClick = async () => {
-    await refreshViewData();
-  };
 
   useEffect(() => {
     if (viewMode === "chat" && focusedNodeId) {
@@ -105,17 +87,11 @@ function EnhancedBreadcrumbFocusViewContent({ initialResponse }: EnhancedBreadcr
   if (viewMode === "graph") {
     return (
       <div className="h-screen flex flex-col bg-white">
-        <FocusViewHeader
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          goHome={goHome}
-          pathLength={currentPath.length}
-        />
+        <FocusViewHeader />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
             data={viewData} // Use viewData directly
             onNodeClick={handleGraphNodeClick}
-            currentPath={currentPath}
           />
           <QuestionDetailModal
             question={selectedNode}
@@ -134,12 +110,7 @@ function EnhancedBreadcrumbFocusViewContent({ initialResponse }: EnhancedBreadcr
   return (
     <div className="h-screen flex flex-col bg-white">
       <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-sm">
-        <FocusViewHeader
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          goHome={goHome}
-          pathLength={currentPath.length}
-        />
+        <FocusViewHeader />
         <BreadcrumbNavigation
           currentPath={currentPath}
           navigateToQuestion={navigateToQuestion}
@@ -179,13 +150,7 @@ function EnhancedBreadcrumbFocusViewContent({ initialResponse }: EnhancedBreadcr
         </ScrollArea>
       </div>
 
-      <NewQuestionForm
-        currentQuestion={currentQuestion}
-        prompt={prompt}
-        setPrompt={setPrompt}
-        handleAddQuestion={handleAddQuestion}
-        isLoading={isLoading}
-      />
+      <NewQuestionForm />
 
       <EditQuestionDialog
         editingQuestion={editingQuestion}
@@ -199,4 +164,3 @@ function EnhancedBreadcrumbFocusViewContent({ initialResponse }: EnhancedBreadcr
     </div>
   );
 }
-
