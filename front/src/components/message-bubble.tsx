@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ReactMarkdown from "react-markdown";
 
 interface MessageBubbleProps {
   questionText?: string;
@@ -38,7 +39,9 @@ export function MessageBubble({
           <div className="font-medium text-gray-900">{questionText}</div>
         )}
         {isAnswerVisible && answer && (
-          <div className="text-gray-700 leading-relaxed">{answer}</div>
+          <div className="text-gray-700 leading-relaxed">
+            <ReactMarkdown>{answer}</ReactMarkdown>
+          </div>
         )}
       </div>
     </div>
