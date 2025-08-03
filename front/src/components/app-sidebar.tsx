@@ -31,7 +31,6 @@ import {
   Plus,
   MoreHorizontal,
   Search,
-  MessageSquare,
   PanelLeftOpen,
   LogIn,
   UserPlus,
@@ -43,6 +42,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -90,8 +90,18 @@ export function AppSidebar() {
           <div className="flex items-center gap-2">
             {state === "expanded" ? (
               <>
-                <MessageSquare className="h-6 w-6" />
-                <span className="font-semibold">ChatGraph</span>
+                <Image
+                  src="/chatlogo.png" // public 폴더 기준
+                  alt="Chat Logo"
+                  width={30}
+                  height={30}
+                  className="h-6 w-6"
+                />
+                <Link href="/">
+                  <span className="font-semibold cursor-pointer">
+                    ChatGraph
+                  </span>
+                </Link>
               </>
             ) : (
               <Tooltip>

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUp } from "lucide-react";
 import { askQuestion } from "@/api/questions";
+import Image from "next/image";
 
 export function StartNewTopicForm() {
   const [prompt, setPrompt] = useState("");
@@ -29,6 +30,13 @@ export function StartNewTopicForm() {
   return (
     <div className="flex flex-col items-center justify-center h-full p-4">
       <div className="max-w-2xl w-full text-center space-y-6">
+        <Image
+          src="/chatlogo.png"
+          alt="Chat Logo"
+          width={120}
+          height={120}
+          className="mx-auto mb-20"
+        />
         <h1 className="text-4xl font-bold text-gray-900">
           새로운 질문을 시작해보세요
         </h1>
