@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import {
   Sidebar,
   SidebarHeader,
@@ -34,6 +36,8 @@ import {
   PanelLeftOpen,
   LogIn,
   UserPlus,
+  Check,
+  X,
 } from "lucide-react";
 import {
   Tooltip,
@@ -44,38 +48,83 @@ import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
 import { toast } from "sonner";
 import Image from "next/image";
 
+import { patchTopic, deleteTopic } from "@/api/topics";
+
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [topics, setTopics] = useState<TopicHistoryItem[]>([]);
   const [loadingTopics, setLoadingTopics] = useState(true);
+  const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(null);
+  const [newName, setNewName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
+  const filteredTopics = topics.filter((topic) =>
+    topic.topicName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  useEffect(() => {
+  const fetchTopics = async () => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
 
-    const fetchTopics = async () => {
-      if (!!token) {
-        try {
-          setLoadingTopics(true);
-          const fetchedTopics = await getTopicsHistory();
-          console.log(fetchedTopics);
-          setTopics(fetchedTopics);
-        } catch (error) {
-          console.error("Failed to fetch topics:", error);
-          toast.error("토픽 목록을 불러오는데 실패했습니다.");
-        } finally {
-          setLoadingTopics(false);
-        }
-      } else {
-        setTopics([]);
+    if (token) {
+      try {
+        setLoadingTopics(true);
+        const fetchedTopics = await getTopicsHistory();
+        setTopics(fetchedTopics);
+      } catch (err) {
+        console.error("Failed to fetch topics:", err);
+        toast.error("토픽 목록을 불러오지 못했습니다.");
+      } finally {
         setLoadingTopics(false);
       }
-    };
+    } else {
+      setTopics([]);
+    }
+  };
 
+  useEffect(() => {
     fetchTopics();
-  }, [isLoggedIn]);
+  }, []);
+
+  const handleEdit = async () => {
+    if (!editingTopic || !newName.trim()) return;
+
+    const originalTopics = topics;
+    const newTopics = topics.map((t) =>
+      t.topicId === editingTopic.topicId ? { ...t, topicName: newName } : t
+    );
+    setTopics(newTopics);
+    setEditingTopic(null);
+
+    try {
+      await patchTopic(editingTopic.topicId, { newNodeName: newName });
+      toast.success("토픽명이 수정되었습니다.");
+    } catch (error) {
+      toast.error("수정에 실패했습니다. 다시 시도해주세요.");
+      setTopics(originalTopics); // Revert on failure
+      console.error("Edit failed:", error);
+    }
+  };
+
+  const handleDelete = async (topicId: string) => {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+
+    const originalTopics = topics;
+    const newTopics = topics.filter((t) => t.topicId !== topicId);
+    setTopics(newTopics);
+
+    try {
+      await deleteTopic(topicId);
+      toast.success("삭제 완료");
+      router.refresh(); // 현재 토픽 페이지라면 반영되도록
+    } catch (error) {
+      toast.error("삭제에 실패했습니다. 다시 시도해주세요.");
+      setTopics(originalTopics); // Revert on failure
+      console.error("Deletion failed:", error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -132,7 +181,11 @@ export function AppSidebar() {
             </SidebarMenuButton>
             {isSearchVisible && state === "expanded" && (
               <div className="mt-2">
-                <SidebarInput placeholder="검색" />
+                <SidebarInput
+                  placeholder="검색"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             )}
           </SidebarMenuItem>
@@ -156,32 +209,75 @@ export function AppSidebar() {
                 </div>
               ) : topics.length > 0 ? (
                 <SidebarMenu>
-                  {topics.map((topic) => (
+                  {filteredTopics.map((topic) => (
                     <SidebarMenuItem key={topic.topicId}>
                       <SidebarMenuButton asChild>
-                        <Link
-                          href={`/${topic.topicId}`}
-                          className="flex items-center gap-2"
-                        >
-                          <span>{topic.topicName}</span>
-                        </Link>
+                        {editingTopic?.topicId === topic.topicId ? (
+                          <div className="flex items-center gap-2 w-full">
+                            <SidebarInput
+                              autoFocus
+                              value={newName}
+                              onChange={(e) => setNewName(e.target.value)}
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && handleEdit()
+                              }
+                              className="flex-1 h-8 text-sm"
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={handleEdit}
+                              className="h-8 w-8"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setEditingTopic(null)}
+                              className="h-8 w-8"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between w-full">
+                            <Link
+                              href={`/${topic.topicId}`}
+                              className="flex items-center gap-2 flex-1"
+                            >
+                              <span className="truncate">
+                                {topic.topicName}
+                              </span>
+                            </Link>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <SidebarMenuAction>
+                                  <MoreHorizontal />
+                                </SidebarMenuAction>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                side="right"
+                                align="start"
+                              >
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingTopic(topic);
+                                    setNewName(topic.topicName);
+                                  }}
+                                >
+                                  <span>수정</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDelete(topic.topicId)}
+                                >
+                                  <span>삭제</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
                       </SidebarMenuButton>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction>
-                            <MoreHorizontal />
-                          </SidebarMenuAction>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="right" align="start">
-                          <DropdownMenuItem>
-                            <span>Edit {topic.topicName}</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <span>Delete {topic.topicName}</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
