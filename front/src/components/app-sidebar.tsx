@@ -74,6 +74,7 @@ export function AppSidebar() {
         const fetchedTopics = await getTopicsHistory();
         setTopics(fetchedTopics);
       } catch (err) {
+        console.error("Failed to fetch topics:", err);
         toast.error("토픽 목록을 불러오지 못했습니다.");
       } finally {
         setLoadingTopics(false);
