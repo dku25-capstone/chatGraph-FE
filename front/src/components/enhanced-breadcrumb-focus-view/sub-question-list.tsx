@@ -11,6 +11,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
+import ReactMarkdown from "react-markdown";
 
 interface SubQuestionListProps {
   questions: ViewData[]; // 자식 질문 목록
@@ -80,9 +81,9 @@ export const SubQuestionList = ({
                     </h4>
                   </div>
                   {expanded[child.id] && (
-                    <p className="text-sm text-gray-600 mb-3 pl-10">
-                      {child.answerText}
-                    </p> // 답변 들여쓰기
+                    <div className="text-sm text-gray-600 mb-3 pl-10">
+                      <ReactMarkdown>{child.answerText}</ReactMarkdown>
+                    </div> // 답변 들여쓰기
                   )}
                   <div className="flex items-center gap-2 pl-10">
                     {child.children.length > 0 && (
