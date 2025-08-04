@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { askQuestion, getTopicById, QuestionNode } from "@/api/questions";
+import { askQuestion, getTopicById, QuestionNode, deleteQuestion, patchQuestion } from "@/api/questions";
 import {
   ViewData,
   TopicTreeResponse,
@@ -19,7 +19,6 @@ export const useQuestionTree = (
   const [isLoading, setIsLoading] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<ViewData | null>(null);
   const [newQuestion, setNewQuestion] = useState("");
-  const [newAnswer, setNewAnswer] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<ViewData | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
@@ -138,23 +137,31 @@ export const useQuestionTree = (
   const handleEditQuestion = (question: ViewData) => {
     setEditingQuestion(question);
     setNewQuestion(question.questionText);
-    setNewAnswer(question.answerText);
   };
 
   // 질문 저장 함수
   // 현재 트리 상태 (currentPath 또는 TopicTreeResponse)에서 editingQuestion.id에 해당하는 노드를 찾아 질문/답변을 변경하는 코드가 아직 구현되지 않음.
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingQuestion) return;
-    console.log("Save edit is not implemented for TopicTreeResponse yet.");
-    setEditingQuestion(null);
+    try {
+      await patchQuestion(editingQuestion.id, { newNodeName: newQuestion });
+      refreshViewData();
+    } catch (error) {
+      console.error("Failed to save edit:", error);
+    } finally {
+      setEditingQuestion(null);
+    }
   };
 
   // 질문 삭제 함수
   // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
-  const handleDeleteQuestion = () => {
-    console.log(
-      "Delete question is not implemented for TopicTreeResponse yet."
-    );
+  const handleDeleteQuestion = async (questionId: string) => {
+    try {
+      await deleteQuestion(questionId);
+      refreshViewData(); // Refresh data after deletion
+    } catch (error) {
+      console.error("Failed to delete question:", error);
+    }
   };
 
   return {
@@ -166,14 +173,12 @@ export const useQuestionTree = (
     isLoading,
     editingQuestion,
     newQuestion,
-    newAnswer,
     scrollAreaRef,
     currentQuestion,
     setViewMode,
     setPrompt,
     setEditingQuestion,
     setNewQuestion,
-    setNewAnswer,
     navigateToQuestion,
     addToPath,
     goHome,

@@ -1,4 +1,4 @@
-import RegisterForm from "@/components/RegisterForm";
+import RegisterForm from "@/components/user/RegisterForm";
 import Link from "next/link";
 
 // 회원가입 페이지

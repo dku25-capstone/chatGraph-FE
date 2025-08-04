@@ -43,13 +43,11 @@ EnhancedBreadcrumbFocusViewProps) {
     viewMode,
     editingQuestion,
     newQuestion,
-    newAnswer,
     scrollAreaRef,
     currentQuestion,
     setViewMode,
     setEditingQuestion,
     setNewQuestion,
-    setNewAnswer,
     navigateToQuestion,
     addToPath,
     handleGraphNodeClick,
@@ -155,9 +153,7 @@ EnhancedBreadcrumbFocusViewProps) {
       <EditQuestionDialog
         editingQuestion={editingQuestion}
         newQuestion={newQuestion}
-        newAnswer={newAnswer}
         setNewQuestion={setNewQuestion}
-        setNewAnswer={setNewAnswer}
         handleSaveEdit={handleSaveEdit}
         setEditingQuestion={setEditingQuestion}
       />

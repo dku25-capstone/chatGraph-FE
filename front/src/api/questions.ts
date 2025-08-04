@@ -40,6 +40,7 @@ interface TopicTreeResponse {
   };
 }
 
+
 // 질문 전송 (새 질문 or 후속 질문)
 export const askQuestion = async (data: QuestionRequest): Promise<TopicTreeResponse> => {
   const response = await api.post<TopicTreeResponse>("/api/questions", data);
@@ -53,3 +54,31 @@ export const getTopicById = async (topicId: string): Promise<TopicTreeResponse> 
 };
 
 
+
+
+//질문 수정 
+export interface PatchQuestionRequest {
+  newNodeName: string;
+}
+
+export interface PatchQuestionResponse {
+  nodeId: string;
+  nodeType: string;
+  nodeData: string;
+}
+export const patchQuestion = async (
+  questionId: string,
+  data: PatchQuestionRequest
+): Promise<PatchQuestionResponse> => {
+  const response = await api.patch<PatchQuestionResponse>(
+    `/api/questions/${questionId}`,
+    data
+  );
+  return response.data;
+};
+
+
+//질문 삭제
+export const deleteQuestion = async (questionId:string): Promise<void> =>{
+  await api.delete(`/api/questions/${questionId}`);
+}

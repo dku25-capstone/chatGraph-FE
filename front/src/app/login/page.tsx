@@ -1,4 +1,4 @@
-import LoginForm from "@/components/LoginForm";
+import LoginForm from "@/components/user/LoginForm";
 import Link from "next/link";
 
 // 로그인 페이지

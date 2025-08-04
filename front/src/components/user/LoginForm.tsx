@@ -1,12 +1,12 @@
 "use client"
 
 import Link from 'next/link';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { api } from '@/lib/api';
+import { login } from '@/api/user';
 import { toast } from "sonner"; // sonner import 추가
 import { Loader2, CheckCircle } from "lucide-react"; // 로딩 아이콘 추가
 
@@ -23,10 +23,7 @@ export default function LoginForm() {
     setIsLoading(true); // 로딩 시작
 
     try {
-      const res = await api.post('/api/login', {
-        email,
-        password,
-      });
+      const res = await login({ email, password });
 
       if (res.status === 200) {
         const token = res.data.token;

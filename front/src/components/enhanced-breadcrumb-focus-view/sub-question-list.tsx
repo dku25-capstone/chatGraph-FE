@@ -3,12 +3,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   MessageSquare,
   Edit,
   Trash2,
-  Eye,
   ChevronDown,
   ChevronUp,
+  MoreHorizontal,
 } from "lucide-react";
 import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
 import ReactMarkdown from "react-markdown";
@@ -17,7 +23,7 @@ interface SubQuestionListProps {
   questions: ViewData[]; // 자식 질문 목록
   addToPath: (question: ViewData) => void; // 경로에 자식 질문 추가 함수
   handleEditQuestion: (question: ViewData) => void; // 질문 수정 함수
-  handleDeleteQuestion: () => void; // 질문 삭제 함수
+  handleDeleteQuestion: (questionId: string) => void; // 질문 삭제 함수
   showTitle: boolean;
 }
 
@@ -94,37 +100,34 @@ export const SubQuestionList = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-1 ml-4">
-                  <Button // 수정 버튼
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditQuestion(child);
-                    }}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                  <Button // 삭제 버튼
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteQuestion();
-                    }}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                  <Button // 질문 이동 버튼
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToPath(child);
-                    }}
-                  >
-                    <Eye className="h-3 w-3" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditQuestion(child);
+                        }}
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteQuestion(child.id);
+                        }}
+                        className="text-red-500"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardContent>
