@@ -40,7 +40,7 @@ export const NewQuestionForm = () => {
               className="flex-shrink-0"
             >
               {isLoading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300" />
               ) : (
                 <ArrowUp className="h-4 w-4" />
               )}
