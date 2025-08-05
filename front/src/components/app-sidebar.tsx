@@ -50,12 +50,13 @@ import { searchQuestions, QuestionNode } from "@/api/questions";
 
 import { patchTopic, deleteTopic } from "@/api/topics";
 import LoadingSpinner from "@/components/ui/loading-spinner"; // 로딩 스피너 컴포넌트 임포트
+import { useTopicStore } from "@/lib/topic-store";
 
 interface SearchResultNode extends QuestionNode {
   topicId: string;
 }
 
-export function AppSidebar() {
+  export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -148,6 +149,10 @@ export function AppSidebar() {
     try {
       await patchTopic(editingTopic.topicId, { newNodeName: newName });
       toast.success("토픽명이 수정되었습니다.");
+      // Update the global topic store if this is the currently active topic
+      if (useTopicStore.getState().currentTopicId === editingTopic.topicId) {
+        useTopicStore.getState().setTopic(editingTopic.topicId, newName);
+      }
     } catch (error) {
       toast.error("수정에 실패했습니다. 다시 시도해주세요.");
       setTopics(originalTopics);
@@ -319,7 +324,7 @@ export function AppSidebar() {
                           <div className="flex items-center justify-between w-full">
                             <Link
                               href={`/${item.topicId}`}
-                              className="flex items-center gap-2 flex-1"
+                              className="flex items-center gap-2 flex-1 min-w-0"
                             >
                               <span className="truncate">{item.topicName}</span>
                             </Link>
