@@ -10,7 +10,8 @@ import { findPathToNode } from "@/lib/utils";
 // 상태 및 동작 커스텀 훅
 export const useQuestionTree = (
   initialResponse: TopicTreeResponse,
-  topicId: string
+  topicId: string,
+  initialQuestionId?: string | null
 ) => {
   const [viewData, setViewData] = useState<ViewData | null>(() =>
     transformApiDataToViewData(initialResponse)
@@ -34,6 +35,15 @@ export const useQuestionTree = (
   //   setViewData(initialViewData);
   //   setCurrentPath([initialViewData]);
   // }, [initialResponse]);
+
+  useEffect(() => {
+    if (initialQuestionId && viewData) {
+      const path = findPathToNode(viewData, initialQuestionId);
+      if (path) {
+        setCurrentPath(path);
+      }
+    }
+  }, [initialQuestionId, viewData]);
 
   // viewMode가 graph로 변경될 때 currentPath를 초기화
   useEffect(() => {

@@ -15,8 +15,9 @@ export const QuestionTreeProvider: React.FC<{
   children: React.ReactNode;
   initialResponse: TopicTreeResponse;
   topicId: string;
-}> = ({ children, initialResponse, topicId }) => {
-  const questionTree = useQuestionTree(initialResponse, topicId);
+  initialQuestionId?: string | null;
+}> = ({ children, initialResponse, topicId, initialQuestionId }) => {
+  const questionTree = useQuestionTree(initialResponse, topicId, initialQuestionId);
   return (
     <QuestionTreeContext.Provider value={questionTree}>
       {children}

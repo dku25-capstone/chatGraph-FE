@@ -21,14 +21,20 @@ import { findPathToNode } from "@/lib/utils";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
+  initialQuestionId?: string | null; // Make it optional and nullable
 }
 
 export function EnhancedBreadcrumbFocusView({
   initialResponse,
+  initialQuestionId,
 }: EnhancedBreadcrumbFocusViewProps) {
   const topicId = initialResponse.topic; // Extract topicId here
   return (
-    <QuestionTreeProvider initialResponse={initialResponse} topicId={topicId}>
+    <QuestionTreeProvider
+      initialResponse={initialResponse}
+      topicId={topicId}
+      initialQuestionId={initialQuestionId}
+    >
       <EnhancedBreadcrumbFocusViewContent initialResponse={initialResponse} />
     </QuestionTreeProvider>
   );
