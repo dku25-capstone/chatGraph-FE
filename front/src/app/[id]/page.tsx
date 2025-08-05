@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { TopicTreeResponse } from "@/lib/data-transformer"; // API 응답 타입
 import { getTopicById } from "@/api/questions"; // 특정 topicId에 해당하는 질문 트리 데이터를 가져오는 API 함수
 import { EnhancedBreadcrumbFocusView } from "@/components/enhanced-breadcrumb-focus-view"; // 질문-답변 트리를 브레드크럼 형식으로 시각화하는 메인 UI 컴포넌트
+import LoadingSpinner from "@/components/ui/loading-spinner"; // 로딩 스피너 컴포넌트 임포트
 
 export default function ChatPage() {
   const params = useParams(); // URL에서 파라미터(id) 가져옴
@@ -35,10 +36,11 @@ export default function ChatPage() {
   }, [fetchData]);
 
   // 로딩중
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        Loading...
+        <LoadingSpinner />
       </div>
     );
   }

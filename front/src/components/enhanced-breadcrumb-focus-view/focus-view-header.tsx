@@ -4,7 +4,8 @@ import { Home, Network, List } from "lucide-react";
 import { useQuestionTreeContext } from "./QuestionTreeContext";
 
 export const FocusViewHeader = () => {
-  const { viewMode, setViewMode, goHome, currentPath, refreshViewData } = useQuestionTreeContext();
+  const { viewMode, setViewMode, goHome, currentPath } =
+    useQuestionTreeContext();
 
   if (viewMode === "graph") {
     return (
@@ -29,7 +30,7 @@ export const FocusViewHeader = () => {
         <Button
           variant="outline"
           onClick={() => {
-            refreshViewData();
+            // refreshViewData();
             setViewMode("graph");
           }}
         >

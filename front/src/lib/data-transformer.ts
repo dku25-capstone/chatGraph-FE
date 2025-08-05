@@ -62,7 +62,7 @@ export const transformApiDataToViewData = (
     if ("topicName" in node) {
       viewDataId = node.topicId;
       questionText = node.topicName; // 토픽 제목
-      answerText = `This is the root of the topic: ${node.topicName}`;
+      answerText = `토픽 질문: ${node.topicName}`;
     } else {
       viewDataId = node.questionId;
       questionText = node.questionText;
@@ -97,7 +97,7 @@ export const transformApiDataToViewData = (
   return {
     id: rootNode.topicId,
     questionText: rootNode.topicName,
-    answerText: `This is the root of the topic: ${rootNode.topicName}`,
+    answerText: `토픽 질문: ${rootNode.topicName}`,
     children: [...directChildren, ...additionalChildren],
   };
 };
