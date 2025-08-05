@@ -85,10 +85,16 @@ export const deleteQuestion = async (questionId:string): Promise<void> =>{
 }
 
 //질문 검색
+export interface SearchQuestionsResponse {
+  topic: string;
+  nodes: {
+    [id: string]: QuestionNode;
+  };
+}
 export const searchQuestions = async (
   keyword: string
-): Promise<QuestionAnswer[]> => {
-  const response = await api.get<QuestionAnswer[]>("/api/questions/search", {
+): Promise<SearchQuestionsResponse> => {
+  const response = await api.get<SearchQuestionsResponse>("/api/questions/search", {
     params: { keyword },
   });
   return response.data;
