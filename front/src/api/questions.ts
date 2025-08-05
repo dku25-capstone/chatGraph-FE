@@ -13,6 +13,7 @@ export interface QuestionAnswer {
   answerId: string;
   answerText: string;
   createdAt: string;
+  topicId: string; // Add topicId
 }
 
 interface TopicNode {
@@ -82,3 +83,13 @@ export const patchQuestion = async (
 export const deleteQuestion = async (questionId:string): Promise<void> =>{
   await api.delete(`/api/questions/${questionId}`);
 }
+
+//질문 검색
+export const searchQuestions = async (
+  keyword: string
+): Promise<QuestionAnswer[]> => {
+  const response = await api.get<QuestionAnswer[]>("/api/questions/search", {
+    params: { keyword },
+  });
+  return response.data;
+};

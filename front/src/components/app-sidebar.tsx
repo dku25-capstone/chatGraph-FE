@@ -48,7 +48,7 @@ import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
 import { toast } from "sonner";
 import Image from "next/image";
 
-import { patchTopic, deleteTopic } from "@/api/topics";
+import { patchQuestion, deleteQuestion, searchQuestions, QuestionAnswer } from "@/api/questions";
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -59,10 +59,25 @@ export function AppSidebar() {
   const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(null);
   const [newName, setNewName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<QuestionAnswer[]>([]);
   const router = useRouter();
-  const filteredTopics = topics.filter((topic) =>
-    topic.topicName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
+  const handleSearch = async (term: string) => {
+    setSearchTerm(term);
+    if (term.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const results = await searchQuestions(term);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Failed to search questions:", error);
+      toast.error("검색 중 오류가 발생했습니다.");
+    }
+  };
+
+  const displayedItems = searchTerm.trim() !== "" ? searchResults : topics;
 
   const fetchTopics = async () => {
     const token = localStorage.getItem("token");
@@ -99,7 +114,7 @@ export function AppSidebar() {
     setEditingTopic(null);
 
     try {
-      await patchTopic(editingTopic.topicId, { newNodeName: newName });
+      await patchQuestion(editingTopic.topicId, { newNodeName: newName });
       toast.success("토픽명이 수정되었습니다.");
     } catch (error) {
       toast.error("수정에 실패했습니다. 다시 시도해주세요.");
@@ -116,7 +131,7 @@ export function AppSidebar() {
     setTopics(newTopics);
 
     try {
-      await deleteTopic(topicId);
+      await deleteQuestion(topicId);
       toast.success("삭제 완료");
       router.refresh(); // 현재 토픽 페이지라면 반영되도록
     } catch (error) {
@@ -182,10 +197,10 @@ export function AppSidebar() {
             {isSearchVisible && state === "expanded" && (
               <div className="mt-2">
                 <SidebarInput
-                  placeholder="검색"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+                    placeholder="검색"
+                    value={searchTerm}
+                    onChange={(e) => handleSearch(e.target.value)}
+                  />
               </div>
             )}
           </SidebarMenuItem>
@@ -209,10 +224,19 @@ export function AppSidebar() {
                 </div>
               ) : topics.length > 0 ? (
                 <SidebarMenu>
-                  {filteredTopics.map((topic) => (
-                    <SidebarMenuItem key={topic.topicId}>
+                  {displayedItems.map((item) => (
+                    <SidebarMenuItem key={item.questionId || item.topicId}>
                       <SidebarMenuButton asChild>
-                        {editingTopic?.topicId === topic.topicId ? (
+                        {searchTerm.trim() !== "" ? (
+                          <Link
+                            href={`/${(item as QuestionAnswer).topicId}`}
+                            className="flex items-center gap-2 flex-1"
+                          >
+                            <span className="truncate">
+                              {(item as QuestionAnswer).questionText}
+                            </span>
+                          </Link>
+                        ) : editingTopic?.topicId === (item as TopicHistoryItem).topicId ? (
                           <div className="flex items-center gap-2 w-full">
                             <SidebarInput
                               autoFocus
@@ -243,11 +267,11 @@ export function AppSidebar() {
                         ) : (
                           <div className="flex items-center justify-between w-full">
                             <Link
-                              href={`/${topic.topicId}`}
+                              href={`/${(item as TopicHistoryItem).topicId}`}
                               className="flex items-center gap-2 flex-1"
                             >
                               <span className="truncate">
-                                {topic.topicName}
+                                {(item as TopicHistoryItem).topicName}
                               </span>
                             </Link>
                             <DropdownMenu>
@@ -262,14 +286,14 @@ export function AppSidebar() {
                               >
                                 <DropdownMenuItem
                                   onClick={() => {
-                                    setEditingTopic(topic);
-                                    setNewName(topic.topicName);
+                                    setEditingTopic(item as TopicHistoryItem);
+                                    setNewName((item as TopicHistoryItem).topicName);
                                   }}
                                 >
                                   <span>수정</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => handleDelete(topic.topicId)}
+                                  onClick={() => handleDelete((item as TopicHistoryItem).topicId)}
                                 >
                                   <span>삭제</span>
                                 </DropdownMenuItem>
