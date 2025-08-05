@@ -63,7 +63,7 @@ export const SubQuestionList = ({
         {questions.map((child) => (
           <Card // 각 질문을 카드로 표시
             key={child.id}
-            className="hover:shadow-md transition-all duration-200 border-l-4 border-l-blue-500 cursor-pointer"
+            className="hover:shadow-md transition-all duration-200 border-l cursor-pointer"
             onClick={() => addToPath(child)} // 카드 전체에 클릭 이벤트 부여
           >
             <CardContent className="p-4">
@@ -82,7 +82,7 @@ export const SubQuestionList = ({
                         <ChevronDown className="h-4 w-4" />
                       )}
                     </Button>
-                    <h4 className="font-medium text-blue-600 hover:text-blue-800">
+                    <h4 className="font-medium text-black-800 hover:text-black-1000">
                       {child.questionText}
                     </h4>
                   </div>
