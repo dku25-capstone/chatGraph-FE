@@ -56,7 +56,9 @@ export function AppSidebar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [topics, setTopics] = useState<TopicHistoryItem[]>([]);
   const [loadingTopics, setLoadingTopics] = useState(true);
-  const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(null);
+  const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(
+    null
+  );
   const [newName, setNewName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
@@ -64,27 +66,26 @@ export function AppSidebar() {
     topic.topicName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const fetchTopics = async () => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-
-    if (token) {
-      try {
-        setLoadingTopics(true);
-        const fetchedTopics = await getTopicsHistory();
-        setTopics(fetchedTopics);
-      } catch (err) {
-        console.error("Failed to fetch topics:", err);
-        toast.error("토픽 목록을 불러오지 못했습니다.");
-      } finally {
-        setLoadingTopics(false);
-      }
-    } else {
-      setTopics([]);
-    }
-  };
-
   useEffect(() => {
+    const fetchTopics = async () => {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+
+      if (token) {
+        try {
+          setLoadingTopics(true);
+          const fetchedTopics = await getTopicsHistory();
+          setTopics(fetchedTopics);
+        } catch (err) {
+          console.error("Failed to fetch topics:", err);
+          toast.error("토픽 목록을 불러오지 못했습니다.");
+        } finally {
+          setLoadingTopics(false);
+        }
+      } else {
+        setTopics([]);
+      }
+    };
     fetchTopics();
   }, []);
 
@@ -256,10 +257,7 @@ export function AppSidebar() {
                                   <MoreHorizontal />
                                 </SidebarMenuAction>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                side="right"
-                                align="start"
-                              >
+                              <DropdownMenuContent side="right" align="start">
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setEditingTopic(topic);
