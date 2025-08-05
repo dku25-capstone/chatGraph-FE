@@ -37,7 +37,6 @@ import {
   LogIn,
   UserPlus,
   Check,
-  X,
 } from "lucide-react";
 import {
   Tooltip,
@@ -81,12 +80,15 @@ export function AppSidebar() {
       const response = await searchQuestions(term);
       if (response && Array.isArray(response)) {
         const allNodes: SearchResultNode[] = [];
-        response.forEach(item => {
+        response.forEach((item) => {
           if (item && item.nodes) {
-            const nodes = Object.values(item.nodes).map((node) => ({
-              ...node,
-              topicId: item.topic,
-            }));
+            const nodes = Object.keys(item.nodes).map((nodeId) => {
+              const node = item.nodes[nodeId];
+              return {
+                ...node,
+                topicId: item.topic,
+              };
+            });
             allNodes.push(...nodes);
           }
         });
@@ -101,16 +103,14 @@ export function AppSidebar() {
     }
   };
 
-  const displayedItems = searchTerm.trim() !== "" ? searchResults : topics;
-
   const fetchTopics = async () => {
     try {
       setLoadingTopics(true);
       const fetchedTopics = await getTopicsHistory();
-      // createdAt을 기준으로 내림차순 정렬
-      const sortedTopics = fetchedTopics.sort((a, b) => {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
+      const sortedTopics = fetchedTopics.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
       setTopics(sortedTopics);
     } catch (err) {
       console.error("Failed to fetch topics:", err);
@@ -123,7 +123,7 @@ export function AppSidebar() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
-    setIsAuthLoading(false); // 인증 로딩 완료
+    setIsAuthLoading(false);
   }, []);
 
   useEffect(() => {
@@ -150,7 +150,7 @@ export function AppSidebar() {
       toast.success("토픽명이 수정되었습니다.");
     } catch (error) {
       toast.error("수정에 실패했습니다. 다시 시도해주세요.");
-      setTopics(originalTopics); // Revert on failure
+      setTopics(originalTopics);
       console.error("Edit failed:", error);
     }
   };
@@ -167,7 +167,7 @@ export function AppSidebar() {
           resolve("삭제 완료");
           router.refresh();
         } catch (error) {
-          setTopics(originalTopics); // Revert on failure
+          setTopics(originalTopics);
           console.error("Deletion failed:", error);
           reject("삭제에 실패했습니다. 다시 시도해주세요.");
         }
@@ -203,16 +203,14 @@ export function AppSidebar() {
             {state === "expanded" ? (
               <>
                 <Image
-                  src="/chatlogo.png" // public 폴더 기준
+                  src="/chatlogo.png"
                   alt="Chat Logo"
                   width={30}
                   height={30}
                   className="h-6 w-6"
                 />
                 <Link href="/">
-                  <span className="font-semibold cursor-pointer">
-                    ChatGraph
-                  </span>
+                  <span className="font-semibold cursor-pointer">ChatGraph</span>
                 </Link>
               </>
             ) : (
@@ -245,10 +243,10 @@ export function AppSidebar() {
             {isSearchVisible && state === "expanded" && (
               <div className="mt-2">
                 <SidebarInput
-                    placeholder="검색"
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e.target.value)}
-                  />
+                  placeholder="검색"
+                  value={searchTerm}
+                  onChange={(e) => handleSearch(e.target.value)}
+                />
               </div>
             )}
           </SidebarMenuItem>
@@ -272,37 +270,39 @@ export function AppSidebar() {
                 <div className="flex justify-center items-center h-20">
                   <LoadingSpinner />
                 </div>
-              ) : topics.length > 0 || searchResults.length > 0 ? (
+              ) : searchTerm.trim() !== "" ? (
                 <SidebarMenu>
-                  {displayedItems.map((item) => (
-                    <SidebarMenuItem key={(item as any).questionId || (item as any).topicId}>
+                  {searchResults.map((item) => (
+                    <SidebarMenuItem key={item.questionId}>
                       <SidebarMenuButton asChild>
-                        {searchTerm.trim() !== "" ? (
-                          <Link
-                            href={`/${(item as SearchResultNode).topicId}?question=${(item as SearchResultNode).questionId}`}
-                            className="flex items-center gap-2 flex-1"
-                          >
-                            <span className="truncate">
-                              {(item as SearchResultNode).questionText}
-                            </span>
-                          </Link>
-                        ) : editingTopic?.topicId === (item as TopicHistoryItem).topicId ? (
+                        <Link
+                          href={`/${item.topicId}?question=${item.questionId}`}
+                          className="flex items-center gap-2 flex-1"
+                        >
+                          <span className="truncate">{item.questionText}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              ) : topics.length > 0 ? (
+                <SidebarMenu>
+                  {topics.map((item) => (
+                    <SidebarMenuItem key={item.topicId}>
+                      <SidebarMenuButton asChild>
+                        {editingTopic?.topicId === item.topicId ? (
                           <div className="flex items-center gap-2 w-full">
                             <SidebarInput
                               autoFocus
                               value={newName}
                               onChange={(e) => setNewName(e.target.value)}
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  handleEdit();
-                                } else if (e.key === "Escape") {
+                                if (e.key === "Enter") handleEdit();
+                                else if (e.key === "Escape")
                                   setEditingTopic(null);
-                                }
                               }}
                               onBlur={() => {
-                                if (editingTopic) {
-                                  handleEdit();
-                                }
+                                if (editingTopic) handleEdit();
                               }}
                               className="flex-1 h-8 text-sm"
                             />
@@ -318,12 +318,10 @@ export function AppSidebar() {
                         ) : (
                           <div className="flex items-center justify-between w-full">
                             <Link
-                              href={`/${(item as TopicHistoryItem).topicId}`}
+                              href={`/${item.topicId}`}
                               className="flex items-center gap-2 flex-1"
                             >
-                              <span className="truncate">
-                                {(item as TopicHistoryItem).topicName}
-                              </span>
+                              <span className="truncate">{item.topicName}</span>
                             </Link>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -334,14 +332,14 @@ export function AppSidebar() {
                               <DropdownMenuContent side="right" align="start">
                                 <DropdownMenuItem
                                   onClick={() => {
-                                    setEditingTopic(item as TopicHistoryItem);
-                                    setNewName((item as TopicHistoryItem).topicName);
+                                    setEditingTopic(item);
+                                    setNewName(item.topicName);
                                   }}
                                 >
                                   <span>수정</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => confirmDelete((item as TopicHistoryItem).topicId)}
+                                  onClick={() => confirmDelete(item.topicId)}
                                 >
                                   <span>삭제</span>
                                 </DropdownMenuItem>
@@ -365,7 +363,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-2">
         {isAuthLoading ? (
-          <div className="text-center text-sm text-gray-500"></div> // 로딩 중일 때 빈 공간
+          <div className="text-center text-sm text-gray-500"></div>
         ) : (
           <SidebarMenu>
             {isLoggedIn ? (
