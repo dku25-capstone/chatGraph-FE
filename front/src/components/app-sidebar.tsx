@@ -49,6 +49,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 
 import { patchTopic, deleteTopic } from "@/api/topics";
+import LoadingSpinner from "@/components/ui/loading-spinner"; // 로딩 스피너 컴포넌트 임포트
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -56,6 +57,7 @@ export function AppSidebar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [topics, setTopics] = useState<TopicHistoryItem[]>([]);
   const [loadingTopics, setLoadingTopics] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true); // 인증 로딩 상태 추가
   const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(
     null
   );
@@ -66,28 +68,37 @@ export function AppSidebar() {
     topic.topicName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  useEffect(() => {
-    const fetchTopics = async () => {
-      const token = localStorage.getItem("token");
-      setIsLoggedIn(!!token);
+  const fetchTopics = async () => {
+    try {
+      setLoadingTopics(true);
+      const fetchedTopics = await getTopicsHistory();
+      // createdAt을 기준으로 내림차순 정렬
+      const sortedTopics = fetchedTopics.sort((a, b) => {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      setTopics(sortedTopics);
+    } catch (err) {
+      console.error("Failed to fetch topics:", err);
+      toast.error("토픽 목록을 불러오지 못했습니다.");
+    } finally {
+      setLoadingTopics(false);
+    }
+  };
 
-      if (token) {
-        try {
-          setLoadingTopics(true);
-          const fetchedTopics = await getTopicsHistory();
-          setTopics(fetchedTopics);
-        } catch (err) {
-          console.error("Failed to fetch topics:", err);
-          toast.error("토픽 목록을 불러오지 못했습니다.");
-        } finally {
-          setLoadingTopics(false);
-        }
-      } else {
-        setTopics([]);
-      }
-    };
-    fetchTopics();
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+    setIsAuthLoading(false); // 인증 로딩 완료
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchTopics();
+    } else {
+      setTopics([]);
+      setLoadingTopics(false);
+    }
+  }, [isLoggedIn]);
 
   const handleEdit = async () => {
     if (!editingTopic || !newName.trim()) return;
@@ -205,8 +216,8 @@ export function AppSidebar() {
             <SidebarGroupLabel>채팅목록</SidebarGroupLabel>
             <SidebarGroupContent>
               {loadingTopics ? (
-                <div className="text-center text-sm text-gray-500">
-                  로딩 중...
+                <div className="flex justify-center items-center h-20">
+                  <LoadingSpinner />
                 </div>
               ) : topics.length > 0 ? (
                 <SidebarMenu>
@@ -290,54 +301,58 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-2">
-        <SidebarMenu>
-          {isLoggedIn ? (
-            <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton>
-                    <User2 />
-                    {state === "expanded" && <span>Username</span>}
-                    {state === "expanded" && <ChevronUp className="ml-auto" />}
+        {isAuthLoading ? (
+          <div className="text-center text-sm text-gray-500"></div> // 로딩 중일 때 빈 공간
+        ) : (
+          <SidebarMenu>
+            {isLoggedIn ? (
+              <SidebarMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton>
+                      <User2 />
+                      {state === "expanded" && <span>Username</span>}
+                      {state === "expanded" && <ChevronUp className="ml-auto" />}
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    side="top"
+                    className="w-[--radix-popper-anchor-width]"
+                  >
+                    <DropdownMenuItem>
+                      <span>Account</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <span>Billing</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <span>Sign out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            ) : (
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/login">
+                      <LogIn />
+                      {state === "expanded" && <span>로그인</span>}
+                    </Link>
                   </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="top"
-                  className="w-[--radix-popper-anchor-width]"
-                >
-                  <DropdownMenuItem>
-                    <span>Account</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <span>Billing</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <span>Sign out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem>
-          ) : (
-            <>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/login">
-                    <LogIn />
-                    {state === "expanded" && <span>로그인</span>}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/register">
-                    <UserPlus />
-                    {state === "expanded" && <span>회원가입</span>}
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </>
-          )}
-        </SidebarMenu>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/register">
+                      <UserPlus />
+                      {state === "expanded" && <span>회원가입</span>}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
+            )}
+          </SidebarMenu>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
