@@ -40,19 +40,14 @@ export const useQuestionTree = (
 
   // Listen for changes in the topic store (from app-sidebar)
   useEffect(() => {
-    const unsubscribe = useTopicStore.subscribe(
-      (state) => state.currentTopicName,
-      (currentTopicName) => {
-        if (viewData && useTopicStore.getState().currentTopicId === topicId) {
-          setViewData((prevViewData) => {
-            if (!prevViewData) return null;
-            return { ...prevViewData, questionText: currentTopicName || "" };
-          });
-        }
-      }
-    );
-    return () => unsubscribe();
-  }, [viewData, topicId]);
+    const currentTopicNameFromStore = useTopicStore.getState().currentTopicName;
+    if (viewData && useTopicStore.getState().currentTopicId === topicId && currentTopicNameFromStore !== viewData.questionText) {
+      setViewData((prevViewData) => {
+        if (!prevViewData) return null;
+        return { ...prevViewData, questionText: currentTopicNameFromStore || "" };
+      });
+    }
+  }, [useTopicStore.getState().currentTopicName, viewData, topicId]);
 
   // 시작 질문 노드를 currentPath의 첫 요소로 등록
   // useEffect(() => {
