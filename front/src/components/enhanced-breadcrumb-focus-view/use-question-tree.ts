@@ -12,8 +12,13 @@ export const useQuestionTree = (
   initialResponse: TopicTreeResponse,
   topicId: string
 ) => {
-  const [viewData, setViewData] = useState<ViewData | null>(null);
-  const [currentPath, setCurrentPath] = useState<ViewData[]>([]); // 현재 선택된 질문까지의 경로
+  const [viewData, setViewData] = useState<ViewData | null>(() =>
+    transformApiDataToViewData(initialResponse)
+  );
+  const [currentPath, setCurrentPath] = useState<ViewData[]>(() => {
+    const root = transformApiDataToViewData(initialResponse);
+    return [root];
+  }); // 현재 선택된 질문까지의 경로
   const [viewMode, setViewMode] = useState<"chat" | "graph">("chat");
   const [prompt, setPrompt] = useState(""); // follow-up 입력값
   const [isLoading, setIsLoading] = useState(false);
@@ -25,11 +30,11 @@ export const useQuestionTree = (
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
   // 시작 질문 노드를 currentPath의 첫 요소로 등록
-  useEffect(() => {
-    const initialViewData = transformApiDataToViewData(initialResponse);
-    setViewData(initialViewData);
-    setCurrentPath([initialViewData]);
-  }, [initialResponse]);
+  // useEffect(() => {
+  //   const initialViewData = transformApiDataToViewData(initialResponse);
+  //   setViewData(initialViewData);
+  //   setCurrentPath([initialViewData]);
+  // }, [initialResponse]);
 
   // viewMode가 graph로 변경될 때 currentPath를 초기화
   useEffect(() => {

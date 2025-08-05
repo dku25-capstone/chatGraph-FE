@@ -17,6 +17,7 @@ export function InteractiveD3Graph({
   const { currentPath } = useQuestionTreeContext();
 
   useEffect(() => {
+    console.log("🎯 D3 useEffect 실행됨", { data, currentPath });
     if (!svgRef.current || !containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
 
