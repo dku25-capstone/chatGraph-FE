@@ -25,7 +25,7 @@ export default function RootLayout({
             <main className="flex-1 items-center">{children}</main>
           </div>
         </SidebarProvider>
-        <Toaster /> {/* Toaster 컴포넌트 추가 */}
+        <Toaster position="top-center" /> {/* Toaster 컴포넌트 추가 */}
       </body>
     </html>
   );

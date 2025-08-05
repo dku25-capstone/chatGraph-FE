@@ -47,9 +47,14 @@ import {
 import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
 import { toast } from "sonner";
 import Image from "next/image";
+import { searchQuestions, QuestionNode } from "@/api/questions";
 
 import { patchTopic, deleteTopic } from "@/api/topics";
 import LoadingSpinner from "@/components/ui/loading-spinner"; // 로딩 스피너 컴포넌트 임포트
+
+interface SearchResultNode extends QuestionNode {
+  topicId: string;
+}
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -63,7 +68,7 @@ export function AppSidebar() {
   );
   const [newName, setNewName] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<QuestionAnswer[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResultNode[]>([]);
   const router = useRouter();
 
   const handleSearch = async (term: string) => {
@@ -73,10 +78,25 @@ export function AppSidebar() {
       return;
     }
     try {
-      const results = await searchQuestions(term);
-      setSearchResults(results);
+      const response = await searchQuestions(term);
+      if (response && Array.isArray(response)) {
+        const allNodes: SearchResultNode[] = [];
+        response.forEach(item => {
+          if (item && item.nodes) {
+            const nodes = Object.values(item.nodes).map((node) => ({
+              ...node,
+              topicId: item.topic,
+            }));
+            allNodes.push(...nodes);
+          }
+        });
+        setSearchResults(allNodes);
+      } else {
+        setSearchResults([]);
+      }
     } catch (error) {
       console.error("Failed to search questions:", error);
+      setSearchResults([]);
       toast.error("검색 중 오류가 발생했습니다.");
     }
   };
@@ -126,7 +146,7 @@ export function AppSidebar() {
     setEditingTopic(null);
 
     try {
-      await patchQuestion(editingTopic.topicId, { newNodeName: newName });
+      await patchTopic(editingTopic.topicId, { newNodeName: newName });
       toast.success("토픽명이 수정되었습니다.");
     } catch (error) {
       toast.error("수정에 실패했습니다. 다시 시도해주세요.");
@@ -136,21 +156,37 @@ export function AppSidebar() {
   };
 
   const handleDelete = async (topicId: string) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
+    const promise = () =>
+      new Promise(async (resolve, reject) => {
+        const originalTopics = topics;
+        const newTopics = topics.filter((t) => t.topicId !== topicId);
+        setTopics(newTopics);
 
-    const originalTopics = topics;
-    const newTopics = topics.filter((t) => t.topicId !== topicId);
-    setTopics(newTopics);
+        try {
+          await deleteTopic(topicId);
+          resolve("삭제 완료");
+          router.refresh();
+        } catch (error) {
+          setTopics(originalTopics); // Revert on failure
+          console.error("Deletion failed:", error);
+          reject("삭제에 실패했습니다. 다시 시도해주세요.");
+        }
+      });
 
-    try {
-      await deleteQuestion(topicId);
-      toast.success("삭제 완료");
-      router.refresh(); // 현재 토픽 페이지라면 반영되도록
-    } catch (error) {
-      toast.error("삭제에 실패했습니다. 다시 시도해주세요.");
-      setTopics(originalTopics); // Revert on failure
-      console.error("Deletion failed:", error);
-    }
+    toast.promise(promise(), {
+      loading: "삭제 중...",
+      success: (message) => message as string,
+      error: (message) => message as string,
+    });
+  };
+
+  const confirmDelete = (topicId: string) => {
+    toast("정말 삭제하시겠습니까?", {
+      action: {
+        label: "삭제",
+        onClick: () => handleDelete(topicId),
+      },
+    });
   };
 
   const handleLogout = () => {
@@ -228,24 +264,26 @@ export function AppSidebar() {
 
         {state === "expanded" && (
           <SidebarGroup className="mt-4">
-            <SidebarGroupLabel>채팅목록</SidebarGroupLabel>
+            <SidebarGroupLabel>
+              {searchTerm.trim() !== "" ? "검색목록" : "채팅목록"}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               {loadingTopics ? (
                 <div className="flex justify-center items-center h-20">
                   <LoadingSpinner />
                 </div>
-              ) : topics.length > 0 ? (
+              ) : topics.length > 0 || searchResults.length > 0 ? (
                 <SidebarMenu>
                   {displayedItems.map((item) => (
-                    <SidebarMenuItem key={item.questionId || item.topicId}>
+                    <SidebarMenuItem key={(item as any).questionId || (item as any).topicId}>
                       <SidebarMenuButton asChild>
                         {searchTerm.trim() !== "" ? (
                           <Link
-                            href={`/${(item as QuestionAnswer).topicId}`}
+                            href={`/${(item as SearchResultNode).topicId}?question=${(item as SearchResultNode).questionId}`}
                             className="flex items-center gap-2 flex-1"
                           >
                             <span className="truncate">
-                              {(item as QuestionAnswer).questionText}
+                              {(item as SearchResultNode).questionText}
                             </span>
                           </Link>
                         ) : editingTopic?.topicId === (item as TopicHistoryItem).topicId ? (
@@ -254,9 +292,18 @@ export function AppSidebar() {
                               autoFocus
                               value={newName}
                               onChange={(e) => setNewName(e.target.value)}
-                              onKeyDown={(e) =>
-                                e.key === "Enter" && handleEdit()
-                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  handleEdit();
+                                } else if (e.key === "Escape") {
+                                  setEditingTopic(null);
+                                }
+                              }}
+                              onBlur={() => {
+                                if (editingTopic) {
+                                  handleEdit();
+                                }
+                              }}
                               className="flex-1 h-8 text-sm"
                             />
                             <Button
@@ -266,14 +313,6 @@ export function AppSidebar() {
                               className="h-8 w-8"
                             >
                               <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setEditingTopic(null)}
-                              className="h-8 w-8"
-                            >
-                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         ) : (
@@ -302,7 +341,7 @@ export function AppSidebar() {
                                   <span>수정</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => handleDelete((item as TopicHistoryItem).topicId)}
+                                  onClick={() => confirmDelete((item as TopicHistoryItem).topicId)}
                                 >
                                   <span>삭제</span>
                                 </DropdownMenuItem>
