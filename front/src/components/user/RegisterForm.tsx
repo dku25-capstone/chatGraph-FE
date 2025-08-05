@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { signup } from '@/api/user';
 import { toast } from "sonner";
 import { Loader2, CheckCircle } from "lucide-react";
 
@@ -34,10 +34,7 @@ export default function SignupForm() {
     setIsLoading(true);
 
     try {
-      const res = await api.post("/api/signup", {
-        email,
-        password,
-      });
+      const res = await signup({ email, password });
 
       if (res.status === 200) {
         toast.success("회원가입이 완료되었습니다", {

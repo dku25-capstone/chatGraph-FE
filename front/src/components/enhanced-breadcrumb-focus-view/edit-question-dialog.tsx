@@ -12,9 +12,7 @@ import { ViewData } from "@/lib/data-transformer";
 interface EditQuestionDialogProps {
   editingQuestion: ViewData | null;
   newQuestion: string;
-  newAnswer: string;
   setNewQuestion: (question: string) => void;
-  setNewAnswer: (answer: string) => void;
   handleSaveEdit: () => void;
   setEditingQuestion: (question: ViewData | null) => void;
 }
@@ -23,9 +21,7 @@ interface EditQuestionDialogProps {
 export const EditQuestionDialog = ({
   editingQuestion,
   newQuestion,
-  newAnswer,
   setNewQuestion,
-  setNewAnswer,
   handleSaveEdit,
   setEditingQuestion,
 }: EditQuestionDialogProps) => (
@@ -49,10 +45,11 @@ export const EditQuestionDialog = ({
         <div>
           <label className="text-sm font-medium mb-2 block">답변</label>
           <Textarea
-            value={newAnswer}
-            onChange={(e) => setNewAnswer(e.target.value)}
-            placeholder="답변을 입력하세요"
+            value={editingQuestion?.answerText ?? ''}
+            readOnly
+            placeholder="답변"
             rows={6}
+            className="bg-gray-100"
           />
         </div>
         <div className="flex justify-end gap-2">

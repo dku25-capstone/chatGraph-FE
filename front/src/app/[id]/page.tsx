@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { TopicTreeResponse } from "@/lib/data-transformer"; // API 응답 타입
 import { getTopicById } from "@/api/questions"; // 특정 topicId에 해당하는 질문 트리 데이터를 가져오는 API 함수
 import { EnhancedBreadcrumbFocusView } from "@/components/enhanced-breadcrumb-focus-view"; // 질문-답변 트리를 브레드크럼 형식으로 시각화하는 메인 UI 컴포넌트
@@ -9,7 +10,9 @@ import LoadingSpinner from "@/components/ui/loading-spinner"; // 로딩 스피�
 
 export default function ChatPage() {
   const params = useParams(); // URL에서 파라미터(id) 가져옴
+  const searchParams = useSearchParams();
   const topicId = params.id as string; // 현재 토픽의 id를 문자열로 저장
+  const questionId = searchParams.get("question");
 
   // API에서 받은 전체 트리 데이터를 저장하는 상태
   const [apiResponse, setApiResponse] = useState<TopicTreeResponse | null>(
@@ -56,6 +59,7 @@ export default function ChatPage() {
   return (
     <EnhancedBreadcrumbFocusView
       initialResponse={apiResponse} // 초기 질문 트리 데이터를 전달
+      initialQuestionId={questionId} // 검색 결과에서 선택된 질문 ID
       // onQuestionAdded={fetchData}
     />
   );
