@@ -185,10 +185,9 @@ export function InteractiveD3Graph({
 
         // Visual feedback
         circles.attr("stroke-width", 2);
-        d3.select(this)
-          .select("circle")
-          .attr("stroke-width", 4)
-          .attr("stroke", "#1e40af");
+        d3.select(this).select("circle");
+        // .attr("stroke-width", 4)
+        // .attr("stroke", "#1e40af");
       });
 
     // Drag behavior

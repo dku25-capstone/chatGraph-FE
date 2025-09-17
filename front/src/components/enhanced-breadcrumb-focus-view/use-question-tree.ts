@@ -43,30 +43,33 @@ export const useQuestionTree = (
     }
   }, [viewData, topicId]);
 
-  const currentTopicNameFromStore = useTopicStore.getState().currentTopicName;
+  // 스토어의 해당 값이 실제로 변경될 때만 리렌더링 일어남
+  const currentTopicNameFromStore = useTopicStore(
+    (state) => state.currentTopicName
+  );
+  const currentTopicIdFromStore = useTopicStore(
+    (state) => state.currentTopicId
+  );
 
+  // 의존성을 스토어에서 온 값으로 분리
   useEffect(() => {
-    if (
-      viewData &&
-      useTopicStore.getState().currentTopicId === topicId &&
-      currentTopicNameFromStore !== viewData.questionText
-    ) {
-      setViewData((prevViewData) => {
-        if (!prevViewData) return null;
+    setViewData((prevViewData) => {
+      if (
+        prevViewData &&
+        currentTopicIdFromStore === topicId &&
+        currentTopicNameFromStore !== prevViewData.questionText
+      ) {
+        // 조건이 맞으면 새로운 상태 반환
         return {
           ...prevViewData,
           questionText: currentTopicNameFromStore || "",
         };
-      });
-    }
-  }, [currentTopicNameFromStore, viewData, topicId]);
-
-  // 시작 질문 노드를 currentPath의 첫 요소로 등록
-  // useEffect(() => {
-  //   const initialViewData = transformApiDataToViewData(initialResponse);
-  //   setViewData(initialViewData);
-  //   setCurrentPath([initialViewData]);
-  // }, [initialResponse]);
+      }
+      // 조건이 맞지 않으면 반드시 이전 상태를 그대로 반환
+      return prevViewData;
+    });
+    // useEffect는 오직 스토어의 값이 변경될 때만 로직을 다시 실행
+  }, [currentTopicNameFromStore, currentTopicIdFromStore, topicId]);
 
   useEffect(() => {
     if (initialQuestionId && viewData) {
