@@ -1,5 +1,11 @@
-import { useState, useEffect, useRef } from "react";
-import { askQuestion, getTopicById, QuestionNode, deleteQuestion, patchQuestion } from "@/api/questions";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import {
+  askQuestion,
+  getTopicById,
+  QuestionNode,
+  deleteQuestion,
+  patchQuestion,
+} from "@/api/questions";
 import {
   ViewData,
   TopicTreeResponse,
@@ -15,13 +21,13 @@ export const useQuestionTree = (
   topicId: string,
   initialQuestionId?: string | null
 ) => {
-  const [viewData, setViewData] = useState<ViewData | null>(() =>
-    transformApiDataToViewData(initialResponse)
+  const initialViewData = useMemo(
+    () => transformApiDataToViewData(initialResponse),
+    [initialResponse]
   );
-  const [currentPath, setCurrentPath] = useState<ViewData[]>(() => {
-    const root = transformApiDataToViewData(initialResponse);
-    return [root];
-  }); // 현재 선택된 질문까지의 경로
+
+  const [viewData, setViewData] = useState<ViewData | null>(initialViewData);
+  const [currentPath, setCurrentPath] = useState<ViewData[]>([initialViewData]); // 현재 선택된 질문까지의 경로
   const [viewMode, setViewMode] = useState<"chat" | "graph">("chat");
   const [prompt, setPrompt] = useState(""); // follow-up 입력값
   const [isLoading, setIsLoading] = useState(false);
@@ -31,23 +37,29 @@ export const useQuestionTree = (
   const [selectedNode, setSelectedNode] = useState<ViewData | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
-  // Update topic store when viewData changes (initial load or refresh)
   useEffect(() => {
     if (viewData && topicId) {
       useTopicStore.getState().setTopic(topicId, viewData.questionText);
     }
   }, [viewData, topicId]);
 
-  // Listen for changes in the topic store (from app-sidebar)
+  const currentTopicNameFromStore = useTopicStore.getState().currentTopicName;
+
   useEffect(() => {
-    const currentTopicNameFromStore = useTopicStore.getState().currentTopicName;
-    if (viewData && useTopicStore.getState().currentTopicId === topicId && currentTopicNameFromStore !== viewData.questionText) {
+    if (
+      viewData &&
+      useTopicStore.getState().currentTopicId === topicId &&
+      currentTopicNameFromStore !== viewData.questionText
+    ) {
       setViewData((prevViewData) => {
         if (!prevViewData) return null;
-        return { ...prevViewData, questionText: currentTopicNameFromStore || "" };
+        return {
+          ...prevViewData,
+          questionText: currentTopicNameFromStore || "",
+        };
       });
     }
-  }, [useTopicStore.getState().currentTopicName, viewData, topicId]);
+  }, [currentTopicNameFromStore, viewData, topicId]);
 
   // 시작 질문 노드를 currentPath의 첫 요소로 등록
   // useEffect(() => {
@@ -74,47 +86,48 @@ export const useQuestionTree = (
     }
   }, [viewMode, viewData, currentPath.length, setCurrentPath]);
 
-  const currentQuestion =
-    currentPath.length > 0 ? currentPath[currentPath.length - 1] : null;
+  const currentQuestion = useMemo(
+    () => (currentPath.length > 0 ? currentPath[currentPath.length - 1] : null),
+    [currentPath]
+  );
 
-  const navigateToQuestion = (question: ViewData, index: number) => {
-    setCurrentPath(currentPath.slice(0, index + 1));
-  };
+  const navigateToQuestion = useCallback(
+    (question: ViewData, index: number) => {
+      setCurrentPath((prevPath) => prevPath.slice(0, index + 1));
+    },
+    [] // setCurrentPath는 안정적이므로 의존성 필요 없음
+  );
 
-  const addToPath = (question: ViewData) => {
-    setCurrentPath([...currentPath, question]);
-  };
+  const addToPath = useCallback((question: ViewData) => {
+    setCurrentPath((prevPath) => [...prevPath, question]);
+  }, []);
 
-  const goHome = () => {
+  const goHome = useCallback(() => {
     if (viewData) {
       setCurrentPath([viewData]);
     }
-  };
+  }, [viewData]);
 
-  const handleGraphNodeClick = (node: ViewData) => {
-    // D3 그래프 노드 클릭 시 해당 경로로 이동하는 로직 (구현 필요)
-    console.log("Graph node clicked:", node);
+  const handleGraphNodeClick = useCallback((node: ViewData) => {
     setSelectedNode(node);
-  };
+  }, []);
 
-  const refreshViewData = async () => {
+  const refreshViewData = useCallback(async () => {
     if (!topicId) return;
     setIsLoading(true);
     try {
       const updatedResponse = await getTopicById(topicId);
       const newViewData = transformApiDataToViewData(updatedResponse);
       setViewData(newViewData);
-      // Optionally, reset currentPath or adjust it based on the new viewData
-      // For now, let's keep it simple and assume initial path is sufficient or will be re-calculated
-      setCurrentPath([newViewData]); // Reset to root of the new data
+      setCurrentPath([newViewData]);
     } catch (error) {
       console.error("Failed to refresh topic data:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [topicId]);
 
-  const handleAddQuestion = async () => {
+  const handleAddQuestion = useCallback(async () => {
     if (!prompt.trim() || !currentQuestion || !viewData) return;
     setIsLoading(true);
 
@@ -166,34 +179,32 @@ export const useQuestionTree = (
       setPrompt("");
       setIsLoading(false);
     }
-  };
+  }, [prompt, currentQuestion, viewData]);
 
   // 질문 수정 함수(현재 UI만 변경)
-  const handleEditQuestion = (question: ViewData) => {
+  const handleEditQuestion = useCallback((question: ViewData) => {
     setEditingQuestion(question);
     setNewQuestion(question.questionText);
-  };
+  }, []);
 
   // 질문 저장 함수
   // 현재 트리 상태 (currentPath 또는 TopicTreeResponse)에서 editingQuestion.id에 해당하는 노드를 찾아 질문/답변을 변경하는 코드가 아직 구현되지 않음.
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = useCallback(async () => {
     if (!editingQuestion) return;
+    const originalViewData = viewData;
 
-    const originalViewData = viewData; // Store original data for rollback
-
-    // Optimistically update the UI
-    const updatedViewData = (node: ViewData): ViewData => {
+    const updatedViewDataFn = (node: ViewData): ViewData => {
       if (node.id === editingQuestion.id) {
         return { ...node, questionText: newQuestion };
       }
       return {
         ...node,
-        children: node.children.map((child) => updatedViewData(child)),
+        children: node.children.map((child) => updatedViewDataFn(child)),
       };
     };
 
     if (viewData) {
-      setViewData(updatedViewData(viewData));
+      setViewData(updatedViewDataFn(viewData));
     }
 
     try {
@@ -202,107 +213,133 @@ export const useQuestionTree = (
     } catch (error) {
       console.error("Failed to save edit:", error);
       toast.error("질문 수정에 실패했습니다.");
-      setViewData(originalViewData); // Rollback on error
+      setViewData(originalViewData);
     } finally {
       setEditingQuestion(null);
     }
-  };
+  }, [editingQuestion, newQuestion, viewData]);
 
   // 질문 삭제 함수
   // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
-  const handleDeleteQuestion = async (questionId: string) => {
-    const originalViewData = viewData; // Store original data for rollback
-    const originalCurrentPath = currentPath; // Store original path for rollback
+  const handleDeleteQuestion = useCallback(
+    async (questionId: string) => {
+      const originalViewData = viewData;
+      const originalCurrentPath = currentPath;
 
-    let newViewData: ViewData | null = null;
-    let newCurrentPath: ViewData[] = [];
+      let newViewData: ViewData | null = null;
+      let newCurrentPath: ViewData[] = [];
 
-    // Optimistically update the UI
-    const deleteNode = (node: ViewData): ViewData | null => {
-      if (!node) return null;
-      if (node.id === questionId) {
-        return null; // This node is deleted
-      }
-      const newChildren = node.children
-        .map((child) => deleteNode(child))
-        .filter((child) => child !== null) as ViewData[];
-      return { ...node, children: newChildren };
-    };
+      // Optimistically update the UI
+      const deleteNode = (node: ViewData): ViewData | null => {
+        if (!node) return null;
+        if (node.id === questionId) {
+          return null; // This node is deleted
+        }
+        const newChildren = node.children
+          .map((child) => deleteNode(child))
+          .filter((child) => child !== null) as ViewData[];
+        return { ...node, children: newChildren };
+      };
 
-    if (viewData) {
-      newViewData = deleteNode(viewData);
-      if (newViewData) {
-        setViewData(newViewData);
+      if (viewData) {
+        newViewData = deleteNode(viewData);
+        if (newViewData) {
+          setViewData(newViewData);
 
-        // Determine the new currentPath
-        const deletedIsCurrent = currentQuestion && currentQuestion.id === questionId;
-        if (deletedIsCurrent) {
-          // If the current question is deleted, go up to its parent
-          newCurrentPath = currentPath.slice(0, currentPath.length - 1);
-        } else {
-          // Otherwise, try to find the path to the current question in the new tree
-          // This handles cases where a sibling or child of currentQuestion was deleted
-          if (currentQuestion) {
-            const path = findPathToNode(newViewData, currentQuestion.id);
-            if (path) {
-              newCurrentPath = path;
+          // Determine the new currentPath
+          const deletedIsCurrent =
+            currentQuestion && currentQuestion.id === questionId;
+          if (deletedIsCurrent) {
+            // If the current question is deleted, go up to its parent
+            newCurrentPath = currentPath.slice(0, currentPath.length - 1);
+          } else {
+            // Otherwise, try to find the path to the current question in the new tree
+            // This handles cases where a sibling or child of currentQuestion was deleted
+            if (currentQuestion) {
+              const path = findPathToNode(newViewData, currentQuestion.id);
+              if (path) {
+                newCurrentPath = path;
+              } else {
+                // If currentQuestion is no longer found (e.g., its parent was deleted),
+                // revert to root or handle appropriately. For now, revert to root.
+                newCurrentPath = [newViewData];
+              }
             } else {
-              // If currentQuestion is no longer found (e.g., its parent was deleted),
-              // revert to root or handle appropriately. For now, revert to root.
+              // No current question, just set to root
               newCurrentPath = [newViewData];
             }
-          } else {
-            // No current question, just set to root
-            newCurrentPath = [newViewData];
           }
+          setCurrentPath(newCurrentPath);
+        } else {
+          // If the root node is deleted (unlikely for questions), handle appropriately
+          setViewData(null);
+          setCurrentPath([]);
         }
-        setCurrentPath(newCurrentPath);
-
-      } else {
-        // If the root node is deleted (unlikely for questions), handle appropriately
-        setViewData(null);
-        setCurrentPath([]);
       }
-    }
 
-    try {
-      await deleteQuestion(questionId);
-      toast.success("질문이 성공적으로 삭제되었습니다.");
-    } catch (error) {
-      console.error("Failed to delete question:", error);
-      toast.error("질문 삭제에 실패했습니다.");
-      setViewData(originalViewData); // Rollback on error
-      setCurrentPath(originalCurrentPath); // Rollback path
-    }
-  };
+      try {
+        await deleteQuestion(questionId);
+        toast.success("질문이 성공적으로 삭제되었습니다.");
+      } catch (error) {
+        console.error("Failed to delete question:", error);
+        toast.error("질문 삭제에 실패했습니다.");
+        setViewData(originalViewData); // Rollback on error
+        setCurrentPath(originalCurrentPath); // Rollback path
+      }
+    },
+    [viewData, currentPath, currentQuestion]
+  );
 
-  return {
-    viewData,
-    currentPath,
-    setCurrentPath,
-    viewMode,
-    prompt,
-    isLoading,
-    editingQuestion,
-    newQuestion,
-    scrollAreaRef,
-    currentQuestion,
-    setViewMode,
-    setPrompt,
-    setEditingQuestion,
-    setNewQuestion,
-    navigateToQuestion,
-    addToPath,
-    goHome,
-    handleGraphNodeClick,
-    handleAddQuestion,
-    handleEditQuestion,
-    handleSaveEdit,
-    handleDeleteQuestion,
-    selectedNode,
-    setSelectedNode,
-    focusedNodeId,
-    setFocusedNodeId,
-    refreshViewData,
-  };
+  return useMemo(
+    () => ({
+      viewData,
+      currentPath,
+      setCurrentPath,
+      viewMode,
+      prompt,
+      isLoading,
+      editingQuestion,
+      newQuestion,
+      scrollAreaRef,
+      currentQuestion,
+      setViewMode,
+      setPrompt,
+      setEditingQuestion,
+      setNewQuestion,
+      navigateToQuestion,
+      addToPath,
+      goHome,
+      handleGraphNodeClick,
+      handleAddQuestion,
+      handleEditQuestion,
+      handleSaveEdit,
+      handleDeleteQuestion,
+      selectedNode,
+      setSelectedNode,
+      focusedNodeId,
+      setFocusedNodeId,
+      refreshViewData,
+    }),
+    [
+      viewData,
+      currentPath,
+      viewMode,
+      prompt,
+      isLoading,
+      editingQuestion,
+      newQuestion,
+      currentQuestion,
+      navigateToQuestion,
+      addToPath,
+      goHome,
+      handleGraphNodeClick,
+      handleAddQuestion,
+      handleEditQuestion,
+      handleSaveEdit,
+      handleDeleteQuestion,
+      selectedNode,
+      focusedNodeId,
+      refreshViewData,
+    ]
+  );
 };
