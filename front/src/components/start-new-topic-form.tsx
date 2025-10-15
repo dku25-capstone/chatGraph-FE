@@ -1,17 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUp } from "lucide-react";
 import { askQuestion } from "@/api/questions";
 import Image from "next/image";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function StartNewTopicForm() {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLogin,setIsLogin] = useState(false);
   const router = useRouter();
+  
+  // 컴포넌트가 마운트될 때 로그인 상태를 확인합니다.
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLogin(true);
+    }
+  }, []); // 빈 배열을 전달하여 한 번만 실행되도록 합니다.
+
 
   const handleStartNewTopic = async () => {
     if (!prompt.trim()) return;
@@ -58,18 +73,33 @@ export function StartNewTopicForm() {
                 disabled={isLoading}
               />
             </div>
-            <Button
-              onClick={handleStartNewTopic}
-              disabled={!prompt.trim() || isLoading}
-              size="lg"
-              className="flex-shrink-0"
-            >
-              {isLoading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300" />
-              ) : (
-                <ArrowUp className="h-5 w-5" />
-              )}
-            </Button>
+            {isLogin ? (
+              <Button
+                onClick={handleStartNewTopic}
+                disabled={!prompt.trim() || isLoading}
+                size="lg"
+                className="flex-shrink-0"
+              >
+                {isLoading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300" />
+                ) : (
+                  <ArrowUp className="h-5 w-5" />
+                )}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex-shrink-0">
+                    <Button disabled size="lg" className="cursor-not-allowed">
+                      <ArrowUp className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>로그인이 필요합니다</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
       </div>

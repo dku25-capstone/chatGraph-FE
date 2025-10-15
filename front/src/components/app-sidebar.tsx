@@ -238,14 +238,33 @@ interface SearchResultNode extends QuestionNode {
       <SidebarContent className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="검색"
-              onClick={() => setIsSearchVisible(!isSearchVisible)}
-            >
-              <Search />
-              <span>검색</span>
-            </SidebarMenuButton>
-            {isSearchVisible && state === "expanded" && (
+            {isLoggedIn ? (
+              <SidebarMenuButton
+                tooltip="검색"
+                onClick={() => setIsSearchVisible(!isSearchVisible)}
+              >
+                <Search />
+                <span>검색</span>
+              </SidebarMenuButton>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="w-full">
+                    <SidebarMenuButton
+                      disabled
+                      className="w-full cursor-not-allowed"
+                    >
+                      <Search />
+                      <span>검색</span>
+                    </SidebarMenuButton>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>로그인이 필요합니다</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {isLoggedIn && isSearchVisible && state === "expanded" && (
               <div className="mt-2">
                 <SidebarInput
                   placeholder="검색"
