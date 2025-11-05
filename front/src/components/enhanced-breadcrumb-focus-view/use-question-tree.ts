@@ -222,6 +222,37 @@ export const useQuestionTree = (
     }
   }, [editingQuestion, newQuestion, viewData]);
 
+  const handleSaveInPlaceEdit = useCallback(
+    async (questionId: string, newText: string) => {
+      if (!viewData) return;
+
+      const originalViewData = viewData;
+
+      const updateNodeText = (node: ViewData): ViewData => {
+        if (node.id === questionId) {
+          return { ...node, questionText: newText };
+        }
+        return {
+          ...node,
+          children: node.children.map(updateNodeText),
+        };
+      };
+
+      const newViewData = updateNodeText(viewData);
+      setViewData(newViewData);
+
+      try {
+        await patchQuestion(questionId, { newNodeName: newText });
+        toast.success("질문이 성공적으로 수정되었습니다.");
+      } catch (error) {
+        console.error("Failed to save in-place edit:", error);
+        toast.error("질문 수정에 실패했습니다.");
+        setViewData(originalViewData); // Rollback on error
+      }
+    },
+    [viewData]
+  );
+
   // 질문 삭제 함수
   // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
   const handleDeleteQuestion = useCallback(
@@ -316,6 +347,7 @@ export const useQuestionTree = (
       handleAddQuestion,
       handleEditQuestion,
       handleSaveEdit,
+      handleSaveInPlaceEdit,
       handleDeleteQuestion,
       selectedNode,
       setSelectedNode,

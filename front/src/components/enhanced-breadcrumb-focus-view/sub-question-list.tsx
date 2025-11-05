@@ -16,28 +16,29 @@ import {
   ChevronUp,
   MoreHorizontal,
 } from "lucide-react";
-import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
+import { ViewData } from "@/lib/data-transformer";
 import ReactMarkdown from "react-markdown";
+import { Input } from "../ui/input";
 
 interface SubQuestionListProps {
-  questions: ViewData[]; // 자식 질문 목록
-  addToPath: (question: ViewData) => void; // 경로에 자식 질문 추가 함수
-  handleEditQuestion: (question: ViewData) => void; // 질문 수정 함수
-  handleDeleteQuestion: (questionId: string) => void; // 질문 삭제 함수
+  questions: ViewData[];
+  addToPath: (question: ViewData) => void;
+  onSave: (questionId: string, newText: string) => void;
+  onDelete: (questionId: string) => void;
   showTitle: boolean;
 }
 
-// 현재 질문에 대한 하위 질문 목록 보여주는 UI
 export const SubQuestionList = ({
   questions,
   addToPath,
-  handleEditQuestion,
-  handleDeleteQuestion,
+  onSave,
+  onDelete,
   showTitle,
 }: SubQuestionListProps) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState("");
 
-  // 컴포넌트 처음 마운트, questions 바뀔 때, 펼친 상태로 초기화
   useEffect(() => {
     const initialExpandedState = questions.reduce(
       (acc, q) => ({ ...acc, [q.id]: true }),
@@ -47,8 +48,38 @@ export const SubQuestionList = ({
   }, [questions]);
 
   const toggleExpand = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // 이벤트 전파 중단
+    e.stopPropagation();
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleEditClick = (e: React.MouseEvent, question: ViewData) => {
+    e.stopPropagation();
+    setEditingId(question.id);
+    setEditText(question.questionText);
+  };
+
+  const handleSaveClick = (e: React.MouseEvent, questionId: string) => {
+    e.stopPropagation();
+    onSave(questionId, editText);
+    setEditingId(null);
+  };
+
+  const handleCancelClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(null);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, questionId: string) => {
+    e.stopPropagation();
+    onDelete(questionId);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, questionId: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onSave(questionId, editText);
+      setEditingId(null);
+    }
   };
 
   return (
@@ -61,74 +92,85 @@ export const SubQuestionList = ({
       )}
       <div className="grid gap-3">
         {questions.map((child) => (
-          <Card // 각 질문을 카드로 표시
+          <Card
             key={child.id}
             className="hover:shadow-md transition-all duration-200 border-l cursor-pointer"
-            onClick={() => addToPath(child)} // 카드 전체에 클릭 이벤트 부여
+            onClick={() => (editingId !== child.id ? addToPath(child) : null)}
           >
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center mb-2">
-                    <Button // 답변 토글 버튼
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => toggleExpand(e, child.id)}
-                      className="mr-2"
-                    >
-                      {expanded[child.id] ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
+                  {editingId === child.id ? (
+                    <div className="space-y-2">
+                      <Input 
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(e, child.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={(e) => handleSaveClick(e, child.id)}>저장</Button>
+                        <Button size="sm" variant="ghost" onClick={handleCancelClick}>취소</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center mb-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => toggleExpand(e, child.id)}
+                          className="mr-2"
+                        >
+                          {expanded[child.id] ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <h4 className="font-medium text-black-800 hover:text-black-1000">
+                          {child.questionText}
+                        </h4>
+                      </div>
+                      {expanded[child.id] && (
+                        <div className="text-sm text-gray-600 mb-3 pl-10">
+                          <ReactMarkdown>{child.answerText}</ReactMarkdown>
+                        </div>
                       )}
-                    </Button>
-                    <h4 className="font-medium text-black-800 hover:text-black-1000">
-                      {child.questionText}
-                    </h4>
-                  </div>
-                  {expanded[child.id] && (
-                    <div className="text-sm text-gray-600 mb-3 pl-10">
-                      <ReactMarkdown>{child.answerText}</ReactMarkdown>
-                    </div> // 답변 들여쓰기
+                      <div className="flex items-center gap-2 pl-10">
+                        {child.children.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {child.children.length} sub-questions
+                          </Badge>
+                        )}
+                      </div>
+                    </>
                   )}
-                  <div className="flex items-center gap-2 pl-10">
-                    {child.children.length > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {child.children.length} sub-questions
-                      </Badge>
-                    )}
+                </div>
+                {editingId !== child.id && (
+                  <div className="flex items-center gap-1 ml-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={(e) => handleEditClick(e, child)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Edit</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => handleDeleteClick(e, child.id)}
+                          className="text-red-500"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 ml-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditQuestion(child);
-                        }}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteQuestion(child.id);
-                        }}
-                        className="text-red-500"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
