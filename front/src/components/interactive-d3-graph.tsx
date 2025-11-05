@@ -17,7 +17,6 @@ export function InteractiveD3Graph({
   const { currentPath } = useQuestionTreeContext();
 
   useEffect(() => {
-    console.log("🎯 D3 useEffect 실행됨", { data, currentPath });
     if (!svgRef.current || !containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
 
@@ -28,6 +27,9 @@ export function InteractiveD3Graph({
     const root = d3.hierarchy(data, (d) => d.children);
     const nodes = root.descendants();
     const links = root.links();
+
+    // 그래프 전체 노드 확인
+    console.log("그래프 전체 노드:", nodes);
 
     // SVG dimensions and setup
     const svg = d3
@@ -183,6 +185,27 @@ export function InteractiveD3Graph({
       .on("click", function (event, d) {
         onNodeClick(d.data);
 
+        // 현재 클릭한 노드
+        console.log("클릭된 노드:", d.data.questionText);
+        console.log("클릭한 노드 아이디:", d.data.id);
+        console.log("클릭한 노드 위치:", d.x, d.y);
+
+        // 클릭한 노드의 부모 노드 정보
+        if (d.parent) {
+          console.log("부모 노드:", d.parent.data.id);
+        } else {
+          console.log("루트 노드입니다");
+        }
+
+        // 자식 노드 정보
+        // 자식 배열 존재하고 내용이 0보다 많으면
+        if (d.children && d.children.length > 0) {
+          const childNames = d.children.map((child) => child.data.questionText);
+          console.log("자식 노드 목록:", childNames);
+        } else {
+          console.log("리프 노드입니다.");
+        }
+
         // Visual feedback
         circles.attr("stroke-width", 2);
         d3.select(this).select("circle");
@@ -204,10 +227,10 @@ export function InteractiveD3Graph({
       })
       .on("end", (event, d) => {
         if (!event.active) simulation.alphaTarget(0);
+
         d.fx = null;
         d.fy = null;
       });
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     node.call(drag as any);
 

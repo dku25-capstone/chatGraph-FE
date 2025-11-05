@@ -1,11 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Home, Network, List } from "lucide-react";
+import { Home, Network, List, Edit, X } from "lucide-react";
 import { useQuestionTreeContext } from "./QuestionTreeContext";
 
 export const FocusViewHeader = () => {
-  const { viewMode, setViewMode, goHome, currentPath } =
-    useQuestionTreeContext();
+  const {
+    viewMode,
+    setViewMode,
+    goHome,
+    currentPath,
+    modifyMode,
+    startModifyMode,
+    cancelModifyMode,
+  } = useQuestionTreeContext();
 
   if (viewMode === "graph") {
     return (
@@ -16,6 +23,21 @@ export const FocusViewHeader = () => {
             채팅으로 이동
           </Button>
           <h1 className="text-xl font-semibold">질문 그래프</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          {modifyMode === "IDLE" ? (
+            // 3a. 기본 모드일 때는 "수정" 버튼
+            <Button variant="outline" onClick={startModifyMode}>
+              <Edit className="h-4 w-4 mr-2" />
+              관계 수정
+            </Button>
+          ) : (
+            // 3b. 수정 모드일 때는 "취소" 버튼
+            <Button variant="destructive" onClick={cancelModifyMode}>
+              <X className="h-4 w-4 mr-2" />
+              수정 취소
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -30,7 +52,6 @@ export const FocusViewHeader = () => {
         <Button
           variant="outline"
           onClick={() => {
-            // refreshViewData();
             setViewMode("graph");
           }}
         >
