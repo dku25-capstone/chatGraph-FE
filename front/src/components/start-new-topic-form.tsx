@@ -15,31 +15,26 @@ import {
 
 export function StartNewTopicForm() {
   const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLogin,setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const router = useRouter();
-  
-  // 컴포넌트가 마운트될 때 로그인 상태를 확인합니다.
+
   useEffect(() => {
+    setHasMounted(true);
     const token = localStorage.getItem("token");
     if (token) {
       setIsLogin(true);
     }
-  }, []); // 빈 배열을 전달하여 한 번만 실행되도록 합니다.
-
+  }, []);
 
   const handleStartNewTopic = async () => {
     if (!prompt.trim()) return;
 
-    setIsLoading(true);
-    try {
-      const response = await askQuestion({ questionText: prompt });
-      router.push(`/${response.topic}`); // 동적 라우팅
-    } catch (error) {
-      console.error("Error starting new topic:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    const tempId = `temp-${Date.now()}`;
+    const timestamp = new Date().toISOString();
+    sessionStorage.setItem(tempId, JSON.stringify({ prompt, timestamp }));
+
+    router.push(`/${tempId}?optimistic=true`);
   };
 
   return (
@@ -64,29 +59,24 @@ export function StartNewTopicForm() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyPress={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && !isLoading) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     handleStartNewTopic();
                   }
                 }}
                 className="border-0 bg-transparent focus-visible:ring-0 text-lg py-3"
-                disabled={isLoading}
               />
             </div>
-            {isLogin ? (
+            {hasMounted && isLogin ? (
               <Button
                 onClick={handleStartNewTopic}
-                disabled={!prompt.trim() || isLoading}
+                disabled={!prompt.trim()}
                 size="lg"
                 className="flex-shrink-0"
               >
-                {isLoading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300" />
-                ) : (
-                  <ArrowUp className="h-5 w-5" />
-                )}
+                <ArrowUp className="h-5 w-5" />
               </Button>
-            ) : (
+            ) : hasMounted && !isLogin ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex-shrink-0">
@@ -99,6 +89,12 @@ export function StartNewTopicForm() {
                   <p>로그인이 필요합니다</p>
                 </TooltipContent>
               </Tooltip>
+            ) : (
+              <div className="flex-shrink-0">
+                <Button disabled size="lg" className="cursor-not-allowed">
+                  <ArrowUp className="h-5 w-5" />
+                </Button>
+              </div>
             )}
           </div>
         </div>

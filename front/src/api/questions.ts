@@ -34,7 +34,7 @@ export interface QuestionNode {
   parentId?: string;
 }
 
-interface TopicTreeResponse {
+export interface TopicTreeResponse {
   topic: string; // root node id
   nodes: {
     [id: string]: TopicNode | QuestionNode;

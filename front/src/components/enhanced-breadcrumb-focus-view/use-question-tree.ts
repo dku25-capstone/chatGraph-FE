@@ -224,9 +224,10 @@ export const useQuestionTree = (
 
   const handleSaveInPlaceEdit = useCallback(
     async (questionId: string, newText: string) => {
-      if (!viewData) return;
+      if (!viewData || !currentQuestion) return;
 
       const originalViewData = viewData;
+      const originalCurrentPath = currentPath;
 
       const updateNodeText = (node: ViewData): ViewData => {
         if (node.id === questionId) {
@@ -239,7 +240,12 @@ export const useQuestionTree = (
       };
 
       const newViewData = updateNodeText(viewData);
+      const newPath = findPathToNode(newViewData, currentQuestion.id);
+
       setViewData(newViewData);
+      if (newPath) {
+        setCurrentPath(newPath);
+      }
 
       try {
         await patchQuestion(questionId, { newNodeName: newText });
@@ -248,9 +254,10 @@ export const useQuestionTree = (
         console.error("Failed to save in-place edit:", error);
         toast.error("질문 수정에 실패했습니다.");
         setViewData(originalViewData); // Rollback on error
+        setCurrentPath(originalCurrentPath);
       }
     },
-    [viewData]
+    [viewData, currentPath, currentQuestion]
   );
 
   // 질문 삭제 함수
