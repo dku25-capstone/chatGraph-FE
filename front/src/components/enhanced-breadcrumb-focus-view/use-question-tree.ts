@@ -59,17 +59,16 @@ export const useQuestionTree = (
         currentTopicIdFromStore === topicId &&
         currentTopicNameFromStore !== prevViewData.questionText
       ) {
-        // 조건이 맞으면 새로운 상태 반환
-        return {
+        const newRoot = {
           ...prevViewData,
           questionText: currentTopicNameFromStore || "",
         };
+        setCurrentPath((prevPath) => [newRoot, ...prevPath.slice(1)]);
+        return newRoot;
       }
-      // 조건이 맞지 않으면 반드시 이전 상태를 그대로 반환
       return prevViewData;
     });
-    // useEffect는 오직 스토어의 값이 변경될 때만 로직을 다시 실행
-  }, [currentTopicNameFromStore, currentTopicIdFromStore, topicId]);
+  }, [currentTopicNameFromStore, currentTopicIdFromStore, topicId, setCurrentPath]);
 
   useEffect(() => {
     if (initialQuestionId && viewData) {
