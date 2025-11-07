@@ -1,45 +1,141 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { useSearchParams } from "next/navigation";
-import { TopicTreeResponse } from "@/lib/data-transformer"; // API 응답 타입
-import { getTopicById } from "@/api/questions"; // 특정 topicId에 해당하는 질문 트리 데이터를 가져오는 API 함수
-import { EnhancedBreadcrumbFocusView } from "@/components/enhanced-breadcrumb-focus-view"; // 질문-답변 트리를 브레드크럼 형식으로 시각화하는 메인 UI 컴포넌트
-import LoadingSpinner from "@/components/ui/loading-spinner"; // 로딩 스피너 컴포넌트 임포트
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { TopicTreeResponse, askQuestion, TopicNode } from "@/api/questions";
+import { getTopicById } from "@/api/questions";
+import { EnhancedBreadcrumbFocusView } from "@/components/enhanced-breadcrumb-focus-view";
+import LoadingSpinner from "@/components/ui/loading-spinner";
+import { useTopicStore } from "@/lib/topic-store";
 
-export default function ChatPage() {
-  const params = useParams(); // URL에서 파라미터(id) 가져옴
+function ChatPageContent() {
+  const params = useParams();
   const searchParams = useSearchParams();
-  const topicId = params.id as string; // 현재 토픽의 id를 문자열로 저장
-  const questionId = searchParams.get("question");
+  const router = useRouter();
 
-  // API에서 받은 전체 트리 데이터를 저장하는 상태
-  const [apiResponse, setApiResponse] = useState<TopicTreeResponse | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true); // 로딩 상태
+  const topicId = params.id as string;
+  const isOptimistic = searchParams.get("optimistic") === "true";
+  const questionIdFromSearch = searchParams.get("question");
 
-  const fetchData = useCallback(async () => {
-    if (topicId) {
-      try {
-        setLoading(true);
-        const response = await getTopicById(topicId);
-        setApiResponse(response); // 응답 데이터를 상태에 저장
-      } catch (error) {
-        console.error("Failed to fetch topic data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  }, [topicId]);
+  // --- 1. State를 'loading' 또는 'null'로 단순하게 초기화합니다 ---
+  const [apiResponse, setApiResponse] = useState<TopicTreeResponse | null>(null);
+  const [loading, setLoading] = useState(true); // 항상 true로 시작
+  const apiCallStarted = useRef(false);
+  // -----------------------------------------------------------
+
+  const { setPrefetchedResponse } = useTopicStore();
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    // --- 2. topicId가 확정될 때까지 아무것도 하지 않습니다 ---
+    if (!topicId) {
+      console.log("Waiting for topicId...");
+      return;
+    }
 
-  // 로딩중
+    console.log("--- useEffect triggered ---");
+    console.log(`topicId: ${topicId}, isOptimistic: ${isOptimistic}`);
 
+    // --- 3. 낙관적(Optimistic) 경로 ---
+    if (isOptimistic) {
+      console.log("-> Running OPTIMISTIC path");
+      if (apiCallStarted.current) {
+        console.log("-> API call already started, exiting.");
+        return;
+      }
+      apiCallStarted.current = true;
+
+      const optimisticDataString = sessionStorage.getItem(topicId);
+      if (optimisticDataString) {
+        // ... (기존 낙관적 로직 동일) ...
+        const { prompt, timestamp } = JSON.parse(optimisticDataString);
+        console.log("-> Found prompt in sessionStorage, creating fake response.");
+        const tempTopicId = topicId;
+        const fakeResponse: TopicTreeResponse = {
+          topic: tempTopicId,
+          nodes: {
+            [tempTopicId]: {
+              topicId: tempTopicId,
+              topicName: prompt,
+              createdAt: timestamp,
+              children: [`question-${tempTopicId}`],
+            },
+            [`question-${tempTopicId}`]: {
+              questionId: `question-${tempTopicId}`,
+              questionText: prompt,
+              level: 1,
+              answerId: `answer-${tempTopicId}`,
+              answerText: "",
+              createdAt: timestamp,
+              children: [],
+            },
+          },
+        };
+        setApiResponse(fakeResponse);
+        setLoading(false); // 로딩 종료
+
+        console.log("-> Calling askQuestion in background...");
+        askQuestion({ questionText: prompt })
+          .then(realResponse => {
+            console.log("-> askQuestion SUCCESS. Saving to store and replacing URL.");
+            const topicNode = realResponse.nodes[realResponse.topic] as TopicNode;
+            useTopicStore.getState().addTopic({
+              topicId: realResponse.topic,
+              topicName: topicNode.topicName,
+              createdAt: topicNode.createdAt,
+            });
+            setPrefetchedResponse(realResponse);
+            router.replace(`/${realResponse.topic}`);
+          })
+          .catch(error => {
+            console.error("Optimistic question asking failed:", error);
+            // TODO: 실패 처리 (예: 에러 페이지로 리디렉션 또는 UI 롤백)
+            // router.replace("/error");
+          });
+      } else {
+        console.log("-> Prompt NOT found in sessionStorage, redirecting to home.");
+        router.replace("/");
+      }
+    
+    // --- 4. 비-낙관적(Non-Optimistic) 경로 ---
+    } else {
+      console.log("-> Running NON-OPTIMISTIC path");
+
+      // --- 5. Prefetched 데이터가 있는지 확인 ---
+      const store = useTopicStore.getState();
+      const prefetched = store.prefetchedResponse;
+      const hasPrefetched = prefetched?.topic === topicId;
+
+      if (hasPrefetched) {
+        console.log("-> Running PREFETCHED path. Cleaning up store.");
+        setApiResponse(prefetched);
+        setLoading(false); // 로딩 종료
+        setPrefetchedResponse(null); // 스토어 비우기
+      
+      // --- 6. Prefetched 데이터가 없으면, 서버에서 직접 Fetch ---
+      } else {
+        console.log("-> Running NORMAL fetch path. Calling fetchData...");
+        
+        const fetchData = async () => {
+          try {
+            // setLoading(true); // 이미 true 상태임
+            const response = await getTopicById(topicId);
+            setApiResponse(response);
+          } catch (error) {
+            console.error("Failed to fetch topic data:", error);
+            setApiResponse(null);
+          } finally {
+            setLoading(false); // 로딩 종료
+          }
+        };
+
+        fetchData();
+      }
+    }
+    
+    // topicId나 isOptimistic 플래그가 변경될 때마다 이 로직을 다시 실행합니다.
+  }, [topicId, isOptimistic, router, setPrefetchedResponse]);
+
+  // --- 7. 렌더링 로직은 동일 ---
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -47,7 +143,7 @@ export default function ChatPage() {
       </div>
     );
   }
-  // 데이터 없을 경우 에러 표시
+
   if (!apiResponse) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -58,9 +154,16 @@ export default function ChatPage() {
 
   return (
     <EnhancedBreadcrumbFocusView
-      initialResponse={apiResponse} // 초기 질문 트리 데이터를 전달
-      initialQuestionId={questionId} // 검색 결과에서 선택된 질문 ID
-      // onQuestionAdded={fetchData}
+      initialResponse={apiResponse}
+      initialQuestionId={questionIdFromSearch}
     />
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><LoadingSpinner /></div>}>
+      <ChatPageContent />
+    </Suspense>
   );
 }

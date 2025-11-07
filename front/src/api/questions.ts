@@ -16,7 +16,7 @@ export interface QuestionAnswer {
   topicId: string; // Add topicId
 }
 
-interface TopicNode {
+export interface TopicNode {
   topicId: string;
   topicName: string;
   createdAt: string;
@@ -34,7 +34,7 @@ export interface QuestionNode {
   parentId?: string;
 }
 
-interface TopicTreeResponse {
+export interface TopicTreeResponse {
   topic: string; // root node id
   nodes: {
     [id: string]: TopicNode | QuestionNode;
