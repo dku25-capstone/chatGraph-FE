@@ -22,7 +22,6 @@ interface MessageBubbleProps {
   onToggleAnswer?: () => void;
   onEdit?: (newText: string) => void;
   onDelete?: () => void;
-  isLoading?: boolean; // 이 prop은 OptimisticAnswer 로직에서 직접 사용되진 않습니다.
 }
 
 export function MessageBubble({
@@ -34,7 +33,6 @@ export function MessageBubble({
   onToggleAnswer,
   onEdit,
   onDelete,
-  isLoading = false, // prop은 받지만, answer의 유무로 자동 처리됩니다.
 }: MessageBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(questionText);
@@ -104,7 +102,7 @@ export function MessageBubble({
               실제 문자열이 있으면 ReactMarkdown을 렌더링합니다.
               isNew prop은 일단 false로 전달합니다. (필요시 조정)
             */}
-            <OptimisticAnswer answer={answer} isNew={false} />
+            <OptimisticAnswer answer={answer} />
           </div>
         )}
         {/* --- 수정 완료 --- */}

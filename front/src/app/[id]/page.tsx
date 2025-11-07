@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { TopicTreeResponse, askQuestion } from "@/api/questions";
+import { TopicTreeResponse, askQuestion, TopicNode } from "@/api/questions";
 import { getTopicById } from "@/api/questions";
 import { EnhancedBreadcrumbFocusView } from "@/components/enhanced-breadcrumb-focus-view";
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -77,7 +77,7 @@ function ChatPageContent() {
         askQuestion({ questionText: prompt })
           .then(realResponse => {
             console.log("-> askQuestion SUCCESS. Saving to store and replacing URL.");
-            const topicNode = realResponse.nodes[realResponse.topic] as any;
+            const topicNode = realResponse.nodes[realResponse.topic] as TopicNode;
             useTopicStore.getState().addTopic({
               topicId: realResponse.topic,
               topicName: topicNode.topicName,

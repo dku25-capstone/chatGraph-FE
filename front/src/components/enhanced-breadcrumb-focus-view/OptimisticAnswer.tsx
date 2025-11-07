@@ -15,10 +15,9 @@ const loadingMessages = [
 
 interface OptimisticAnswerProps {
   answer: string | null | undefined;
-  isNew: boolean;
 }
 
-export const OptimisticAnswer = ({ answer, isNew }: OptimisticAnswerProps) => {
+export const OptimisticAnswer = ({ answer }: OptimisticAnswerProps) => {
   const [messageIndex, setMessageIndex] = useState(0);
 
   useEffect(() => {

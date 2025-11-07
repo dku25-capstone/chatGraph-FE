@@ -17,9 +17,8 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { ViewData } from "@/lib/data-transformer";
-import { Typewriter } from "../Typewriter";
-import { Input } from "../ui/input";
 import { OptimisticAnswer } from "./OptimisticAnswer";
+import { Input } from "../ui/input";
 
 interface SubQuestionListProps {
   questions: ViewData[];
@@ -136,7 +135,7 @@ export const SubQuestionList = ({
                         </div>
                         {expanded[child.id] && (
                           <div className="text-sm text-gray-600 mb-3 pl-10">
-                            <OptimisticAnswer answer={child.answerText} isNew={child.id.startsWith('temp-')} />
+                            <OptimisticAnswer answer={child.answerText} />
                           </div>
                         )}
                         <div className="flex items-center gap-2 pl-10">

@@ -11,10 +11,12 @@ interface TopicState {
   topics: TopicHistoryItem[];
   setTopics: (topics: TopicHistoryItem[]) => void;
   addTopic: (topic: TopicHistoryItem) => void;
+  updateTopic: (topicId: string, newName: string) => void;
+  removeTopic: (topicId: string) => void;
   fetchTopics: () => Promise<void>;
 }
 
-export const useTopicStore = create<TopicState>((set, get) => ({
+export const useTopicStore = create<TopicState>((set) => ({
   currentTopicId: null,
   currentTopicName: null,
   setTopic: (id, name) => set({ currentTopicId: id, currentTopicName: name }),

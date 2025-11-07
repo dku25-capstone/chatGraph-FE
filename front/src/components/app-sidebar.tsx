@@ -43,7 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
+import { TopicHistoryItem } from "@/api/topics-history";
 import { toast } from "sonner";
 import Image from "next/image";
 import { searchQuestions, QuestionNode } from "@/api/questions";

@@ -173,9 +173,10 @@ export const useQuestionTree = (
         parentQuestionId: parentId,
       });
 
-      const newQuestionId = Object.keys(response.nodes).find((id) =>
-        id.startsWith("question-") && response.nodes[id].questionText === optimisticPrompt
-      );
+      const newQuestionId = Object.keys(response.nodes).find((id) => {
+        const node = response.nodes[id];
+        return id.startsWith("question-") && "questionText" in node && node.questionText === optimisticPrompt;
+      });
 
       if (!newQuestionId) {
         throw new Error("New question not found in the API response.");
@@ -414,6 +415,7 @@ export const useQuestionTree = (
       handleAddQuestion,
       handleEditQuestion,
       handleSaveEdit,
+      handleSaveInPlaceEdit,
       handleDeleteQuestion,
       selectedNode,
       focusedNodeId,
