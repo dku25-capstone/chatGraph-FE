@@ -132,57 +132,93 @@ export const useQuestionTree = (
 
   const handleAddQuestion = useCallback(async () => {
     if (!prompt.trim() || !currentQuestion || !viewData) return;
+
+    const parentId = currentQuestion.id;
+    const tempId = `temp-question-${Date.now()}`;
+    const optimisticPrompt = prompt;
+
+    // 1. Create the optimistic node
+    const optimisticNode: ViewData = {
+      id: tempId,
+      questionText: optimisticPrompt,
+      answerText: "", // Empty answer for now
+      children: [],
+    };
+
+    // 2. Optimistically update the UI
+    const originalViewData = viewData;
+    const updateData = (node: ViewData): ViewData => {
+      if (node.id === parentId) {
+        return { ...node, children: [...node.children, optimisticNode] };
+      }
+      return { ...node, children: node.children.map(updateData) };
+    };
+    const newViewData = updateData(viewData);
+    setViewData(newViewData);
+
+    // 3. Optimistically update the path
+    const newPath = findPathToNode(newViewData, parentId);
+    if (newPath) {
+      setCurrentPath([...newPath, optimisticNode]);
+    }
+
+    // 4. Clear the prompt and set loading state
+    setPrompt("");
     setIsLoading(true);
 
     try {
-      const parentId = currentQuestion.id;
-
+      // 5. Make the API call in the background
       const response = await askQuestion({
-        questionText: prompt,
+        questionText: optimisticPrompt,
         parentQuestionId: parentId,
       });
 
-      // 백엔드가 생성한 새로운 질문 노드의 id 찾기
       const newQuestionId = Object.keys(response.nodes).find((id) =>
-        id.startsWith("question-")
+        id.startsWith("question-") && response.nodes[id].questionText === optimisticPrompt
       );
+
       if (!newQuestionId) {
         throw new Error("New question not found in the API response.");
       }
-      const newQuestionNode = response.nodes[newQuestionId] as QuestionNode; // 새 질문 노드를 변수에 저장
+      const newQuestionNode = response.nodes[newQuestionId] as QuestionNode;
 
-      // follow-up 질문을 즉시 UI에 반영하기 위한 낙관적 업데이트
-      const newViewDataNode: ViewData = {
-        id: newQuestionNode.questionId,
-        questionText: newQuestionNode.questionText,
-        answerText: newQuestionNode.answerText,
-        children: [],
-      };
-
-      // 전체 viewData를 업데이트
-      const updateData = (node: ViewData): ViewData => {
-        if (node.id === parentId) {
-          return { ...node, children: [...node.children, newViewDataNode] };
+      // 6. Update the optimistic node with the real data
+      const finalUpdate = (node: ViewData): ViewData => {
+        if (node.id === tempId) {
+          return {
+            ...node,
+            id: newQuestionNode.questionId,
+            answerText: newQuestionNode.answerText,
+            // Children will be updated if the response contains them
+          };
         }
-        return { ...node, children: node.children.map(updateData) };
+        return { ...node, children: node.children.map(finalUpdate) };
       };
-      const newViewData = updateData(viewData);
-      setViewData(newViewData);
 
-      // 새로운 경로를 찾아서 업데이트
-      const newPath = findPathToNode(newViewData, parentId);
-      if (newPath) {
-        setCurrentPath([...newPath, newViewDataNode]);
-      }
+      setViewData((currentViewData) => {
+        if (!currentViewData) return null;
+        const finalViewData = finalUpdate(currentViewData);
+        
+        // Update path with the real ID
+        const finalPath = findPathToNode(finalViewData, newQuestionNode.questionId);
+        if (finalPath) {
+          setCurrentPath(finalPath);
+        }
+        
+        return finalViewData;
+      });
 
-      console.log("New question added:", newQuestionNode);
     } catch (error) {
       console.error("Failed to add question:", error);
+      toast.error("질문 추가에 실패했습니다. 이전 상태로 되돌립니다.");
+      // Rollback on error
+      setViewData(originalViewData);
+      const oldPath = findPathToNode(originalViewData, parentId);
+      if(oldPath) setCurrentPath(oldPath);
     } finally {
-      setPrompt("");
       setIsLoading(false);
     }
-  }, [prompt, currentQuestion, viewData]);
+  }, [prompt, currentQuestion, viewData, setViewData, setCurrentPath, setPrompt, setIsLoading]);
 
   // 질문 수정 함수(현재 UI만 변경)
   const handleEditQuestion = useCallback((question: ViewData) => {
