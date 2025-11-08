@@ -19,6 +19,7 @@ import {
 import { ViewData } from "@/lib/data-transformer";
 import { OptimisticAnswer } from "./OptimisticAnswer";
 import { Input } from "../ui/input";
+import { Separator } from "@/components/ui/separator";
 
 interface SubQuestionListProps {
   questions: ViewData[];
@@ -135,6 +136,7 @@ export const SubQuestionList = ({
                         </div>
                         {expanded[child.id] && (
                           <div className="text-sm text-gray-600 mb-3 pl-10">
+                            <Separator className="my-4" />
                             <OptimisticAnswer answer={child.answerText} />
                           </div>
                         )}
