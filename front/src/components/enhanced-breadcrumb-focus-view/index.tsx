@@ -26,6 +26,7 @@ import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
 import { EditQuestionDialog } from "./edit-question-dialog";
+import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 import QuestionDetailModal from "../QuestionDetailModal";
 import { findPathToNode } from "@/lib/utils";
 import { AlertDialog } from "@radix-ui/react-alert-dialog";
@@ -68,8 +69,8 @@ EnhancedBreadcrumbFocusViewProps) {
     navigateToQuestion,
     addToPath,
     handleGraphNodeClick,
-    handleEditQuestion,
     handleSaveEdit,
+    handleSaveInPlaceEdit,
     handleDeleteQuestion,
     selectedNode,
     setSelectedNode,
@@ -81,6 +82,18 @@ EnhancedBreadcrumbFocusViewProps) {
   } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
+  const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
+
+  const requestDelete = (questionId: string) => {
+    setQuestionToDelete(questionId);
+  };
+
+  const onConfirmDelete = () => {
+    if (questionToDelete) {
+      handleDeleteQuestion(questionToDelete);
+      setQuestionToDelete(null);
+    }
+  };
 
   useEffect(() => {
     if (viewMode === "chat" && focusedNodeId) {
@@ -172,11 +185,14 @@ EnhancedBreadcrumbFocusViewProps) {
               <MessageBubble
                 questionText={currentQuestion.questionText}
                 answer={currentQuestion.answerText}
+                isUser={true} // Assuming the focused question is always by the user
                 isToggleable={true}
                 isAnswerVisible={isMainAnswerVisible}
                 onToggleAnswer={() =>
                   setIsMainAnswerVisible(!isMainAnswerVisible)
                 }
+                onEdit={(newText) => handleSaveInPlaceEdit(currentQuestion.id, newText)}
+                onDelete={() => requestDelete(currentQuestion.id)}
               />
               <Separator className="my-0" />
             </>
@@ -192,8 +208,8 @@ EnhancedBreadcrumbFocusViewProps) {
                 key={currentQuestion.id} // Add key prop here
                 questions={currentQuestion.children}
                 addToPath={addToPath}
-                handleEditQuestion={handleEditQuestion}
-                handleDeleteQuestion={handleDeleteQuestion}
+                onSave={handleSaveInPlaceEdit}
+                onDelete={requestDelete}
                 showTitle={currentPath.length > 1}
               />
             )}
@@ -209,6 +225,12 @@ EnhancedBreadcrumbFocusViewProps) {
         setNewQuestion={setNewQuestion}
         handleSaveEdit={handleSaveEdit}
         setEditingQuestion={setEditingQuestion}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={questionToDelete !== null}
+        onClose={() => setQuestionToDelete(null)}
+        onConfirm={onConfirmDelete}
       />
     </div>
   );

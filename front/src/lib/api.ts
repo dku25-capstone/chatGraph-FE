@@ -3,7 +3,7 @@ import axios from "axios";
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   withCredentials: true,
-  timeout: 15000, // 5초후 실패 처리
+  timeout: 30000, // 10초후 실패 처리
 });
 
 api.interceptors.request.use((config) => {

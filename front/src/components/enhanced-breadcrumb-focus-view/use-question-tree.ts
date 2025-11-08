@@ -75,17 +75,16 @@ export const useQuestionTree = (
         currentTopicIdFromStore === topicId &&
         currentTopicNameFromStore !== prevViewData.questionText
       ) {
-        // 조건이 맞으면 새로운 상태 반환
-        return {
+        const newRoot = {
           ...prevViewData,
           questionText: currentTopicNameFromStore || "",
         };
+        setCurrentPath((prevPath) => [newRoot, ...prevPath.slice(1)]);
+        return newRoot;
       }
-      // 조건이 맞지 않으면 반드시 이전 상태를 그대로 반환
       return prevViewData;
     });
-    // useEffect는 오직 스토어의 값이 변경될 때만 로직을 다시 실행
-  }, [currentTopicNameFromStore, currentTopicIdFromStore, topicId]);
+  }, [currentTopicNameFromStore, currentTopicIdFromStore, topicId, setCurrentPath]);
 
   useEffect(() => {
     if (initialQuestionId && viewData) {
@@ -231,57 +230,94 @@ export const useQuestionTree = (
 
   const handleAddQuestion = useCallback(async () => {
     if (!prompt.trim() || !currentQuestion || !viewData) return;
+
+    const parentId = currentQuestion.id;
+    const tempId = `temp-question-${Date.now()}`;
+    const optimisticPrompt = prompt;
+
+    // 1. Create the optimistic node
+    const optimisticNode: ViewData = {
+      id: tempId,
+      questionText: optimisticPrompt,
+      answerText: "", // Empty answer for now
+      children: [],
+    };
+
+    // 2. Optimistically update the UI
+    const originalViewData = viewData;
+    const updateData = (node: ViewData): ViewData => {
+      if (node.id === parentId) {
+        return { ...node, children: [...node.children, optimisticNode] };
+      }
+      return { ...node, children: node.children.map(updateData) };
+    };
+    const newViewData = updateData(viewData);
+    setViewData(newViewData);
+
+    // 3. Optimistically update the path
+    const newPath = findPathToNode(newViewData, parentId);
+    if (newPath) {
+      setCurrentPath([...newPath, optimisticNode]);
+    }
+
+    // 4. Clear the prompt and set loading state
+    setPrompt("");
     setIsLoading(true);
 
     try {
-      const parentId = currentQuestion.id;
-
+      // 5. Make the API call in the background
       const response = await askQuestion({
-        questionText: prompt,
+        questionText: optimisticPrompt,
         parentQuestionId: parentId,
       });
 
-      // 백엔드가 생성한 새로운 질문 노드의 id 찾기
-      const newQuestionId = Object.keys(response.nodes).find((id) =>
-        id.startsWith("question-")
-      );
+      const newQuestionId = Object.keys(response.nodes).find((id) => {
+        const node = response.nodes[id];
+        return id.startsWith("question-") && "questionText" in node && node.questionText === optimisticPrompt;
+      });
+
       if (!newQuestionId) {
         throw new Error("New question not found in the API response.");
       }
-      const newQuestionNode = response.nodes[newQuestionId] as QuestionNode; // 새 질문 노드를 변수에 저장
+      const newQuestionNode = response.nodes[newQuestionId] as QuestionNode;
 
-      // follow-up 질문을 즉시 UI에 반영하기 위한 낙관적 업데이트
-      const newViewDataNode: ViewData = {
-        id: newQuestionNode.questionId,
-        questionText: newQuestionNode.questionText,
-        answerText: newQuestionNode.answerText,
-        children: [],
-      };
-
-      // 전체 viewData를 업데이트
-      const updateData = (node: ViewData): ViewData => {
-        if (node.id === parentId) {
-          return { ...node, children: [...node.children, newViewDataNode] };
+      // 6. Update the optimistic node with the real data
+      const finalUpdate = (node: ViewData): ViewData => {
+        if (node.id === tempId) {
+          return {
+            ...node,
+            id: newQuestionNode.questionId,
+            answerText: newQuestionNode.answerText,
+            // Children will be updated if the response contains them
+          };
         }
-        return { ...node, children: node.children.map(updateData) };
+        return { ...node, children: node.children.map(finalUpdate) };
       };
-      const newViewData = updateData(viewData);
-      setViewData(newViewData);
 
-      // 새로운 경로를 찾아서 업데이트
-      const newPath = findPathToNode(newViewData, parentId);
-      if (newPath) {
-        setCurrentPath([...newPath, newViewDataNode]);
-      }
+      setViewData((currentViewData) => {
+        if (!currentViewData) return null;
+        const finalViewData = finalUpdate(currentViewData);
+        
+        // Update path with the real ID
+        const finalPath = findPathToNode(finalViewData, newQuestionNode.questionId);
+        if (finalPath) {
+          setCurrentPath(finalPath);
+        }
+        
+        return finalViewData;
+      });
 
-      console.log("New question added:", newQuestionNode);
     } catch (error) {
       console.error("Failed to add question:", error);
+      toast.error("질문 추가에 실패했습니다. 이전 상태로 되돌립니다.");
+      // Rollback on error
+      setViewData(originalViewData);
+      const oldPath = findPathToNode(originalViewData, parentId);
+      if(oldPath) setCurrentPath(oldPath);
     } finally {
-      setPrompt("");
       setIsLoading(false);
     }
-  }, [prompt, currentQuestion, viewData]);
+  }, [prompt, currentQuestion, viewData, setViewData, setCurrentPath, setPrompt, setIsLoading]);
 
   // 질문 수정 함수(현재 UI만 변경)
   const handleEditQuestion = useCallback((question: ViewData) => {
@@ -320,6 +356,44 @@ export const useQuestionTree = (
       setEditingQuestion(null);
     }
   }, [editingQuestion, newQuestion, viewData]);
+
+  const handleSaveInPlaceEdit = useCallback(
+    async (questionId: string, newText: string) => {
+      if (!viewData || !currentQuestion) return;
+
+      const originalViewData = viewData;
+      const originalCurrentPath = currentPath;
+
+      const updateNodeText = (node: ViewData): ViewData => {
+        if (node.id === questionId) {
+          return { ...node, questionText: newText };
+        }
+        return {
+          ...node,
+          children: node.children.map(updateNodeText),
+        };
+      };
+
+      const newViewData = updateNodeText(viewData);
+      const newPath = findPathToNode(newViewData, currentQuestion.id);
+
+      setViewData(newViewData);
+      if (newPath) {
+        setCurrentPath(newPath);
+      }
+
+      try {
+        await patchQuestion(questionId, { newNodeName: newText });
+        toast.success("질문이 성공적으로 수정되었습니다.");
+      } catch (error) {
+        console.error("Failed to save in-place edit:", error);
+        toast.error("질문 수정에 실패했습니다.");
+        setViewData(originalViewData); // Rollback on error
+        setCurrentPath(originalCurrentPath);
+      }
+    },
+    [viewData, currentPath, currentQuestion]
+  );
 
   // 질문 삭제 함수
   // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
@@ -415,6 +489,7 @@ export const useQuestionTree = (
       handleAddQuestion,
       handleEditQuestion,
       handleSaveEdit,
+      handleSaveInPlaceEdit,
       handleDeleteQuestion,
       selectedNode,
       setSelectedNode,
@@ -442,6 +517,7 @@ export const useQuestionTree = (
       handleAddQuestion,
       handleEditQuestion,
       handleSaveEdit,
+      handleSaveInPlaceEdit,
       handleDeleteQuestion,
       selectedNode,
       focusedNodeId,

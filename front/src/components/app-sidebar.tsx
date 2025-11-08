@@ -43,7 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
+import { TopicHistoryItem } from "@/api/topics-history";
 import { toast } from "sonner";
 import Image from "next/image";
 import { searchQuestions, QuestionNode } from "@/api/questions";
@@ -60,8 +60,8 @@ interface SearchResultNode extends QuestionNode {
   const { state, toggleSidebar } = useSidebar();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [topics, setTopics] = useState<TopicHistoryItem[]>([]);
-  const [loadingTopics, setLoadingTopics] = useState(true);
+  const { topics, fetchTopics, updateTopic, removeTopic, setTopics } = useTopicStore(); // Zustand 스토어 사용
+  const [loadingTopics, setLoadingTopics] = useState(true); // 로딩 상태는 로컬로 유지
   const [isAuthLoading, setIsAuthLoading] = useState(true); // 인증 로딩 상태 추가
   const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(
     null
@@ -104,23 +104,6 @@ interface SearchResultNode extends QuestionNode {
     }
   };
 
-  const fetchTopics = async () => {
-    try {
-      setLoadingTopics(true);
-      const fetchedTopics = await getTopicsHistory();
-      const sortedTopics = fetchedTopics.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      setTopics(sortedTopics);
-    } catch (err) {
-      console.error("Failed to fetch topics:", err);
-      toast.error("토픽 목록을 불러오지 못했습니다.");
-    } finally {
-      setLoadingTopics(false);
-    }
-  };
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
@@ -129,27 +112,24 @@ interface SearchResultNode extends QuestionNode {
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchTopics();
+      setLoadingTopics(true);
+      fetchTopics().finally(() => setLoadingTopics(false));
     } else {
-      setTopics([]);
+      setTopics([]); // 로그아웃 시 스토어 비우기
       setLoadingTopics(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, fetchTopics, setTopics]);
 
   const handleEdit = async () => {
     if (!editingTopic || !newName.trim()) return;
 
-    const originalTopics = topics;
-    const newTopics = topics.map((t) =>
-      t.topicId === editingTopic.topicId ? { ...t, topicName: newName } : t
-    );
-    setTopics(newTopics);
+    const originalTopics = useTopicStore.getState().topics;
+    updateTopic(editingTopic.topicId, newName);
     setEditingTopic(null);
 
     try {
       await patchTopic(editingTopic.topicId, { newNodeName: newName });
       toast.success("토픽명이 수정되었습니다.");
-      // Update the global topic store if this is the currently active topic
       if (useTopicStore.getState().currentTopicId === editingTopic.topicId) {
         useTopicStore.getState().setTopic(editingTopic.topicId, newName);
       }
@@ -163,9 +143,8 @@ interface SearchResultNode extends QuestionNode {
   const handleDelete = async (topicId: string) => {
     const promise = () =>
       new Promise(async (resolve, reject) => {
-        const originalTopics = topics;
-        const newTopics = topics.filter((t) => t.topicId !== topicId);
-        setTopics(newTopics);
+        const originalTopics = useTopicStore.getState().topics;
+        removeTopic(topicId);
 
         try {
           await deleteTopic(topicId);
