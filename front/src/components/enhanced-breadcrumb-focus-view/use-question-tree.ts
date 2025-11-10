@@ -5,6 +5,9 @@ import {
   QuestionNode,
   deleteQuestion,
   patchQuestion,
+  type CopyQuestionRequest,
+  copyQuestions,
+  deleteQuestionBatch,
 } from "@/api/questions";
 import {
   ViewData,
@@ -14,6 +17,21 @@ import {
 import { findPathToNode } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTopicStore } from "@/lib/topic-store";
+
+/* ViewData 노드 받아서, 그 노드를 포함한 모든 하위 노드의 ID를
+ 재귀적으로 수집하여 1차원 배열로 반환하는 함수 */
+function getAllIdsFromNode(node: ViewData): string[] {
+  // 현재 노드의 ID
+  const currentId = node.id;
+
+  // 모든 자식 노드에 대해 함수 재귀 호출, 결과 ID 배열을 1차원 배열로 합침
+  const descendantsIds = node.children.flatMap((child) =>
+    getAllIdsFromNode(child)
+  );
+
+  // 현재 ID와 모든 하위 ID를 합쳐서 반환
+  return [currentId, ...descendantsIds];
+}
 
 // 상태 및 동작 커스텀 훅
 export const useQuestionTree = (
@@ -26,6 +44,15 @@ export const useQuestionTree = (
     [initialResponse]
   );
 
+  // 수정 모드가 가질 수 있는 3가지 상태
+  type ModifyMode = "IDLE" | "SELECT_CHILD" | "SELECT_PARENT";
+
+  // '부모 변경 확인' 모달에 필요한 데이터 타입 정의
+  interface ReparentRequest {
+    movedNode: ViewData;
+    newParentNode: ViewData;
+  }
+
   const [viewData, setViewData] = useState<ViewData | null>(initialViewData);
   const [currentPath, setCurrentPath] = useState<ViewData[]>([initialViewData]); // 현재 선택된 질문까지의 경로
   const [viewMode, setViewMode] = useState<"chat" | "graph">("chat");
@@ -36,6 +63,13 @@ export const useQuestionTree = (
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<ViewData | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
+  // 현재 모드를 저장할 상태
+  const [modifyMode, setModifyMode] = useState<ModifyMode>("IDLE"); // 기본값은 기본상태
+  // 이동시킬 노드를 저장할 상태
+  const [nodeToMove, setNodeToMove] = useState<ViewData | null>(null);
+  // "부모 변경 확인" 모달을 위한 상태
+  const [reparentRequest, setReparentRequest] =
+    useState<ReparentRequest | null>(null);
 
   useEffect(() => {
     if (viewData && topicId) {
@@ -68,7 +102,12 @@ export const useQuestionTree = (
       }
       return prevViewData;
     });
-  }, [currentTopicNameFromStore, currentTopicIdFromStore, topicId, setCurrentPath]);
+  }, [
+    currentTopicNameFromStore,
+    currentTopicIdFromStore,
+    topicId,
+    setCurrentPath,
+  ]);
 
   useEffect(() => {
     if (initialQuestionId && viewData) {
@@ -110,8 +149,91 @@ export const useQuestionTree = (
     }
   }, [viewData]);
 
-  const handleGraphNodeClick = useCallback((node: ViewData) => {
-    setSelectedNode(node);
+  const handleGraphNodeClick = useCallback(
+    (clickedNode: ViewData) => {
+      // 현재 수정 모드에 따라 분기
+      switch (modifyMode) {
+        // 기본모드(IDLE)이면 노드 상세보기
+        case "IDLE":
+          setSelectedNode(clickedNode);
+          break;
+
+        // 이동할 노드 선택
+        case "SELECT_CHILD":
+          setNodeToMove(clickedNode); // 이동할 노드 상태에 저장
+          setModifyMode("SELECT_PARENT"); // 다음 단계(부모 선택)으로 변경
+          toast.info(
+            `'${clickedNode.questionText}' 선택됨. 새 부모 노드를 클릭하세요.`
+          );
+          break;
+
+        // 새 부모 노드 선택
+        case "SELECT_PARENT":
+          const newParentNode = clickedNode; // 선택한 노드가 새 부모 노드
+
+          // 이동할 노드의 현재 부모를 찾음
+          const pathToMovedNode = findPathToNode(viewData!, nodeToMove!.id);
+
+          const currentParent =
+            pathToMovedNode && pathToMovedNode.length > 1
+              ? pathToMovedNode[pathToMovedNode.length - 2]
+              : null;
+
+          // 유효성 검사
+
+          // 자기 자신을 부모로 선택한 경우
+          if (nodeToMove && newParentNode.id === nodeToMove.id) {
+            toast.error("자기 자신을 부모로 선택할 수 없습니다.");
+            return;
+          }
+
+          // 이미 현재 부모인 노드를 부모로 선택하는 경우
+          if (currentParent && newParentNode.id === currentParent.id) {
+            toast.error("이미 현재 부모 노드입니다.");
+            return;
+          }
+
+          // 자신의 자식/손자 노드를 부모로 선택한 경우
+          const path = findPathToNode(viewData!, newParentNode.id);
+          if (path && path.some((p) => p.id === nodeToMove!.id)) {
+            toast.error("선택한 노드의 하위노드로는 이동할 수 없습니다.");
+            return;
+          }
+
+          toast.info(`'${newParentNode.questionText} 선택됨.'`);
+          // 유효성 통과
+          setReparentRequest({
+            movedNode: nodeToMove!,
+            newParentNode: newParentNode,
+          });
+          break;
+      }
+    },
+    [
+      modifyMode,
+      nodeToMove,
+      viewData,
+      setModifyMode,
+      setNodeToMove,
+      setSelectedNode,
+      setReparentRequest,
+    ]
+  );
+
+  // 수정 버튼을 눌렀을 때 실행할 함수
+  const startModifyMode = useCallback(() => {
+    // 모드 설정
+    setModifyMode("SELECT_CHILD");
+    // '수정할 노드를 선택하세요' 안내 토스트 띄움
+    toast.info("관계를 수정할 노드를 선택하세요.");
+  }, [setModifyMode]);
+
+  // 취소 버튼을 눌렀을 때 실행할 함수
+  const cancelModifyMode = useCallback(() => {
+    setModifyMode("IDLE"); // 다시 기본값으로 변경
+    setNodeToMove(null); // 선택했던 노드가 있으면 초기화
+    setReparentRequest(null); // 모달 닫기
+    toast.dismiss(); // 띄워둔 토스트 알림 닫기
   }, []);
 
   const refreshViewData = useCallback(async () => {
@@ -128,6 +250,45 @@ export const useQuestionTree = (
       setIsLoading(false);
     }
   }, [topicId]);
+
+  // 확인 모달에서 '이동' 눌렀을 때 실행할 함수
+  const confirmReparenting = useCallback(async () => {
+    if (!reparentRequest) return;
+    const { movedNode, newParentNode } = reparentRequest;
+
+    toast.loading("노드 트리를 이동하는 중...");
+
+    try {
+      // movedNode와 그 모든 하위 노드의 ID를 수집
+      const allIdsToCopy = getAllIdsFromNode(movedNode);
+
+      console.log("복사할 전체 노드 ID 목록: ", allIdsToCopy);
+
+      const requestData: CopyQuestionRequest = {
+        // 전체 ID 배열을담아서 전달
+        sourceQuestionIds: allIdsToCopy,
+        // newParentNode의 ID를 새 부모 ID로 전달
+        targetParentId: newParentNode.id,
+      };
+
+      // copyQuestions api 호출
+      await copyQuestions(requestData);
+
+      // 원본 삭제
+      await deleteQuestionBatch(allIdsToCopy);
+
+      // 데이터가 변경되었으므로 그래프 전체 새로고침
+      await refreshViewData();
+
+      toast.success("노드 이동이 완료되었습니다.");
+    } catch (error) {
+      console.error("노드 복사 실패:", error);
+      toast.error("노드 복사가 실패했습니다.");
+    } finally {
+      // 모든 상태를 초기화하고 모달 닫음
+      cancelModifyMode();
+    }
+  }, [reparentRequest, refreshViewData, cancelModifyMode]);
 
   const handleAddQuestion = useCallback(async () => {
     if (!prompt.trim() || !currentQuestion || !viewData) return;
@@ -174,7 +335,11 @@ export const useQuestionTree = (
 
       const newQuestionId = Object.keys(response.nodes).find((id) => {
         const node = response.nodes[id];
-        return id.startsWith("question-") && "questionText" in node && node.questionText === optimisticPrompt;
+        return (
+          id.startsWith("question-") &&
+          "questionText" in node &&
+          node.questionText === optimisticPrompt
+        );
       });
 
       if (!newQuestionId) {
@@ -198,27 +363,37 @@ export const useQuestionTree = (
       setViewData((currentViewData) => {
         if (!currentViewData) return null;
         const finalViewData = finalUpdate(currentViewData);
-        
+
         // Update path with the real ID
-        const finalPath = findPathToNode(finalViewData, newQuestionNode.questionId);
+        const finalPath = findPathToNode(
+          finalViewData,
+          newQuestionNode.questionId
+        );
         if (finalPath) {
           setCurrentPath(finalPath);
         }
-        
+
         return finalViewData;
       });
-
     } catch (error) {
       console.error("Failed to add question:", error);
       toast.error("질문 추가에 실패했습니다. 이전 상태로 되돌립니다.");
       // Rollback on error
       setViewData(originalViewData);
       const oldPath = findPathToNode(originalViewData, parentId);
-      if(oldPath) setCurrentPath(oldPath);
+      if (oldPath) setCurrentPath(oldPath);
     } finally {
       setIsLoading(false);
     }
-  }, [prompt, currentQuestion, viewData, setViewData, setCurrentPath, setPrompt, setIsLoading]);
+  }, [
+    prompt,
+    currentQuestion,
+    viewData,
+    setViewData,
+    setCurrentPath,
+    setPrompt,
+    setIsLoading,
+  ]);
 
   // 질문 수정 함수(현재 UI만 변경)
   const handleEditQuestion = useCallback((question: ViewData) => {
@@ -397,6 +572,11 @@ export const useQuestionTree = (
       focusedNodeId,
       setFocusedNodeId,
       refreshViewData,
+      modifyMode,
+      startModifyMode,
+      cancelModifyMode,
+      reparentRequest,
+      confirmReparenting,
     }),
     [
       viewData,
@@ -419,6 +599,11 @@ export const useQuestionTree = (
       selectedNode,
       focusedNodeId,
       refreshViewData,
+      modifyMode,
+      startModifyMode,
+      cancelModifyMode,
+      reparentRequest,
+      confirmReparenting,
     ]
   );
 };

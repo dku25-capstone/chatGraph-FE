@@ -8,6 +8,16 @@ import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
 import { TopicTreeResponse } from "@/lib/data-transformer";
 
 import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+import {
   QuestionTreeProvider,
   useQuestionTreeContext,
 } from "./QuestionTreeContext";
@@ -19,6 +29,7 @@ import { EditQuestionDialog } from "./edit-question-dialog";
 import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
 import QuestionDetailModal from "../QuestionDetailModal";
 import { findPathToNode } from "@/lib/utils";
+import { AlertDialog } from "@radix-ui/react-alert-dialog";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -65,6 +76,9 @@ EnhancedBreadcrumbFocusViewProps) {
     setSelectedNode,
     focusedNodeId,
     setFocusedNodeId,
+    confirmReparenting,
+    cancelModifyMode,
+    reparentRequest,
   } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
@@ -119,6 +133,41 @@ EnhancedBreadcrumbFocusViewProps) {
               setViewMode("chat");
             }}
           />
+          <AlertDialog
+            open={!!reparentRequest}
+            onOpenChange={(open) => {
+              // 모달의 X 버튼이나 바깥쪽을 클릭해서 닫을 때
+              if (!open) {
+                cancelModifyMode();
+              }
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>노드 이동 확인</AlertDialogTitle>
+                <AlertDialogDescription>
+                  <b>{reparentRequest?.movedNode.questionText}</b> 노드를
+                  <br />
+                  <b>{reparentRequest?.newParentNode.questionText}</b>의 하위
+                  노드로 이동하시겠습니까?
+                  <br />
+                  <span className="text-xs text-muted-foreground">
+                    (이 노드에 연결된 모든 하위 줄기가 함께 이동합니다.)
+                  </span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                {/* "취소" 버튼에 cancelModifyMode 함수 연결 */}
+                <AlertDialogCancel onClick={cancelModifyMode}>
+                  취소
+                </AlertDialogCancel>
+                {/* "이동" 버튼에 confirmReparenting 함수 연결 */}
+                <AlertDialogAction onClick={confirmReparenting}>
+                  이동
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     );
@@ -144,7 +193,9 @@ EnhancedBreadcrumbFocusViewProps) {
                 onToggleAnswer={() =>
                   setIsMainAnswerVisible(!isMainAnswerVisible)
                 }
-                onEdit={(newText) => handleSaveInPlaceEdit(currentQuestion.id, newText)}
+                onEdit={(newText) =>
+                  handleSaveInPlaceEdit(currentQuestion.id, newText)
+                }
                 onDelete={() => requestDelete(currentQuestion.id)}
               />
               <Separator className="my-0" />
