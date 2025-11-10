@@ -16,6 +16,12 @@ export function InteractiveD3Graph({
   const containerRef = useRef<HTMLDivElement>(null);
   const { currentPath } = useQuestionTreeContext();
 
+  // onNodeClick prop이 바뀔때마다 최신버전 함수 저장
+  const onNodeClickRef = useRef(onNodeClick);
+  useEffect(() => {
+    onNodeClickRef.current = onNodeClick;
+  }, [onNodeClick]);
+
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
@@ -183,7 +189,7 @@ export function InteractiveD3Graph({
           .attr("r", baseRadius);
       })
       .on("click", function (event, d) {
-        onNodeClick(d.data);
+        onNodeClickRef.current(d.data);
 
         // 현재 클릭한 노드
         console.log("클릭된 노드:", d.data.questionText);
@@ -269,7 +275,7 @@ export function InteractiveD3Graph({
 
     // Cleanup function
     return () => {};
-  }, [data, onNodeClick, currentPath]);
+  }, [data, currentPath]);
 
   return (
     <div
