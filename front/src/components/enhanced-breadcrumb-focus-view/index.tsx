@@ -76,7 +76,7 @@ EnhancedBreadcrumbFocusViewProps) {
     setSelectedNode,
     focusedNodeId,
     setFocusedNodeId,
-    // startModifyMode,
+    confirmReparenting,
     cancelModifyMode,
     reparentRequest,
   } = useQuestionTreeContext();
@@ -162,7 +162,9 @@ EnhancedBreadcrumbFocusViewProps) {
                   취소
                 </AlertDialogCancel>
                 {/* "이동" 버튼에 confirmReparenting 함수 연결 */}
-                <AlertDialogAction>이동</AlertDialogAction>
+                <AlertDialogAction onClick={confirmReparenting}>
+                  이동
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -191,7 +193,9 @@ EnhancedBreadcrumbFocusViewProps) {
                 onToggleAnswer={() =>
                   setIsMainAnswerVisible(!isMainAnswerVisible)
                 }
-                onEdit={(newText) => handleSaveInPlaceEdit(currentQuestion.id, newText)}
+                onEdit={(newText) =>
+                  handleSaveInPlaceEdit(currentQuestion.id, newText)
+                }
                 onDelete={() => requestDelete(currentQuestion.id)}
               />
               <Separator className="my-0" />

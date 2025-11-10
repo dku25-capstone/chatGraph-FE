@@ -41,23 +41,25 @@ export interface TopicTreeResponse {
   };
 }
 
-
 // 질문 전송 (새 질문 or 후속 질문)
-export const askQuestion = async (data: QuestionRequest): Promise<TopicTreeResponse> => {
+export const askQuestion = async (
+  data: QuestionRequest
+): Promise<TopicTreeResponse> => {
   const response = await api.post<TopicTreeResponse>("/api/questions", data);
   return response.data;
 };
 
 // 토픽 ID로 질문 트리 불러오기 후 평탄화
-export const getTopicById = async (topicId: string): Promise<TopicTreeResponse> => {
-  const response = await api.get<TopicTreeResponse>(`/api/topics/${topicId}/tree`);
+export const getTopicById = async (
+  topicId: string
+): Promise<TopicTreeResponse> => {
+  const response = await api.get<TopicTreeResponse>(
+    `/api/topics/${topicId}/tree`
+  );
   return response.data;
 };
 
-
-
-
-//질문 수정 
+//질문 수정
 export interface PatchQuestionRequest {
   newNodeName: string;
 }
@@ -78,11 +80,10 @@ export const patchQuestion = async (
   return response.data;
 };
 
-
 //질문 삭제
-export const deleteQuestion = async (questionId:string): Promise<void> =>{
+export const deleteQuestion = async (questionId: string): Promise<void> => {
   await api.delete(`/api/questions/${questionId}`);
-}
+};
 
 //질문 검색
 export interface SearchQuestionsResponse {
@@ -94,8 +95,34 @@ export interface SearchQuestionsResponse {
 export const searchQuestions = async (
   keyword: string
 ): Promise<SearchQuestionsResponse> => {
-  const response = await api.get<SearchQuestionsResponse>("/api/questions/search", {
-    params: { keyword },
-  });
+  const response = await api.get<SearchQuestionsResponse>(
+    "/api/questions/search",
+    {
+      params: { keyword },
+    }
+  );
+  return response.data;
+};
+
+// 관계 수정(복사)
+// Request body 타입 정의
+export interface CopyQuestionRequest {
+  sourceQuestionIds: string[]; // 복사할 노드 ID 배열
+  targetParentId: string; // 붙여넣을 새 부모 노드 ID
+}
+
+// Response body 타입 정의
+export interface CopyQuestionResponse {
+  newQuestionIds: string[]; // 복사되어 새로 생성된 노드들의 ID 배열
+}
+
+// 선택한 질문 노드 및 하위 노드를 특정 질문 노드의 하위로 복사
+export const copyQuestions = async (
+  data: CopyQuestionRequest
+): Promise<CopyQuestionResponse> => {
+  const response = await api.post<CopyQuestionResponse>(
+    "/api/questions/partial-copy",
+    data
+  );
   return response.data;
 };
