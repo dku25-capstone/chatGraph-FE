@@ -7,6 +7,7 @@ import {
   patchQuestion,
   type CopyQuestionRequest,
   copyQuestions,
+  deleteQuestionBatch,
 } from "@/api/questions";
 import {
   ViewData,
@@ -255,7 +256,7 @@ export const useQuestionTree = (
     if (!reparentRequest) return;
     const { movedNode, newParentNode } = reparentRequest;
 
-    toast.loading("노드 트리를 복사하는 중...");
+    toast.loading("노드 트리를 이동하는 중...");
 
     try {
       // movedNode와 그 모든 하위 노드의 ID를 수집
@@ -273,10 +274,13 @@ export const useQuestionTree = (
       // copyQuestions api 호출
       await copyQuestions(requestData);
 
+      // 원본 삭제
+      await deleteQuestionBatch(allIdsToCopy);
+
       // 데이터가 변경되었으므로 그래프 전체 새로고침
       await refreshViewData();
 
-      toast.success("노드 복사가 완료되었습니다.");
+      toast.success("노드 이동이 완료되었습니다.");
     } catch (error) {
       console.error("노드 복사 실패:", error);
       toast.error("노드 복사가 실패했습니다.");

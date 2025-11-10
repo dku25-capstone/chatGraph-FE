@@ -126,3 +126,13 @@ export const copyQuestions = async (
   );
   return response.data;
 };
+
+// 복수 노드 삭제
+// Request body에 ID 배열을 담아 여러 개의 질문 노드 한번에 삭제
+export const deleteQuestionBatch = async (
+  questionIds: string[]
+): Promise<void> => {
+  await api.delete("/api/questions/batch", {
+    data: questionIds,
+  });
+};
