@@ -21,7 +21,7 @@ export default function QuestionDetailModal({
 }: QuestionDetailModalProps) {
   return (
     <Dialog open={!!question} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-4xl">
+      <DialogContent className="w-full sm:max-w-6xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">
             {question?.questionText}
@@ -30,7 +30,7 @@ export default function QuestionDetailModal({
         <div className="prose max-h-[60vh] overflow-y-auto">
           <ReactMarkdown>{question?.answerText || ""}</ReactMarkdown>
         </div>
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-4 gap-1.5">
           <Button onClick={onJumpToChat}>질문 페이지로 이동</Button>
           <Button onClick={onClose} variant="secondary">
             닫기
