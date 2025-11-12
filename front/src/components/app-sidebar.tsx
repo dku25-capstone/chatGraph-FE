@@ -56,11 +56,12 @@ interface SearchResultNode extends QuestionNode {
   topicId: string;
 }
 
-  export function AppSidebar() {
+export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { topics, fetchTopics, updateTopic, removeTopic, setTopics } = useTopicStore(); // Zustand 스토어 사용
+  const { topics, fetchTopics, updateTopic, removeTopic, setTopics } =
+    useTopicStore(); // Zustand 스토어 사용
   const [loadingTopics, setLoadingTopics] = useState(true); // 로딩 상태는 로컬로 유지
   const [isAuthLoading, setIsAuthLoading] = useState(true); // 인증 로딩 상태 추가
   const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(
@@ -175,6 +176,7 @@ interface SearchResultNode extends QuestionNode {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     setIsLoggedIn(false);
     toast.success("로그아웃 되었습니다.");
   };
@@ -194,7 +196,9 @@ interface SearchResultNode extends QuestionNode {
                   className="h-6 w-6"
                 />
                 <Link href="/">
-                  <span className="font-semibold cursor-pointer">ChatGraph</span>
+                  <span className="font-semibold cursor-pointer">
+                    ChatGraph
+                  </span>
                 </Link>
               </>
             ) : (
@@ -376,7 +380,9 @@ interface SearchResultNode extends QuestionNode {
                     <SidebarMenuButton>
                       <User2 />
                       {state === "expanded" && <span>Username</span>}
-                      {state === "expanded" && <ChevronUp className="ml-auto" />}
+                      {state === "expanded" && (
+                        <ChevronUp className="ml-auto" />
+                      )}
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
