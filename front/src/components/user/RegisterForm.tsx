@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useRouter } from "next/navigation";
-import { signup } from '@/api/user';
+import { signup } from "@/api/user";
 import { toast } from "sonner";
 import { Loader2, CheckCircle } from "lucide-react";
 
@@ -27,7 +27,8 @@ export default function SignupForm() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (passwordError || matchError || !email || !password || !passwordCheck) { // 유효성 검사 추가
+    if (passwordError || matchError || !email || !password || !passwordCheck) {
+      // 유효성 검사 추가
       return;
     }
 
@@ -36,7 +37,7 @@ export default function SignupForm() {
     try {
       const res = await signup({ email, password });
 
-      if (res.status === 200) {
+      if (res.status === 201) {
         toast.success("회원가입이 완료되었습니다", {
           icon: <CheckCircle className="h-5 w-5" />,
         });
@@ -61,7 +62,10 @@ export default function SignupForm() {
         </p>
         <form onSubmit={handleSignup} className="w-full space-y-6">
           <div>
-            <Label htmlFor="email" className="block text-left text-base font-medium text-gray-700 mb-2">
+            <Label
+              htmlFor="email"
+              className="block text-left text-base font-medium text-gray-700 mb-2"
+            >
               이메일
             </Label>
             <Input
@@ -75,7 +79,10 @@ export default function SignupForm() {
           </div>
 
           <div>
-            <Label htmlFor="password" className="block text-left text-base font-medium text-gray-700 mb-2">
+            <Label
+              htmlFor="password"
+              className="block text-left text-base font-medium text-gray-700 mb-2"
+            >
               비밀번호
             </Label>
             <Input
@@ -114,7 +121,10 @@ export default function SignupForm() {
           </div>
 
           <div>
-            <Label htmlFor="passwordCheck" className="block text-left text-base font-medium text-gray-700 mb-2">
+            <Label
+              htmlFor="passwordCheck"
+              className="block text-left text-base font-medium text-gray-700 mb-2"
+            >
               비밀번호 확인
             </Label>
             <Input
@@ -148,13 +158,16 @@ export default function SignupForm() {
           <Button
             type="submit"
             className="w-full py-3 text-lg font-semibold bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
-            disabled={isLoading || !!passwordError || !!matchError || !email || !password || !passwordCheck} // 버튼 비활성화 조건 추가
+            disabled={
+              isLoading ||
+              !!passwordError ||
+              !!matchError ||
+              !email ||
+              !password ||
+              !passwordCheck
+            } // 버튼 비활성화 조건 추가
           >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              ""
-            )}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : ""}
             회원가입
           </Button>
         </form>
