@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import Link from 'next/link';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { login } from '@/api/user';
+import Link from "next/link";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { login } from "@/api/user";
 import { toast } from "sonner"; // sonner import 추가
 import { Loader2, CheckCircle } from "lucide-react"; // 로딩 아이콘 추가
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false); // 로딩 상태 추가
 
   const router = useRouter();
@@ -26,14 +26,17 @@ export default function LoginForm() {
       const res = await login({ email, password });
 
       if (res.status === 200) {
-        const token = res.data.token;
-        if (token) {
-          localStorage.setItem('token', token);
-          toast.success("로그인 성공!", { // sonner 성공 메시지
-            icon: <CheckCircle className="h-5 w-5" />,
-          });
-          router.push('/'); // /로 페이지 이동
-        }
+        const accessToken = res.data.token;
+        const refreshToken = res.data.refreshToken;
+        // if (token) {
+        localStorage.setItem("token", accessToken);
+        localStorage.setItem("refreshToken", refreshToken);
+        toast.success("로그인 성공!", {
+          // sonner 성공 메시지
+          icon: <CheckCircle className="h-5 w-5" />,
+        });
+        router.push("/"); // /로 페이지 이동
+        // }
       } else {
         toast.error("로그인 실패"); // sonner 실패 메시지
       }
@@ -54,7 +57,10 @@ export default function LoginForm() {
         </p>
         <form className="w-full space-y-6" onSubmit={handelLogin}>
           <div>
-            <Label htmlFor="email" className="block text-left text-base font-medium text-gray-700 mb-2">
+            <Label
+              htmlFor="email"
+              className="block text-left text-base font-medium text-gray-700 mb-2"
+            >
               이메일
             </Label>
             <Input
@@ -67,7 +73,10 @@ export default function LoginForm() {
             />
           </div>
           <div>
-            <Label htmlFor="password" className="block text-left text-base font-medium text-gray-700 mb-2">
+            <Label
+              htmlFor="password"
+              className="block text-left text-base font-medium text-gray-700 mb-2"
+            >
               비밀번호
             </Label>
             <Input
@@ -84,11 +93,7 @@ export default function LoginForm() {
             className="w-full py-3 text-lg font-semibold bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
             disabled={isLoading} // 로딩 중 버튼 비활성화
           >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              ""
-            )}
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : ""}
             로그인
           </Button>
           <div className="flex justify-between text-base text-gray-600 mt-4">
@@ -104,4 +109,3 @@ export default function LoginForm() {
     </div>
   );
 }
-
