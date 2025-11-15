@@ -45,12 +45,24 @@ export const useQuestionTree = (
   );
 
   // 수정 모드가 가질 수 있는 3가지 상태
-  type ModifyMode = "IDLE" | "SELECT_CHILD" | "SELECT_PARENT";
+  type ModifyMode =
+    | "IDLE"
+    | "SELECT_CHILD"
+    | "SELECT_PARENT"
+    | "SELECT_NODE_TO_MOVE_OTHER";
 
   // '부모 변경 확인' 모달에 필요한 데이터 타입 정의
   interface ReparentRequest {
     movedNode: ViewData;
     newParentNode: ViewData;
+  }
+
+  // 다른 토픽으로 이동 최종 확인 모달에 필요한 데이터 타입
+  interface MoveToTopicRequest {
+    movedNode: ViewData;
+    targetTopic: { id: string; name: string };
+    targetParentId: string;
+    targetParentNode: { id: string; name: string };
   }
 
   const [viewData, setViewData] = useState<ViewData | null>(initialViewData);
@@ -70,6 +82,12 @@ export const useQuestionTree = (
   // "부모 변경 확인" 모달을 위한 상태
   const [reparentRequest, setReparentRequest] =
     useState<ReparentRequest | null>(null);
+  // 다른 토픽으로 이동 관련 상태
+  const [isTopicSelectorOpen, setIsTopicSelectorOpen] = useState(false);
+  const [moveToTopicRequest, setMoveTopicRequest] =
+    useState<MoveToTopicRequest | null>(null);
+
+  // const router = useRouter();
 
   useEffect(() => {
     if (viewData && topicId) {
@@ -207,6 +225,15 @@ export const useQuestionTree = (
             newParentNode: newParentNode,
           });
           break;
+
+        case "SELECT_NODE_TO_MOVE_OTHER":
+          setNodeToMove(clickedNode); // 이동할 노드 저장
+          setIsTopicSelectorOpen(true); // '토픽 선택 모달' 띄우기
+          setModifyMode("IDLE"); // 임시로 IDLE로 돌리고, "토픽 선택 모달" 띄움
+          toast.info(
+            `'${clickedNode.questionText}' 선택됨. 이동할 토픽을 선택하세요.`
+          );
+          break;
       }
     },
     [
@@ -219,6 +246,13 @@ export const useQuestionTree = (
       setReparentRequest,
     ]
   );
+
+  // 다른 토픽으로 이동 버튼을 눌렀을 때 실행할 함수
+  const moveToOtherMode = useCallback(() => {
+    // 모드 설정
+    setModifyMode("SELECT_NODE_TO_MOVE_OTHER");
+    toast.info("다른 토픽으로 이동할 질문을 선택하세요.");
+  }, []);
 
   // 수정 버튼을 눌렀을 때 실행할 함수
   const startModifyMode = useCallback(() => {
@@ -233,6 +267,8 @@ export const useQuestionTree = (
     setModifyMode("IDLE"); // 다시 기본값으로 변경
     setNodeToMove(null); // 선택했던 노드가 있으면 초기화
     setReparentRequest(null); // 모달 닫기
+    setIsTopicSelectorOpen(false);
+    setMoveTopicRequest(null);
     toast.dismiss(); // 띄워둔 토스트 알림 닫기
   }, []);
 
@@ -289,6 +325,38 @@ export const useQuestionTree = (
       cancelModifyMode();
     }
   }, [reparentRequest, refreshViewData, cancelModifyMode]);
+
+  // "다른 토픽 이동"을 최종 실행하는 함수(모달의 '이동' 버튼)
+  const confirmMoveToOtherTopic = useCallback(async () => {
+    if (!moveToTopicRequest) return;
+
+    const { movedNode, targetParentId } = moveToTopicRequest;
+
+    toast.loading("다른 토픽으로 노드를 이동하는 중...");
+
+    try {
+      // 복사할 ID 전체 수집
+      const allIdsToCopy = getAllIdsFromNode(movedNode);
+
+      // 복사
+      await copyQuestions({
+        sourceQuestionIds: allIdsToCopy,
+        targetParentId: targetParentId,
+      });
+
+      // 원본 삭제
+      await deleteQuestionBatch(allIdsToCopy);
+
+      // 갱신
+      await refreshViewData(); // 현재 토픽 갱신
+      toast.success("노드 이동이 완료되었습니다.");
+    } catch (error) {
+      console.error("다른 토픽으로 이동 실패:", error);
+      toast.error("노드 이동에 실패했습니다.");
+    } finally {
+      cancelModifyMode();
+    }
+  }, [moveToTopicRequest, refreshViewData, cancelModifyMode]);
 
   const handleAddQuestion = useCallback(async () => {
     if (!prompt.trim() || !currentQuestion || !viewData) return;
@@ -577,6 +645,13 @@ export const useQuestionTree = (
       cancelModifyMode,
       reparentRequest,
       confirmReparenting,
+      moveToOtherMode,
+      confirmMoveToOtherTopic,
+      nodeToMove,
+      isTopicSelectorOpen,
+      setIsTopicSelectorOpen,
+      moveToTopicRequest,
+      setMoveTopicRequest,
     }),
     [
       viewData,
@@ -604,6 +679,13 @@ export const useQuestionTree = (
       cancelModifyMode,
       reparentRequest,
       confirmReparenting,
+      moveToOtherMode,
+      confirmMoveToOtherTopic,
+      nodeToMove,
+      isTopicSelectorOpen,
+      setIsTopicSelectorOpen,
+      moveToTopicRequest,
+      setMoveTopicRequest,
     ]
   );
 };

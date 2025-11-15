@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageBubble } from "@/components/message-bubble";
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
 import { TopicTreeResponse } from "@/lib/data-transformer";
+import { TopicSelectorModal } from "./TopicSelectorModal";
 
 import {
   AlertDialogAction,
@@ -33,14 +34,14 @@ import { AlertDialog } from "@radix-ui/react-alert-dialog";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
-  initialQuestionId?: string | null; // Make it optional and nullable
+  initialQuestionId?: string | null;
 }
 
 export function EnhancedBreadcrumbFocusView({
   initialResponse,
   initialQuestionId,
 }: EnhancedBreadcrumbFocusViewProps) {
-  const topicId = initialResponse.topic; // Extract topicId here
+  const topicId = initialResponse.topic;
   return (
     <QuestionTreeProvider
       initialResponse={initialResponse}
@@ -52,8 +53,7 @@ export function EnhancedBreadcrumbFocusView({
   );
 }
 
-function EnhancedBreadcrumbFocusViewContent({}: // initialResponse,
-EnhancedBreadcrumbFocusViewProps) {
+function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps) {
   const {
     viewData,
     currentPath,
@@ -79,6 +79,12 @@ EnhancedBreadcrumbFocusViewProps) {
     confirmReparenting,
     cancelModifyMode,
     reparentRequest,
+    nodeToMove,
+    isTopicSelectorOpen,
+    setIsTopicSelectorOpen,
+    moveToTopicRequest,
+    setMoveTopicRequest,
+    confirmMoveToOtherTopic,
   } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
@@ -121,7 +127,7 @@ EnhancedBreadcrumbFocusViewProps) {
         <FocusViewHeader />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
-            data={viewData} // Use viewData directly
+            data={viewData}
             onNodeClick={handleGraphNodeClick}
           />
           <QuestionDetailModal
@@ -168,6 +174,59 @@ EnhancedBreadcrumbFocusViewProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          {/* 토픽 선택 모달 렌더링 */}
+          <TopicSelectorModal
+            isOpen={isTopicSelectorOpen}
+            onClose={cancelModifyMode}
+            currentNodeToMove={nodeToMove}
+            onNodeSelected={(targetTopic, targetParentNode) => {
+              // 토픽 선택 모달이 성공적으로 부모 노드를 선택했을때
+              setIsTopicSelectorOpen(false); // 토픽 선택 모달 닫기
+              setMoveTopicRequest({
+                // 최종 확인 모달 띄우기
+                movedNode: nodeToMove!,
+                targetTopic: {
+                  id: targetTopic.topicId,
+                  name: targetTopic.topicName,
+                },
+                targetParentId: targetParentNode.id,
+                targetParentNode: {
+                  id: targetParentNode.id,
+                  name: targetParentNode.name,
+                },
+              });
+            }}
+          />
+
+          {/* 다른 토픽으로 이동 최종 확인 모달 */}
+          <AlertDialog
+            open={!!moveToTopicRequest}
+            onOpenChange={(open) => {
+              if (!open) setMoveTopicRequest(null);
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>다른 토픽으로 이동 확인</AlertDialogTitle>
+                <AlertDialogDescription>
+                  <b>{moveToTopicRequest?.movedNode.questionText}</b> 질문
+                  줄기를
+                  <br />
+                  <b>{moveToTopicRequest?.targetParentNode.name}</b> 하위로
+                  이동하시겠습니까?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setMoveTopicRequest(null)}>
+                  취소
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={confirmMoveToOtherTopic}>
+                  이동
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     );
@@ -187,7 +246,7 @@ EnhancedBreadcrumbFocusViewProps) {
               <MessageBubble
                 questionText={currentQuestion.questionText}
                 answer={currentQuestion.answerText}
-                isUser={true} // Assuming the focused question is always by the user
+                isUser={true}
                 isToggleable={true}
                 isAnswerVisible={isMainAnswerVisible}
                 onToggleAnswer={() =>
@@ -209,7 +268,7 @@ EnhancedBreadcrumbFocusViewProps) {
           <div className="max-w-4xl mx-auto">
             {currentQuestion.children.length > 0 && (
               <SubQuestionList
-                key={currentQuestion.id} // Add key prop here
+                key={currentQuestion.id}
                 questions={currentQuestion.children}
                 addToPath={addToPath}
                 onSave={handleSaveInPlaceEdit}
