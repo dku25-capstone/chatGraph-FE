@@ -12,6 +12,7 @@ export const FocusViewHeader = () => {
     modifyMode,
     startModifyMode,
     cancelModifyMode,
+    moveToOtherMode,
   } = useQuestionTreeContext();
 
   if (viewMode === "graph") {
@@ -26,11 +27,20 @@ export const FocusViewHeader = () => {
         </div>
         <div className="flex items-center gap-2">
           {modifyMode === "IDLE" ? (
-            // 3a. 기본 모드일 때는 "수정" 버튼
-            <Button variant="outline" onClick={startModifyMode}>
-              <Edit className="h-4 w-4 mr-2" />
-              관계 수정
-            </Button>
+            <>
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />새 토픽으로 분리
+              </Button>
+              <Button variant="outline" onClick={moveToOtherMode}>
+                <Edit className="h-4 w-4 mr-2" />
+                다른 토픽으로 이동
+              </Button>
+              {/* 3a. 기본 모드일 때는 "수정" 버튼 */}
+              <Button variant="outline" onClick={startModifyMode}>
+                <Edit className="h-4 w-4 mr-2" />
+                관계 수정
+              </Button>
+            </>
           ) : (
             // 3b. 수정 모드일 때는 "취소" 버튼
             <Button variant="destructive" onClick={cancelModifyMode}>
