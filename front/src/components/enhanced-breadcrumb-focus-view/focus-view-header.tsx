@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Home, Network, List, Edit, X } from "lucide-react";
+import { Network, List, Edit, X } from "lucide-react";
 import { useQuestionTreeContext } from "./QuestionTreeContext";
 
 export const FocusViewHeader = () => {
   const {
     viewMode,
     setViewMode,
-    goHome,
+
     currentPath,
     modifyMode,
     startModifyMode,
@@ -55,10 +55,7 @@ export const FocusViewHeader = () => {
 
   return (
     <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={goHome}>
-          <Home className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center gap-4 ml-12 md:ml-0">
         <Button
           variant="outline"
           onClick={() => {
