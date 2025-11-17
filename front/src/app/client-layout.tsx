@@ -16,7 +16,7 @@ function MainContent({ children }: { children: ReactNode }) {
   return (
     <div className="flex w-full h-screen">
       {showSidebar && <AppSidebar />}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-w-0">
         {showSidebar && isMobile && (
           <Button
             variant="ghost"
