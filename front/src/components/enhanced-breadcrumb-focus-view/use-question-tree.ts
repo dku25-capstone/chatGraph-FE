@@ -539,6 +539,8 @@ export const useQuestionTree = (
     [viewData, currentPath, currentQuestion]
   );
 
+  const { fetchTopics } = useTopicStore();
+
   // 분리 확인 모달에서 확인을 눌렀을때 실행
   const confirmSplitTopic = useCallback(async () => {
     if (!splitRequest) return;
@@ -559,6 +561,7 @@ export const useQuestionTree = (
 
       // 원본 삭제
       await deleteQuestionBatch(allIdsToMove);
+      await fetchTopics();
       toast.success("새 토픽으로 분리가 완료되었습니다!");
 
       // 새 토픽 페이지로 이동
@@ -569,7 +572,7 @@ export const useQuestionTree = (
     } finally {
       cancelModifyMode();
     }
-  }, [splitRequest, router, cancelModifyMode]);
+  }, [splitRequest, router, cancelModifyMode, fetchTopics]);
 
   // 질문 삭제 함수
   // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
@@ -585,17 +588,28 @@ export const useQuestionTree = (
       const newViewData = JSON.parse(JSON.stringify(viewData));
 
       // 2. 새로운 트리에서 삭제할 노드의 부모 경로 찾기
-      const parentId = (findPathToNode(newViewData, questionId) || []).slice(-2, -1)[0]?.id;
-      const parentPath = parentId ? findPathToNode(newViewData, parentId) : null;
+      const parentId = (findPathToNode(newViewData, questionId) || []).slice(
+        -2,
+        -1
+      )[0]?.id;
+      const parentPath = parentId
+        ? findPathToNode(newViewData, parentId)
+        : null;
 
       // 루트 노드의 직계 자식을 삭제하는 경우 처리
       if (!parentPath) {
-        const nodeToDeleteIndex = newViewData.children.findIndex((c: ViewData) => c.id === questionId);
+        const nodeToDeleteIndex = newViewData.children.findIndex(
+          (c: ViewData) => c.id === questionId
+        );
         if (nodeToDeleteIndex !== -1) {
           const nodeToDelete = newViewData.children[nodeToDeleteIndex];
           // 자식 승계 로직: 삭제할 노드의 자식들을 부모(여기서는 루트)의 자식으로 추가
-          newViewData.children.splice(nodeToDeleteIndex, 1, ...nodeToDelete.children);
-          
+          newViewData.children.splice(
+            nodeToDeleteIndex,
+            1,
+            ...nodeToDelete.children
+          );
+
           // 상태 업데이트: viewData를 새 트리로, 경로는 루트로 설정
           setViewData(newViewData);
           setCurrentPath([newViewData]);
@@ -603,8 +617,10 @@ export const useQuestionTree = (
       } else {
         // 일반적인 자식 노드를 삭제하는 경우
         const parentNode = parentPath[parentPath.length - 1];
-        const nodeToDeleteIndex = parentNode.children.findIndex((c: ViewData) => c.id === questionId);
-        
+        const nodeToDeleteIndex = parentNode.children.findIndex(
+          (c: ViewData) => c.id === questionId
+        );
+
         if (nodeToDeleteIndex === -1) return;
 
         const nodeToDelete = parentNode.children[nodeToDeleteIndex];
@@ -612,7 +628,7 @@ export const useQuestionTree = (
 
         // 3. 자식 승계 및 노드 삭제 실행
         parentNode.children.splice(nodeToDeleteIndex, 1, ...childrenToReparent);
-        
+
         // 4. 화면 이동을 위한 새로운 경로 계산
         let newCurrentPath;
         if (currentQuestion.id === questionId) {
@@ -621,9 +637,11 @@ export const useQuestionTree = (
         } else {
           // 현재 질문의 자식 노드를 삭제했다면, 현재 경로는 유지하되,
           // 데이터가 변경되었으므로 findPathToNode로 경로를 다시 찾아 동기화
-          newCurrentPath = findPathToNode(newViewData, currentQuestion.id) || [newViewData];
+          newCurrentPath = findPathToNode(newViewData, currentQuestion.id) || [
+            newViewData,
+          ];
         }
-        
+
         // 5. viewData와 currentPath 상태를 원자적으로 업데이트하여 UI 동기화
         setViewData(newViewData);
         setCurrentPath(newCurrentPath);
