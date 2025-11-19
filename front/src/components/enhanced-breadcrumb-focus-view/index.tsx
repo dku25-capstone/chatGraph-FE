@@ -85,6 +85,9 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
     moveToTopicRequest,
     setMoveTopicRequest,
     confirmMoveToOtherTopic,
+    splitRequest,
+    // setSplitRequest,
+    confirmSplitTopic,
   } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
@@ -158,6 +161,38 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                 {/* "이동" 버튼에 confirmReparenting 함수 연결 */}
                 <AlertDialogAction onClick={confirmReparenting}>
                   이동
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* ✅ 2. [추가] "새 토픽 분리" 확인 모달 */}
+          <AlertDialog
+            open={!!splitRequest}
+            onOpenChange={(open) => {
+              if (!open) cancelModifyMode(); // 닫으면 취소 처리
+            }}
+          >
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>새 토픽으로 분리</AlertDialogTitle>
+                <AlertDialogDescription>
+                  <b>{splitRequest?.nodeToSplit.questionText}</b> 질문과
+                  <br />그 하위 줄기 전체를 <b>새로운 토픽</b>으로
+                  분리하시겠습니까?
+                  <br />
+                  <span className="text-xs text-muted-foreground">
+                    (현재 토픽에서는 해당 줄기가 삭제되고, 새 토픽 페이지로
+                    이동합니다.)
+                  </span>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={cancelModifyMode}>
+                  취소
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={confirmSplitTopic}>
+                  분리하기
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
