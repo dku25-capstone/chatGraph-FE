@@ -70,8 +70,11 @@ export const useQuestionTree = (
   const [viewMode, setViewMode] = useState<"chat" | "graph">("chat");
   const [prompt, setPrompt] = useState(""); // follow-up 입력값
   const [isLoading, setIsLoading] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<ViewData | null>(null);
-  const [newQuestion, setNewQuestion] = useState("");
+  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+  // 모달 방식에 사용되던 아래 상태들(editingQuestion, newQuestion)은 인라인 방식으로 변경되면서 삭제됨.
+  // const [editingQuestion, setEditingQuestion] = useState<ViewData | null>(null);
+  // const [newQuestion, setNewQuestion] = useState("");
+  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<ViewData | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
@@ -144,6 +147,11 @@ export const useQuestionTree = (
       }
     }
   }, [viewMode, viewData, currentPath.length, setCurrentPath]);
+
+  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+  // 브레드크럼 이동 시 모달 데이터 동기화를 위해 사용했던 useEffect는
+  // 모달 방식이 삭제됨에 따라 함께 삭제됨.
+  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
 
   const currentQuestion = useMemo(
     () => (currentPath.length > 0 ? currentPath[currentPath.length - 1] : null),
@@ -463,44 +471,11 @@ export const useQuestionTree = (
     setIsLoading,
   ]);
 
-  // 질문 수정 함수(현재 UI만 변경)
-  const handleEditQuestion = useCallback((question: ViewData) => {
-    setEditingQuestion(question);
-    setNewQuestion(question.questionText);
-  }, []);
+  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+  // 모달 방식에 사용되던 handleEditQuestion, handleSaveEdit 함수는 삭제됨.
+  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
 
-  // 질문 저장 함수
-  // 현재 트리 상태 (currentPath 또는 TopicTreeResponse)에서 editingQuestion.id에 해당하는 노드를 찾아 질문/답변을 변경하는 코드가 아직 구현되지 않음.
-  const handleSaveEdit = useCallback(async () => {
-    if (!editingQuestion) return;
-    const originalViewData = viewData;
-
-    const updatedViewDataFn = (node: ViewData): ViewData => {
-      if (node.id === editingQuestion.id) {
-        return { ...node, questionText: newQuestion };
-      }
-      return {
-        ...node,
-        children: node.children.map((child) => updatedViewDataFn(child)),
-      };
-    };
-
-    if (viewData) {
-      setViewData(updatedViewDataFn(viewData));
-    }
-
-    try {
-      await patchQuestion(editingQuestion.id, { newNodeName: newQuestion });
-      toast.success("질문이 성공적으로 수정되었습니다.");
-    } catch (error) {
-      console.error("Failed to save edit:", error);
-      toast.error("질문 수정에 실패했습니다.");
-      setViewData(originalViewData);
-    } finally {
-      setEditingQuestion(null);
-    }
-  }, [editingQuestion, newQuestion, viewData]);
-
+  // 인라인 수정을 위한 저장 함수. MessageBubble과 SubQuestionList에서 사용됨.
   const handleSaveInPlaceEdit = useCallback(
     async (questionId: string, newText: string) => {
       if (!viewData || !currentQuestion) return;
@@ -543,73 +518,73 @@ export const useQuestionTree = (
   // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
   const handleDeleteQuestion = useCallback(
     async (questionId: string) => {
+      // 롤백을 위해 원본 상태 저장
       const originalViewData = viewData;
       const originalCurrentPath = currentPath;
 
-      let newViewData: ViewData | null = null;
-      let newCurrentPath: ViewData[] = [];
+      if (!viewData || !currentQuestion) return;
 
-      // Optimistically update the UI
-      const deleteNode = (node: ViewData): ViewData | null => {
-        if (!node) return null;
-        if (node.id === questionId) {
-          return null; // This node is deleted
-        }
-        const newChildren = node.children
-          .map((child) => deleteNode(child))
-          .filter((child) => child !== null) as ViewData[];
-        return { ...node, children: newChildren };
-      };
+      // 1. 안전한 조작을 위해 데이터의 깊은 복사본 생성
+      const newViewData = JSON.parse(JSON.stringify(viewData));
 
-      if (viewData) {
-        newViewData = deleteNode(viewData);
-        if (newViewData) {
+      // 2. 새로운 트리에서 삭제할 노드의 부모 경로 찾기
+      const parentId = (findPathToNode(newViewData, questionId) || []).slice(-2, -1)[0]?.id;
+      const parentPath = parentId ? findPathToNode(newViewData, parentId) : null;
+
+      // 루트 노드의 직계 자식을 삭제하는 경우 처리
+      if (!parentPath) {
+        const nodeToDeleteIndex = newViewData.children.findIndex((c: ViewData) => c.id === questionId);
+        if (nodeToDeleteIndex !== -1) {
+          const nodeToDelete = newViewData.children[nodeToDeleteIndex];
+          // 자식 승계 로직: 삭제할 노드의 자식들을 부모(여기서는 루트)의 자식으로 추가
+          newViewData.children.splice(nodeToDeleteIndex, 1, ...nodeToDelete.children);
+          
+          // 상태 업데이트: viewData를 새 트리로, 경로는 루트로 설정
           setViewData(newViewData);
-
-          // Determine the new currentPath
-          const deletedIsCurrent =
-            currentQuestion && currentQuestion.id === questionId;
-          if (deletedIsCurrent) {
-            // If the current question is deleted, go up to its parent
-            newCurrentPath = currentPath.slice(0, currentPath.length - 1);
-          } else {
-            // Otherwise, try to find the path to the current question in the new tree
-            // This handles cases where a sibling or child of currentQuestion was deleted
-            if (currentQuestion) {
-              const path = findPathToNode(newViewData, currentQuestion.id);
-              if (path) {
-                newCurrentPath = path;
-              } else {
-                // If currentQuestion is no longer found (e.g., its parent was deleted),
-                // revert to root or handle appropriately. For now, revert to root.
-                newCurrentPath = [newViewData];
-              }
-            } else {
-              // No current question, just set to root
-              newCurrentPath = [newViewData];
-            }
-          }
-          setCurrentPath(newCurrentPath);
-        } else {
-          // If the root node is deleted (unlikely for questions), handle appropriately
-          setViewData(null);
-          setCurrentPath([]);
+          setCurrentPath([newViewData]);
         }
+      } else {
+        // 일반적인 자식 노드를 삭제하는 경우
+        const parentNode = parentPath[parentPath.length - 1];
+        const nodeToDeleteIndex = parentNode.children.findIndex((c: ViewData) => c.id === questionId);
+        
+        if (nodeToDeleteIndex === -1) return;
+
+        const nodeToDelete = parentNode.children[nodeToDeleteIndex];
+        const childrenToReparent = nodeToDelete.children;
+
+        // 3. 자식 승계 및 노드 삭제 실행
+        parentNode.children.splice(nodeToDeleteIndex, 1, ...childrenToReparent);
+        
+        // 4. 화면 이동을 위한 새로운 경로 계산
+        let newCurrentPath;
+        if (currentQuestion.id === questionId) {
+          // 현재 보고 있는 질문을 삭제했다면, 계산된 부모 경로로 이동
+          newCurrentPath = parentPath;
+        } else {
+          // 현재 질문의 자식 노드를 삭제했다면, 현재 경로는 유지하되,
+          // 데이터가 변경되었으므로 findPathToNode로 경로를 다시 찾아 동기화
+          newCurrentPath = findPathToNode(newViewData, currentQuestion.id) || [newViewData];
+        }
+        
+        // 5. viewData와 currentPath 상태를 원자적으로 업데이트하여 UI 동기화
+        setViewData(newViewData);
+        setCurrentPath(newCurrentPath);
       }
 
+      // 6. 백엔드 API 호출 및 실패 시 롤백
       try {
         await deleteQuestion(questionId);
         toast.success("질문이 성공적으로 삭제되었습니다.");
       } catch (error) {
         console.error("Failed to delete question:", error);
         toast.error("질문 삭제에 실패했습니다.");
-        setViewData(originalViewData); // Rollback on error
-        setCurrentPath(originalCurrentPath); // Rollback path
+        setViewData(originalViewData);
+        setCurrentPath(originalCurrentPath);
       }
     },
-    [viewData, currentPath, currentQuestion]
+    [viewData, currentPath, currentQuestion, setViewData, setCurrentPath] // refreshViewData 제거
   );
-
   return useMemo(
     () => ({
       viewData,
@@ -618,21 +593,15 @@ export const useQuestionTree = (
       viewMode,
       prompt,
       isLoading,
-      editingQuestion,
-      newQuestion,
       scrollAreaRef,
       currentQuestion,
       setViewMode,
       setPrompt,
-      setEditingQuestion,
-      setNewQuestion,
       navigateToQuestion,
       addToPath,
       goHome,
       handleGraphNodeClick,
       handleAddQuestion,
-      handleEditQuestion,
-      handleSaveEdit,
       handleSaveInPlaceEdit,
       handleDeleteQuestion,
       selectedNode,
@@ -653,22 +622,21 @@ export const useQuestionTree = (
       moveToTopicRequest,
       setMoveTopicRequest,
     }),
+    // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+    // useMemo 의존성 배열에서 모달 관련 상태 및 함수들 삭제
+    // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
     [
       viewData,
       currentPath,
       viewMode,
       prompt,
       isLoading,
-      editingQuestion,
-      newQuestion,
       currentQuestion,
       navigateToQuestion,
       addToPath,
       goHome,
       handleGraphNodeClick,
       handleAddQuestion,
-      handleEditQuestion,
-      handleSaveEdit,
       handleSaveInPlaceEdit,
       handleDeleteQuestion,
       selectedNode,
