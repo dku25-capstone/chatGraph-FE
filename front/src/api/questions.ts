@@ -33,6 +33,15 @@ export interface QuestionNode {
   children: string[];
   parentId?: string;
 }
+// 서브 트리를 위한 새 토픽 생성
+export interface SeparateQeustionRequest {
+  sourceQuestionIds: string[];
+}
+
+export interface SeparateQeustionResponse {
+  newTopicId: string;
+  newQuestionIds: string[];
+}
 
 export interface TopicTreeResponse {
   topic: string; // root node id
@@ -135,4 +144,15 @@ export const deleteQuestionBatch = async (
   await api.delete("/api/questions/batch", {
     data: questionIds,
   });
+};
+
+// 선택한 질문들을 위한 새로운 토픽을 생성하고 ID를 반환
+export const separateQuestions = async (
+  data: SeparateQeustionRequest
+): Promise<SeparateQeustionResponse> => {
+  const response = await api.post<SeparateQeustionResponse>(
+    "/api/questions/separations",
+    data
+  );
+  return response.data;
 };

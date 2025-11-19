@@ -8,6 +8,7 @@ import {
   type CopyQuestionRequest,
   copyQuestions,
   deleteQuestionBatch,
+  separateQuestions,
 } from "@/api/questions";
 import {
   ViewData,
@@ -17,6 +18,7 @@ import {
 import { findPathToNode } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTopicStore } from "@/lib/topic-store";
+import { useRouter } from "next/navigation";
 
 /* ViewData 노드 받아서, 그 노드를 포함한 모든 하위 노드의 ID를
  재귀적으로 수집하여 1차원 배열로 반환하는 함수 */
@@ -49,12 +51,18 @@ export const useQuestionTree = (
     | "IDLE"
     | "SELECT_CHILD"
     | "SELECT_PARENT"
-    | "SELECT_NODE_TO_MOVE_OTHER";
+    | "SELECT_NODE_TO_MOVE_OTHER"
+    | "SELECT_NODE_TO_SPLIT";
 
   // '부모 변경 확인' 모달에 필요한 데이터 타입 정의
   interface ReparentRequest {
     movedNode: ViewData;
     newParentNode: ViewData;
+  }
+
+  // "새 토픽 분리" 확인 모달용 데이터 타입 정의
+  interface SplitRequest {
+    nodeToSplit: ViewData;
   }
 
   // 다른 토픽으로 이동 최종 확인 모달에 필요한 데이터 타입
@@ -86,8 +94,10 @@ export const useQuestionTree = (
   const [isTopicSelectorOpen, setIsTopicSelectorOpen] = useState(false);
   const [moveToTopicRequest, setMoveTopicRequest] =
     useState<MoveToTopicRequest | null>(null);
+  // 분리 요청 상태
+  const [splitRequest, setSplitRequest] = useState<SplitRequest | null>(null);
 
-  // const router = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
     if (viewData && topicId) {
@@ -176,6 +186,13 @@ export const useQuestionTree = (
           setSelectedNode(clickedNode);
           break;
 
+        case "SELECT_NODE_TO_SPLIT":
+          toast.info(`'${clickedNode.questionText}' 노드를 선택했습니다.`);
+          setSplitRequest({
+            nodeToSplit: clickedNode,
+          });
+          break;
+
         // 이동할 노드 선택
         case "SELECT_CHILD":
           setNodeToMove(clickedNode); // 이동할 노드 상태에 저장
@@ -244,6 +261,7 @@ export const useQuestionTree = (
       setNodeToMove,
       setSelectedNode,
       setReparentRequest,
+      setSplitRequest,
     ]
   );
 
@@ -267,9 +285,16 @@ export const useQuestionTree = (
     setModifyMode("IDLE"); // 다시 기본값으로 변경
     setNodeToMove(null); // 선택했던 노드가 있으면 초기화
     setReparentRequest(null); // 모달 닫기
+    setSplitRequest(null);
     setIsTopicSelectorOpen(false);
     setMoveTopicRequest(null);
     toast.dismiss(); // 띄워둔 토스트 알림 닫기
+  }, []);
+
+  // 새 토픽으로 분리 버튼 클릭 시 실행
+  const startSplitMode = useCallback(() => {
+    setModifyMode("SELECT_NODE_TO_SPLIT");
+    toast.info("새로운 토픽으로 분리할 시작 노드를 선택하세요.");
   }, []);
 
   const refreshViewData = useCallback(async () => {
@@ -539,6 +564,38 @@ export const useQuestionTree = (
     [viewData, currentPath, currentQuestion]
   );
 
+  // 분리 확인 모달에서 확인을 눌렀을때 실행
+  const confirmSplitTopic = useCallback(async () => {
+    if (!splitRequest) return;
+    const { nodeToSplit } = splitRequest;
+
+    toast.loading("새 토픽으로 분리(이동)하는 중...");
+
+    try {
+      // 이동할 전체 줄기 ID 수집
+      const allIdsToMove = getAllIdsFromNode(nodeToSplit);
+
+      // separations API 호출 -> 새 토픽 생성, ID 발급
+      const separationResponse = await separateQuestions({
+        sourceQuestionIds: allIdsToMove,
+      });
+      const newTopicId = separationResponse.newTopicId;
+      console.log("새 토픽 생성됨!:", newTopicId);
+
+      // 원본 삭제
+      await deleteQuestionBatch(allIdsToMove);
+      toast.success("새 토픽으로 분리가 완료되었습니다!");
+
+      // 새 토픽 페이지로 이동
+      router.push(`/${newTopicId}`);
+    } catch (error) {
+      console.error("새 토픽으로 분리 실패:", error);
+      toast.error("새 토픽으로 분리하는데 실패했습니다.");
+    } finally {
+      cancelModifyMode();
+    }
+  }, [splitRequest, router, cancelModifyMode]);
+
   // 질문 삭제 함수
   // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
   const handleDeleteQuestion = useCallback(
@@ -652,6 +709,9 @@ export const useQuestionTree = (
       setIsTopicSelectorOpen,
       moveToTopicRequest,
       setMoveTopicRequest,
+      startSplitMode,
+      splitRequest,
+      confirmSplitTopic,
     }),
     [
       viewData,
@@ -686,6 +746,9 @@ export const useQuestionTree = (
       setIsTopicSelectorOpen,
       moveToTopicRequest,
       setMoveTopicRequest,
+      startSplitMode,
+      splitRequest,
+      confirmSplitTopic,
     ]
   );
 };

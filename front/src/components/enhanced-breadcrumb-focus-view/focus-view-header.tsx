@@ -13,7 +13,7 @@ export const FocusViewHeader = () => {
   const {
     viewMode,
     setViewMode,
-
+    startSplitMode,
     currentPath,
     modifyMode,
     startModifyMode,
@@ -35,7 +35,7 @@ export const FocusViewHeader = () => {
           {modifyMode === "IDLE" ? (
             <>
               <div className="hidden lg:flex items-center gap-2">
-                <Button variant="outline">
+                <Button variant="outline" onClick={startSplitMode}>
                   <Edit className="h-4 w-4 mr-2" />새 토픽으로 분리
                 </Button>
                 <Button variant="outline" onClick={moveToOtherMode}>
@@ -61,7 +61,10 @@ export const FocusViewHeader = () => {
                     align="end"
                     className="bg-popover text-popover-foreground border shadow-md rounded-md cursor-pointer"
                   >
-                    <DropdownMenuItem className="py-1 px-1">
+                    <DropdownMenuItem
+                      className="py-1 px-1"
+                      onClick={startSplitMode}
+                    >
                       새 토픽으로 분리
                     </DropdownMenuItem>
                     <DropdownMenuItem
