@@ -533,7 +533,7 @@ export const useQuestionTree = (
 
       // 루트 노드의 직계 자식을 삭제하는 경우 처리
       if (!parentPath) {
-        const nodeToDeleteIndex = newViewData.children.findIndex(c => c.id === questionId);
+        const nodeToDeleteIndex = newViewData.children.findIndex((c: ViewData) => c.id === questionId);
         if (nodeToDeleteIndex !== -1) {
           const nodeToDelete = newViewData.children[nodeToDeleteIndex];
           // 자식 승계 로직: 삭제할 노드의 자식들을 부모(여기서는 루트)의 자식으로 추가
@@ -546,7 +546,7 @@ export const useQuestionTree = (
       } else {
         // 일반적인 자식 노드를 삭제하는 경우
         const parentNode = parentPath[parentPath.length - 1];
-        const nodeToDeleteIndex = parentNode.children.findIndex(c => c.id === questionId);
+        const nodeToDeleteIndex = parentNode.children.findIndex((c: ViewData) => c.id === questionId);
         
         if (nodeToDeleteIndex === -1) return;
 
@@ -583,7 +583,7 @@ export const useQuestionTree = (
         setCurrentPath(originalCurrentPath);
       }
     },
-    [viewData, currentPath, currentQuestion, setViewData, setCurrentPath, refreshViewData]
+    [viewData, currentPath, currentQuestion, setViewData, setCurrentPath] // refreshViewData 제거
   );
   return useMemo(
     () => ({

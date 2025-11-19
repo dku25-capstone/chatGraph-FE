@@ -150,6 +150,7 @@ export function MessageBubble({
                       },
                       cancel: {
                         label: "취소",
+                        onClick: () => toast.dismiss(), // 취소 버튼 클릭 시 토스트 닫기
                       },
                     });
                   }
