@@ -26,8 +26,10 @@ import { FocusViewHeader } from "./focus-view-header";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
-import { EditQuestionDialog } from "./edit-question-dialog";
-import { DeleteConfirmationDialog } from "./DeleteConfirmationDialog";
+// <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+// EditQuestionDialog 컴포넌트는 더 이상 사용하지 않으므로 import 문 삭제
+// import { EditQuestionDialog } from "./edit-question-dialog";
+// <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
 import QuestionDetailModal from "../QuestionDetailModal";
 import { findPathToNode } from "@/lib/utils";
 import { AlertDialog } from "@radix-ui/react-alert-dialog";
@@ -54,22 +56,20 @@ export function EnhancedBreadcrumbFocusView({
 }
 
 function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps) {
+  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+  // useQuestionTreeContext에서 모달 관련 상태 및 함수(editingQuestion, newQuestion 등) 제거
+  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
   const {
     viewData,
     currentPath,
     setCurrentPath,
     viewMode,
-    editingQuestion,
-    newQuestion,
     scrollAreaRef,
     currentQuestion,
     setViewMode,
-    setEditingQuestion,
-    setNewQuestion,
     navigateToQuestion,
     addToPath,
     handleGraphNodeClick,
-    handleSaveEdit,
     handleSaveInPlaceEdit,
     handleDeleteQuestion,
     selectedNode,
@@ -91,18 +91,6 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
   } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
-  const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
-
-  const requestDelete = (questionId: string) => {
-    setQuestionToDelete(questionId);
-  };
-
-  const onConfirmDelete = () => {
-    if (questionToDelete) {
-      handleDeleteQuestion(questionToDelete);
-      setQuestionToDelete(null);
-    }
-  };
 
   useEffect(() => {
     if (viewMode === "chat" && focusedNodeId) {
@@ -287,10 +275,14 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                 onToggleAnswer={() =>
                   setIsMainAnswerVisible(!isMainAnswerVisible)
                 }
+                // <<< START: 질문 수정 방식 변경 (인라인) >>>
+                // onEdit prop이 인라인 저장을 처리하는 handleSaveInPlaceEdit 함수를 호출하도록 변경.
+                // 수정된 텍스트(newText)를 인자로 전달.
                 onEdit={(newText) =>
                   handleSaveInPlaceEdit(currentQuestion.id, newText)
                 }
-                onDelete={() => requestDelete(currentQuestion.id)}
+                // <<< END: 질문 수정 방식 변경 (인라인) >>>
+                onDelete={() => handleDeleteQuestion(currentQuestion.id)}
               />
               <Separator className="my-0" />
             </>
@@ -307,7 +299,6 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                 questions={currentQuestion.children}
                 addToPath={addToPath}
                 onSave={handleSaveInPlaceEdit}
-                onDelete={requestDelete}
                 showTitle={currentPath.length > 1}
               />
             )}
@@ -317,19 +308,9 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
 
       <NewQuestionForm />
 
-      <EditQuestionDialog
-        editingQuestion={editingQuestion}
-        newQuestion={newQuestion}
-        setNewQuestion={setNewQuestion}
-        handleSaveEdit={handleSaveEdit}
-        setEditingQuestion={setEditingQuestion}
-      />
-
-      <DeleteConfirmationDialog
-        isOpen={questionToDelete !== null}
-        onClose={() => setQuestionToDelete(null)}
-        onConfirm={onConfirmDelete}
-      />
+      {/* <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>> */}
+      {/* EditQuestionDialog 컴포넌트 렌더링 부분 삭제 */}
+      {/* <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>> */}
     </div>
   );
 }
