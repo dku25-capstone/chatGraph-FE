@@ -106,7 +106,6 @@ export function MessageBubble({
           </div>
         )}
         {/* --- 수정 완료 --- */}
-        
       </div>
       {isUser && !isEditing && (
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">

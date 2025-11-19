@@ -10,7 +10,6 @@ interface SubQuestionListProps {
   questions: ViewData[];
   addToPath: (question: ViewData) => void;
   onSave: (questionId: string, newText: string) => void;
-  onDelete: (questionId: string) => void;
   showTitle: boolean;
 }
 
@@ -55,7 +54,7 @@ export const SubQuestionList = ({
                     </div>
 
                     {expanded[child.id] && (
-                      <div className="text-sm text-gray-600 mb-3 pl-10">
+                      <div className="text-sm text-gray-600 mb-3 pl-10 pr-10">
                         <Separator className="my-4" />
                         <OptimisticAnswer answer={child.answerText} />
                       </div>
