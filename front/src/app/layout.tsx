@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
   title: {
     template: "%s | ChatGraph",
-    default: "ChatGrpah - 생성형 AI 대화 시각화 플랫폼",
+    default: "ChatGraph - 생성형 AI 대화 시각화 플랫폼",
   },
   description:
     "선형적인 AI 대화를 그래프로 시각화하여 지식과 아이디어를 체계적으로 관리하세요.",
