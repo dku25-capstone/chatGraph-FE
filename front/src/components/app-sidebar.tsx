@@ -49,21 +49,36 @@ import Image from "next/image";
 import { searchQuestions, QuestionNode } from "@/api/questions";
 
 import { patchTopic, deleteTopic } from "@/api/topics";
-import LoadingSpinner from "@/components/ui/loading-spinner"; // 로딩 스피너 컴포넌트 임포트
 import { useTopicStore } from "@/lib/topic-store";
 
 interface SearchResultNode extends QuestionNode {
   topicId: string;
 }
 
+// 글래스모피즘 스타일 스켈레톤 컴포넌트
+const SidebarSkeleton = () => {
+  return (
+    <div className="space-y-1 px-2">
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-2 h-8 w-full rounded-md animate-pulse"
+        >
+          <div className="h-4 flex-1 rounded bg-black/5 dark:bg-white/10" />
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { topics, fetchTopics, updateTopic, removeTopic, setTopics } =
-    useTopicStore(); // Zustand 스토어 사용
-  const [loadingTopics, setLoadingTopics] = useState(true); // 로딩 상태는 로컬로 유지
-  const [isAuthLoading, setIsAuthLoading] = useState(true); // 인증 로딩 상태 추가
+    useTopicStore();
+  const [loadingTopics, setLoadingTopics] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(
     null
   );
@@ -116,7 +131,7 @@ export function AppSidebar() {
       setLoadingTopics(true);
       fetchTopics().finally(() => setLoadingTopics(false));
     } else {
-      setTopics([]); // 로그아웃 시 스토어 비우기
+      setTopics([]);
       setLoadingTopics(false);
     }
   }, [isLoggedIn, fetchTopics, setTopics]);
@@ -181,9 +196,19 @@ export function AppSidebar() {
     toast.success("로그아웃 되었습니다.");
   };
 
+  const glassDropdownClass =
+    "bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl";
+
+  // [변경] 클릭 효과(active:scale) 제거, 호버 효과만 유지
+  const hoverEffectClass = 
+    "transition-all duration-200 hover:bg-white/40 dark:hover:bg-white/10";
+
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="p-2">
+    <Sidebar
+      collapsible="icon"
+      className="border-r border-white/20 dark:border-white/10 bg-white/60 dark:bg-black/40 backdrop-blur-xl shadow-lg transition-all duration-300"
+    >
+      <SidebarHeader className="p-2 bg-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {state === "expanded" ? (
@@ -193,10 +218,10 @@ export function AppSidebar() {
                   alt="Chat Logo"
                   width={30}
                   height={30}
-                  className="h-6 w-6"
+                  className="h-6 w-6 opacity-90"
                 />
                 <Link href="/">
-                  <span className="font-semibold cursor-pointer">
+                  <span className="font-semibold cursor-pointer text-gray-800 dark:text-gray-100">
                     ChatGraph
                   </span>
                 </Link>
@@ -204,7 +229,12 @@ export function AppSidebar() {
             ) : (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={toggleSidebar}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleSidebar}
+                    className={hoverEffectClass}
+                  >
                     <PanelLeftOpen />
                   </Button>
                 </TooltipTrigger>
@@ -214,17 +244,20 @@ export function AppSidebar() {
               </Tooltip>
             )}
           </div>
-          {state === "expanded" && <SidebarTrigger />}
+          {state === "expanded" && (
+            <SidebarTrigger className={hoverEffectClass} />
+          )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="p-2">
+      <SidebarContent className="p-2 bg-transparent">
         <SidebarMenu>
           <SidebarMenuItem>
             {isLoggedIn ? (
               <SidebarMenuButton
                 tooltip="검색"
                 onClick={() => setIsSearchVisible(!isSearchVisible)}
+                className={hoverEffectClass}
               >
                 <Search />
                 <span>검색</span>
@@ -235,7 +268,7 @@ export function AppSidebar() {
                   <div className="w-full">
                     <SidebarMenuButton
                       disabled
-                      className="w-full cursor-not-allowed"
+                      className="w-full cursor-not-allowed opacity-50"
                     >
                       <Search />
                       <span>검색</span>
@@ -248,17 +281,22 @@ export function AppSidebar() {
               </Tooltip>
             )}
             {isLoggedIn && isSearchVisible && state === "expanded" && (
-              <div className="mt-2">
+              <div className="mt-2 px-1">
                 <SidebarInput
-                  placeholder="검색"
+                  placeholder="검색어를 입력하세요..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
+                  className="bg-white/30 dark:bg-black/30 border-white/20 dark:border-white/10 focus:bg-white/50 dark:focus:bg-black/50 backdrop-blur-sm transition-all"
                 />
               </div>
             )}
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="새 채팅" asChild>
+            <SidebarMenuButton
+              tooltip="새 채팅"
+              asChild
+              className={hoverEffectClass}
+            >
               <Link href="/">
                 <Plus />
                 <span>새 채팅 만들기</span>
@@ -269,19 +307,20 @@ export function AppSidebar() {
 
         {state === "expanded" && (
           <SidebarGroup className="mt-4">
-            <SidebarGroupLabel>
+            <SidebarGroupLabel className="text-gray-600 dark:text-gray-400 px-2 font-medium">
               {searchTerm.trim() !== "" ? "검색목록" : "채팅목록"}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               {loadingTopics ? (
-                <div className="flex justify-center items-center h-20">
-                  <LoadingSpinner />
-                </div>
+                <SidebarSkeleton />
               ) : searchTerm.trim() !== "" ? (
                 <SidebarMenu>
                   {searchResults.map((item) => (
                     <SidebarMenuItem key={item.questionId}>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton
+                        asChild
+                        className={hoverEffectClass}
+                      >
                         <Link
                           href={`/${item.topicId}?question=${item.questionId}`}
                           className="flex items-center gap-2 flex-1"
@@ -296,7 +335,10 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {topics.map((item) => (
                     <SidebarMenuItem key={item.topicId}>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton
+                        asChild
+                        className={`group ${hoverEffectClass} data-[active=true]:bg-white/40`}
+                      >
                         {editingTopic?.topicId === item.topicId ? (
                           <div className="flex items-center gap-2 w-full">
                             <SidebarInput
@@ -311,13 +353,13 @@ export function AppSidebar() {
                               onBlur={() => {
                                 if (editingTopic) handleEdit();
                               }}
-                              className="flex-1 h-8 text-sm"
+                              className="flex-1 h-8 text-sm bg-white/40 dark:bg-black/40 border-white/30"
                             />
                             <Button
                               size="icon"
                               variant="ghost"
                               onClick={handleEdit}
-                              className="h-8 w-8"
+                              className="h-8 w-8 hover:bg-white/30"
                             >
                               <Check className="h-4 w-4" />
                             </Button>
@@ -328,25 +370,33 @@ export function AppSidebar() {
                               href={`/${item.topicId}`}
                               className="flex items-center gap-2 flex-1 min-w-0"
                             >
-                              <span className="truncate">{item.topicName}</span>
+                              <span className="truncate font-medium text-gray-700 dark:text-gray-200 group-hover:text-black dark:group-hover:text-white transition-colors">
+                                {item.topicName}
+                              </span>
                             </Link>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <SidebarMenuAction>
+                                <SidebarMenuAction className="hover:bg-white/50 dark:hover:bg-white/20 text-gray-500 transition-colors">
                                   <MoreHorizontal />
                                 </SidebarMenuAction>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent side="right" align="start">
+                              <DropdownMenuContent
+                                side="right"
+                                align="start"
+                                className={glassDropdownClass}
+                              >
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setEditingTopic(item);
                                     setNewName(item.topicName);
                                   }}
+                                  className="focus:bg-white/20 dark:focus:bg-white/10 cursor-pointer"
                                 >
                                   <span>수정</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => confirmDelete(item.topicId)}
+                                  className="text-red-500 focus:bg-red-500/10 focus:text-red-600 cursor-pointer"
                                 >
                                   <span>삭제</span>
                                 </DropdownMenuItem>
@@ -359,7 +409,7 @@ export function AppSidebar() {
                   ))}
                 </SidebarMenu>
               ) : (
-                <div className="text-center text-sm text-gray-500">
+                <div className="text-center text-sm text-gray-500/80 mt-4">
                   저장된 채팅이 없습니다.
                 </div>
               )}
@@ -368,34 +418,39 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 bg-transparent">
         {isAuthLoading ? (
-          <div className="text-center text-sm text-gray-500"></div>
+          <div className="space-y-2 px-2">
+             <div className="h-8 w-full rounded-md bg-black/5 dark:bg-white/10 animate-pulse" />
+          </div>
         ) : (
           <SidebarMenu>
             {isLoggedIn ? (
               <SidebarMenuItem>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton>
+                    <SidebarMenuButton className={hoverEffectClass}>
                       <User2 />
                       {state === "expanded" && <span>Username</span>}
                       {state === "expanded" && (
-                        <ChevronUp className="ml-auto" />
+                        <ChevronUp className="ml-auto opacity-50" />
                       )}
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     side="top"
-                    className="w-[--radix-popper-anchor-width]"
+                    className={`w-[--radix-popper-anchor-width] ${glassDropdownClass}`}
                   >
-                    <DropdownMenuItem>
+                    <DropdownMenuItem className="focus:bg-white/20 dark:focus:bg-white/10 cursor-pointer">
                       <span>Account</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem className="focus:bg-white/20 dark:focus:bg-white/10 cursor-pointer">
                       <span>Billing</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout}>
+                    <DropdownMenuItem 
+                        onClick={handleLogout}
+                        className="focus:bg-white/20 dark:focus:bg-white/10 cursor-pointer"
+                    >
                       <span>Sign out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -404,7 +459,7 @@ export function AppSidebar() {
             ) : (
               <>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild className={hoverEffectClass}>
                     <Link href="/login">
                       <LogIn />
                       {state === "expanded" && <span>로그인</span>}
@@ -412,7 +467,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild className={hoverEffectClass}>
                     <Link href="/register">
                       <UserPlus />
                       {state === "expanded" && <span>회원가입</span>}

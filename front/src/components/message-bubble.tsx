@@ -2,36 +2,25 @@
 
 import { ChevronDown, ChevronUp, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// 'ReactMarkdown' 대신 'OptimisticAnswer'를 임포트합니다.
 import { OptimisticAnswer } from "../components/enhanced-breadcrumb-focus-view/OptimisticAnswer";
-// <<< START: 삭제 확인 기능 추가 >>>
-// sonner 라이브러리에서 toast 함수를 임포트하여 확인 창을 띄우는 데 사용.
 import { toast } from "sonner";
-// <<< END: 삭제 확인 기능 추가 >>>
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// <<< START: 질문 수정 방식 변경 (인라인) >>>
-// 인라인 수정을 위해 useState와 useEffect를 임포트.
 import React, { useState, useEffect } from "react";
-// Input 대신 여러 줄 입력이 가능한 Textarea를 사용.
 import { Textarea } from "./ui/textarea";
-// <<< END: 질문 수정 방식 변경 (인라인) >>>
 
 interface MessageBubbleProps {
   questionText?: string;
-  answer?: string; // string | null | undefined
+  answer?: string;
   isUser?: boolean;
   isToggleable?: boolean;
   isAnswerVisible?: boolean;
   onToggleAnswer?: () => void;
-  // <<< START: 질문 수정 방식 변경 (인라인) >>>
-  // onEdit prop의 타입을 수정된 텍스트를 인자로 받는 함수로 변경.
   onEdit?: (newText: string) => void;
-  // <<< END: 질문 수정 방식 변경 (인라인) >>>
   onDelete?: () => void;
 }
 
@@ -45,14 +34,13 @@ export function MessageBubble({
   onEdit,
   onDelete,
 }: MessageBubbleProps) {
-  // <<< START: 질문 수정 방식 변경 (인라인) >>>
-  // 인라인 수정을 위한 내부 상태. isEditing은 수정 모드 여부, editText는 수정 중인 텍스트.
-      const [isEditing, setIsEditing] = useState(false);
-      const [editText, setEditText] = useState(questionText);
-    
-      useEffect(() => {
-        setEditText(questionText);
-      }, [questionText]);  // '저장' 버튼 클릭 시 호출. onEdit prop을 통해 변경된 텍스트를 상위로 전달.
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(questionText);
+
+  useEffect(() => {
+    setEditText(questionText);
+  }, [questionText]);
+
   const handleSave = () => {
     if (onEdit) {
       onEdit(editText);
@@ -60,26 +48,23 @@ export function MessageBubble({
     setIsEditing(false);
   };
 
-  // '취소' 버튼 클릭 시 호출. 수정 상태를 해제하고 텍스트를 원본으로 되돌림.
   const handleCancel = () => {
     setIsEditing(false);
     setEditText(questionText);
   };
 
-  // Textarea에서 키보드 입력 처리. Shift+Enter가 아닌 Enter키만 눌렀을 때 저장.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSave();
     }
   };
-  // <<< END: 질문 수정 방식 변경 (인라인) >>>
 
   return (
     <div
       className={`flex gap-3 p-4 ${
-        isUser ? "bg-transparent" : "bg-gray-50"
-      } group`}
+        isUser ? "bg-transparent justify-end" : "bg-gray-50"
+      } group max-w-full`} // [추가] max-w-full로 전체 너비 제한
     >
       {isToggleable && onToggleAnswer && (
         <div className="flex-shrink-0 pt-1">
@@ -92,7 +77,9 @@ export function MessageBubble({
           </Button>
         </div>
       )}
-      <div className="flex-1 space-y-2">
+      
+      {/* [핵심 수정] w-full 추가: Flex 아이템이 가용 공간을 꽉 채우도록 강제 */}
+      <div className="flex-1 min-w-0 w-full space-y-2">
         {isEditing ? (
           <div className="space-y-2">
             <Textarea
@@ -111,19 +98,25 @@ export function MessageBubble({
             </div>
           </div>
         ) : (
-          <div className="font-medium text-gray-900">{questionText}</div>
+          // [핵심 수정] break-words 대신 break-all 사용 고려 (URL이나 긴 영어 단어 때문일 수 있음)
+          // 만약 한글/일반 영어 문장 위주라면 break-words 유지,
+          // 긴 문자열 테스트 중이라면 break-all을 사용하세요.
+          <div className="font-medium text-gray-900 whitespace-pre-wrap break-words w-full">
+            {questionText}
+          </div>
         )}
 
-        {/* 답변 렌더링 영역 */}
         {isAnswerVisible && (
-          <div className="text-gray-700 leading-relaxed">
+          // [핵심 수정] OptimisticAnswer를 감싸는 div에도 스타일 강제 적용
+          <div className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words w-full [&>*]:max-w-full [&>*]:break-words [&>*]:whitespace-pre-wrap">
+             {/* [&>*]... 구문은 자식 요소(OptimisticAnswer 내부 태그)들에게도 강제로 줄바꿈 스타일을 주입합니다. */}
             <OptimisticAnswer answer={answer} />
           </div>
         )}
       </div>
-      {/* isEditing이 아닐 때만 수정/삭제 메뉴가 보이도록 함 */}
+
       {isUser && !isEditing && (
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"> {/* flex-shrink-0 추가 */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -131,26 +124,20 @@ export function MessageBubble({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {/* <<< START: 질문 수정 방식 변경 (인라인) >>> */}
-              {/* '수정' 버튼 클릭 시 isEditing 상태를 true로 변경하여 인라인 수정 모드로 진입 */}
               <DropdownMenuItem onClick={() => setIsEditing(true)}>
                 수정
               </DropdownMenuItem>
-              {/* <<< END: 질문 수정 방식 변경 (인라인) >>> */}
-
-              {/* <<< START: 삭제 확인 기능 추가 >>> */}
-              {/* '삭제' 버튼 클릭 시 바로 onDelete를 호출하는 대신, 확인 토스트를 띄움 */}
               <DropdownMenuItem
                 onClick={() => {
                   if (onDelete) {
                     toast.warning("정말 이 질문을 삭제하시겠습니까?", {
                       action: {
                         label: "삭제",
-                        onClick: () => onDelete(), // 사용자가 '삭제'를 눌러야만 실제 삭제 함수 호출
+                        onClick: () => onDelete(),
                       },
                       cancel: {
                         label: "취소",
-                        onClick: () => toast.dismiss(), // 취소 버튼 클릭 시 토스트 닫기
+                        onClick: () => toast.dismiss(),
                       },
                     });
                   }
@@ -158,7 +145,6 @@ export function MessageBubble({
               >
                 삭제
               </DropdownMenuItem>
-              {/* <<< END: 삭제 확인 기능 추가 >>> */}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

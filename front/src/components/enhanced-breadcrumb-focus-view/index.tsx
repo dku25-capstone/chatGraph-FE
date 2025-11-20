@@ -7,7 +7,6 @@ import { MessageBubble } from "@/components/message-bubble";
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
 import { TopicTreeResponse } from "@/lib/data-transformer";
 import { TopicSelectorModal } from "./TopicSelectorModal";
-
 import {
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,7 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import {
   QuestionTreeProvider,
   useQuestionTreeContext,
@@ -26,13 +24,10 @@ import { FocusViewHeader } from "./focus-view-header";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
-// <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-// EditQuestionDialog 컴포넌트는 더 이상 사용하지 않으므로 import 문 삭제
-// import { EditQuestionDialog } from "./edit-question-dialog";
-// <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
 import QuestionDetailModal from "../QuestionDetailModal";
-import { findPathToNode } from "@/lib/utils";
+import { findPathToNode, cn } from "@/lib/utils";
 import { AlertDialog } from "@radix-ui/react-alert-dialog";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -56,9 +51,7 @@ export function EnhancedBreadcrumbFocusView({
 }
 
 function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps) {
-  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-  // useQuestionTreeContext에서 모달 관련 상태 및 함수(editingQuestion, newQuestion 등) 제거
-  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+  const { state, isMobile } = useSidebar();
   const {
     viewData,
     currentPath,
@@ -86,7 +79,6 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
     setMoveTopicRequest,
     confirmMoveToOtherTopic,
     splitRequest,
-    // setSplitRequest,
     confirmSplitTopic,
   } = useQuestionTreeContext();
 
@@ -133,7 +125,6 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
           <AlertDialog
             open={!!reparentRequest}
             onOpenChange={(open) => {
-              // 모달의 X 버튼이나 바깥쪽을 클릭해서 닫을 때
               if (!open) {
                 cancelModifyMode();
               }
@@ -154,11 +145,9 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                {/* "취소" 버튼에 cancelModifyMode 함수 연결 */}
                 <AlertDialogCancel onClick={cancelModifyMode}>
                   취소
                 </AlertDialogCancel>
-                {/* "이동" 버튼에 confirmReparenting 함수 연결 */}
                 <AlertDialogAction onClick={confirmReparenting}>
                   이동
                 </AlertDialogAction>
@@ -166,11 +155,10 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* ✅ 2. [추가] "새 토픽 분리" 확인 모달 */}
           <AlertDialog
             open={!!splitRequest}
             onOpenChange={(open) => {
-              if (!open) cancelModifyMode(); // 닫으면 취소 처리
+              if (!open) cancelModifyMode();
             }}
           >
             <AlertDialogContent>
@@ -198,16 +186,13 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* 토픽 선택 모달 렌더링 */}
           <TopicSelectorModal
             isOpen={isTopicSelectorOpen}
             onClose={cancelModifyMode}
             currentNodeToMove={nodeToMove}
             onNodeSelected={(targetTopic, targetParentNode) => {
-              // 토픽 선택 모달이 성공적으로 부모 노드를 선택했을때
-              setIsTopicSelectorOpen(false); // 토픽 선택 모달 닫기
+              setIsTopicSelectorOpen(false);
               setMoveTopicRequest({
-                // 최종 확인 모달 띄우기
                 movedNode: nodeToMove!,
                 targetTopic: {
                   id: targetTopic.topicId,
@@ -222,7 +207,6 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
             }}
           />
 
-          {/* 다른 토픽으로 이동 최종 확인 모달 */}
           <AlertDialog
             open={!!moveToTopicRequest}
             onOpenChange={(open) => {
@@ -263,7 +247,7 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
           currentPath={currentPath}
           navigateToQuestion={navigateToQuestion}
         />
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto overflow-hidden">
           {currentPath.length > 1 && (
             <>
               <MessageBubble
@@ -275,13 +259,9 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                 onToggleAnswer={() =>
                   setIsMainAnswerVisible(!isMainAnswerVisible)
                 }
-                // <<< START: 질문 수정 방식 변경 (인라인) >>>
-                // onEdit prop이 인라인 저장을 처리하는 handleSaveInPlaceEdit 함수를 호출하도록 변경.
-                // 수정된 텍스트(newText)를 인자로 전달.
                 onEdit={(newText) =>
                   handleSaveInPlaceEdit(currentQuestion.id, newText)
                 }
-                // <<< END: 질문 수정 방식 변경 (인라인) >>>
                 onDelete={() => handleDeleteQuestion(currentQuestion.id)}
               />
               <Separator className="my-0" />
@@ -290,7 +270,7 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
         </div>
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative flex-1 pb-[88px]">
         <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
           <div className="max-w-4xl mx-auto">
             {currentQuestion.children.length > 0 && (
@@ -306,11 +286,18 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
         </ScrollArea>
       </div>
 
-      <NewQuestionForm />
-
-      {/* <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>> */}
-      {/* EditQuestionDialog 컴포넌트 렌더링 부분 삭제 */}
-      {/* <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>> */}
+      <div
+        className={cn(
+          "fixed bottom-0 right-0 z-10",
+          isMobile
+            ? "left-0"
+            : state === "expanded"
+            ? "left-[16rem]"
+            : "left-[3rem]"
+        )}
+      >
+        <NewQuestionForm />
+      </div>
     </div>
   );
 }

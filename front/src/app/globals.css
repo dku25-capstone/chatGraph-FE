@@ -1,4 +1,7 @@
 
+html {
+  font-size: 18px; /* Increase base font size by 2px from typical 16px */
+}
 
 @import "tailwindcss";
 @import "tw-animate-css";

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronRight } from "lucide-react";
 import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
+import { cn } from "@/lib/utils";
 
 interface BreadcrumbNavigationProps {
   currentPath: ViewData[]; // 지금까지 클릭해 들어온 질문 노드 경로
@@ -13,8 +13,13 @@ export const BreadcrumbNavigation = ({
   currentPath,
   navigateToQuestion,
 }: BreadcrumbNavigationProps) => (
-  <div className="px-4 py-3 bg-gray-50 border-b">
-    <ScrollArea className="w-full">
+  <div className="px-4 py-3 bg-white/30 dark:bg-black/30 backdrop-blur-lg border-b border-white/30 dark:border-white/10 shadow-lg">
+    <div
+      className={cn(
+        "w-full",
+        currentPath.length > 7 && "overflow-x-auto"
+      )}
+    >
       <div className="flex items-center gap-2 min-w-max">
         {currentPath.map((question, index) => (
           <div
@@ -41,6 +46,6 @@ export const BreadcrumbNavigation = ({
           </div>
         ))}
       </div>
-    </ScrollArea>
+    </div>
   </div>
 );

@@ -44,17 +44,23 @@ export const SubQuestionList = ({
               className="hover:shadow-md transition-all duration-200 border-l cursor-pointer"
               onClick={() => addToPath(child)}
             >
-              <CardContent className="p-4">
+              <CardContent className="p-4 overflow-hidden">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
+                  {/* [핵심 수정] min-w-0 추가 
+                    Flex 아이템이 컨텐츠 크기보다 작아질 수 있도록 허용하여 줄바꿈을 강제함
+                  */}
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center mb-2">
-                      <h4 className="font-medium text-black-800 hover:text-black-1000 pl-10">
+                      {/* [수정 제안] break-all -> whitespace-pre-wrap break-words
+                        단어 중간이 뚝 끊기는 것을 방지하고 자연스럽게 줄바꿈
+                      */}
+                      <h4 className="font-medium text-black-800 hover:text-black-1000 pl-10 whitespace-pre-wrap break-all">
                         {child.questionText}
                       </h4>
                     </div>
 
                     {expanded[child.id] && (
-                      <div className="text-sm text-gray-600 mb-3 pl-10 pr-10">
+                      <div className="text-sm text-gray-600 mb-3 pl-10 pr-10 whitespace-pre-wrap break-words">
                         <Separator className="my-4" />
                         <OptimisticAnswer answer={child.answerText} />
                       </div>
