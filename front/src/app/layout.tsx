@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://chatgraph.site/"),
+
   title: {
     template: "%s | ChatGraph",
     default: "ChatGrpah - 생성형 AI 대화 시각화 플랫폼",
