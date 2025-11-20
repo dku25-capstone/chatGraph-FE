@@ -1,5 +1,11 @@
 import LoginForm from "@/components/user/LoginForm";
+import { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "로그인",
+  description: "ChatGraph에 로그인하고 나만의 지식 지도를 만드세요.",
+};
 
 // 로그인 페이지
 export default function LoginPage() {
