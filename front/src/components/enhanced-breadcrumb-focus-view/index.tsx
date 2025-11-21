@@ -21,7 +21,6 @@ import {
   useQuestionTreeContext,
 } from "./QuestionTreeContext";
 import { FocusViewHeader } from "./focus-view-header";
-import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
 import QuestionDetailModal from "../QuestionDetailModal";
@@ -50,7 +49,7 @@ export function EnhancedBreadcrumbFocusView({
   );
 }
 
-function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps) {
+function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProps) {
   const { state, isMobile } = useSidebar();
   const {
     viewData,
@@ -107,7 +106,10 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
   if (viewMode === "graph") {
     return (
       <div className="h-screen flex flex-col bg-white">
-        <FocusViewHeader />
+        <FocusViewHeader
+          currentPath={currentPath}
+          navigateToQuestion={navigateToQuestion}
+        />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
             data={viewData}
@@ -242,8 +244,7 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
   return (
     <div className="h-screen flex flex-col bg-white">
       <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-sm">
-        <FocusViewHeader />
-        <BreadcrumbNavigation
+        <FocusViewHeader
           currentPath={currentPath}
           navigateToQuestion={navigateToQuestion}
         />
@@ -288,16 +289,19 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
 
       <div
         className={cn(
-          "fixed bottom-0 right-0 z-10",
+          "fixed bottom-0 right-0 z-30",
           isMobile
             ? "left-0"
             : state === "expanded"
-            ? "left-[16rem]"
-            : "left-[3rem]"
+              ? "left-[16rem]"
+              : "left-[3rem]"
         )}
       >
+
         <NewQuestionForm />
+
       </div>
-    </div>
+
+    </div >
   );
 }
