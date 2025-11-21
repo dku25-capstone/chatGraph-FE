@@ -37,7 +37,7 @@ export const FocusViewHeader = ({
   const floatingBarClass = cn(
     "pointer-events-auto", // 클릭 가능
     "flex items-center justify-between", // 내부 요소 양끝 정렬
-    "w-full max-w-[100%] lg:max-w-5xl mx-auto", // 너비 제한 및 중앙 정렬
+    "w-full max-w-[100%] md:max-w-[98%] min-h-13 lg:max-w-6xl mx-auto", // 너비 제한 및 중앙 정렬
     "mt-4 p-1.5 pr-3", // 내부 여백 (버튼과 테두리 사이 간격)
     "rounded-full", // 완전한 알약 모양
     
@@ -50,7 +50,7 @@ export const FocusViewHeader = ({
     // [Hover/Interaction]
     "transition-all duration-300 ease-out",
     "hover:bg-white/70 dark:hover:bg-black/70", // 호버 시 불투명도 증가
-    "hover:shadow-black/15 hover:scale-[1.005]" // 미세한 확대 효과
+
   );
 
   // 뷰 모드 전환 버튼 스타일 (왼쪽 원형 버튼)
@@ -58,8 +58,7 @@ export const FocusViewHeader = ({
     "rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0",
     "bg-white/50 dark:bg-white/10",
     "text-gray-700 dark:text-gray-200",
-    "shadow-sm border border-white/20",
-    "hover:bg-white hover:text-black dark:hover:bg-white/20",
+    "hover:bg-gray-100 hover:text-black dark:hover:bg-white/20",
     "transition-all duration-200"
   );
 

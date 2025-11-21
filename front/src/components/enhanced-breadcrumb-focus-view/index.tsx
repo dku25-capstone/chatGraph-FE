@@ -243,37 +243,42 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
 
   return (
     <div className="h-screen flex flex-col bg-white">
+      {/* 1. 헤더 영역: 여기만 sticky 및 z-index 적용 */}
       <div className="sticky top-0 z-20">
         <FocusViewHeader
           currentPath={currentPath}
           navigateToQuestion={navigateToQuestion}
         />
-        <div className="max-w-4xl mx-auto overflow-hidden">
-          {currentPath.length > 1 && (
-            <>
-              <MessageBubble
-                questionText={currentQuestion.questionText}
-                answer={currentQuestion.answerText}
-                isUser={true}
-                isToggleable={true}
-                isAnswerVisible={isMainAnswerVisible}
-                onToggleAnswer={() =>
-                  setIsMainAnswerVisible(!isMainAnswerVisible)
-                }
-                onEdit={(newText) =>
-                  handleSaveInPlaceEdit(currentQuestion.id, newText)
-                }
-                onDelete={() => handleDeleteQuestion(currentQuestion.id)}
-              />
-              <Separator className="my-0" />
-            </>
-          )}
-        </div>
+        {/* MessageBubble 부분은 여기서 제거 */}
       </div>
 
+      {/* 2. 스크롤 영역: 메시지 버블을 이 안으로 이동 */}
       <div className="relative flex-1 pb-[88px]">
         <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto p-4"> {/* 패딩 추가 권장 */}
+
+            {/* --- [이동됨] 메시지 버블 영역 시작 --- */}
+            {currentPath.length > 1 && (
+              <div className="mb-6"> {/* 간격 추가 */}
+                <MessageBubble
+                  questionText={currentQuestion.questionText}
+                  answer={currentQuestion.answerText}
+                  isUser={true}
+                  isToggleable={true}
+                  isAnswerVisible={isMainAnswerVisible}
+                  onToggleAnswer={() =>
+                    setIsMainAnswerVisible(!isMainAnswerVisible)
+                  }
+                  onEdit={(newText) =>
+                    handleSaveInPlaceEdit(currentQuestion.id, newText)
+                  }
+                  onDelete={() => handleDeleteQuestion(currentQuestion.id)}
+                />
+                <Separator className="my-4" />
+              </div>
+            )}
+            {/* --- [이동됨] 메시지 버블 영역 끝 --- */}
+
             {currentQuestion.children.length > 0 && (
               <SubQuestionList
                 key={currentQuestion.id}
@@ -287,6 +292,7 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
         </ScrollArea>
       </div>
 
+      {/* 입력 폼 영역 (그대로 유지) */}
       <div
         className={cn(
           "fixed bottom-0 right-0 z-30",
@@ -297,11 +303,8 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
               : "left-[3rem]"
         )}
       >
-
         <NewQuestionForm />
-
       </div>
-
-    </div >
+    </div>
   );
 }
