@@ -243,7 +243,7 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
 
   return (
     <div className="h-screen flex flex-col bg-white">
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-sm">
+      <div className="sticky top-0 z-20">
         <FocusViewHeader
           currentPath={currentPath}
           navigateToQuestion={navigateToQuestion}

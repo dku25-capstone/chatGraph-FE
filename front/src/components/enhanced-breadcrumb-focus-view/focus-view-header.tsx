@@ -8,11 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { SimpleTooltip } from "@/components/ui/simple-tooltip";
 import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { ViewData } from "@/lib/data-transformer";
 import { cn } from "@/lib/utils";
@@ -67,37 +63,35 @@ export const FocusViewHeader = ({
     "transition-all duration-200"
   );
 
+  // 구분선도 더 투명하게
+  const dividerClass = "h-4 w-px bg-gray-400/30 hidden sm:block";
+
   return (
     // [외부 컨테이너] 위치 잡기 (sticky top)
-    <div className="sticky top-0 z-50 w-full flex justify-center pointer-events-none pb-4">
+    <div className="sticky top-0 z-50 w-full flex justify-center pointer-events-none pb-4 px-2">
       {/* [내부 플로팅 바] 실제 UI */}
       <div className={floatingBarClass}>
         
         {/* [Left Section] 뷰 모드 토글 + 브레드크럼 */}
         <div className="flex items-center gap-3 flex-1 px-2 min-w-0 overflow-hidden">
           {/* 1. 뷰 모드 전환 버튼 */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={modeToggleBtnClass}
-                onClick={() => setViewMode(viewMode === "graph" ? "chat" : "graph")}
-              >
-                {viewMode === "graph" ? (
-                  <List className="h-4 w-4" />
-                ) : (
-                  <Network className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>{viewMode === "graph" ? "채팅으로 보기" : "그래프로 보기"}</p>
-            </TooltipContent>
-          </Tooltip>
+          <SimpleTooltip content={viewMode === "graph" ? "리스트 뷰로 전환" : "그래프 뷰로 전환"}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={modeToggleBtnClass}
+              onClick={() => setViewMode(viewMode === "graph" ? "chat" : "graph")}
+            >
+              {viewMode === "graph" ? (
+                <List className="h-4 w-4" />
+              ) : (
+                <Network className="h-4 w-4" />
+              )}
+            </Button>
+          </SimpleTooltip>
 
           {/* 2. 구분선 (Vertical Divider) */}
-          <div className="h-4 w-px bg-gray-400/30 hidden sm:block" />
+          <div className={dividerClass} />
 
           {/* 3. 브레드크럼 네비게이션 (Chat Mode일 때만 표시하거나 항상 표시) */}
           {viewMode === "chat" ? (
@@ -108,7 +102,7 @@ export const FocusViewHeader = ({
               />
             </div>
           ) : (
-            <div className="flex-1 px-2 font-medium text-sm text-gray-600 dark:text-gray-300 animate-in fade-in">
+            <div className="flex-1 px-2 font-medium text-sm text-gray-600 dark:text-gray-300 animate-in fade-in slide-in-from-left-2">
               Graph Exploration View
             </div>
           )}
@@ -121,10 +115,21 @@ export const FocusViewHeader = ({
             modifyMode === "IDLE" ? (
               <>
                 <div className="hidden lg:flex items-center gap-1">
-                  {[
-                    { icon: Edit, label: "분리", onClick: startSplitMode },
-                    { icon: Edit, label: "이동", onClick: moveToOtherMode },
-                    { icon: Edit, label: "관계", onClick: startModifyMode },
+                  {[{
+                    icon: Edit,
+                    label: "분리",
+                    onClick: startSplitMode
+                  },
+                  {
+                    icon: Edit,
+                    label: "이동",
+                    onClick: moveToOtherMode
+                  },
+                  {
+                    icon: Edit,
+                    label: "관계",
+                    onClick: startModifyMode
+                  },
                   ].map((action, i) => (
                     <Button
                       key={i}
