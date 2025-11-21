@@ -50,6 +50,8 @@ import { searchQuestions, QuestionNode } from "@/api/questions";
 
 import { patchTopic, deleteTopic } from "@/api/topics";
 import { useTopicStore } from "@/lib/topic-store";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 interface SearchResultNode extends QuestionNode {
   topicId: string;
@@ -201,12 +203,12 @@ export function AppSidebar() {
 
   // [변경] 클릭 효과(active:scale) 제거, 호버 효과만 유지
   const hoverEffectClass = 
-    "transition-all duration-200 hover:bg-white/40 dark:hover:bg-white/10";
+    "transition-all duration-200 hover:bg-white/20 dark:hover:bg-black/20";
 
   return (
     <Sidebar
       collapsible="icon"
-      className="border-r border-white/20 dark:border-white/10 bg-white/60 dark:bg-black/40 backdrop-blur-xl shadow-lg transition-all duration-300"
+      className="border-r border-white/20 dark:border-white/10 bg-gray/100 dark:bg-black/40 backdrop-blur-xl shadow-lg transition-all duration-300"
     >
       <SidebarHeader className="p-2 bg-transparent">
         <div className="flex items-center justify-between">
@@ -304,13 +306,18 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        
+        {state === "expanded" && (
+          <Separator />
+        )}
 
         {state === "expanded" && (
-          <SidebarGroup className="mt-4">
+          <SidebarGroup className="mt-0 flex-1">
             <SidebarGroupLabel className="text-gray-600 dark:text-gray-400 px-2 font-medium">
               {searchTerm.trim() !== "" ? "검색목록" : "채팅목록"}
             </SidebarGroupLabel>
-            <SidebarGroupContent>
+            <SidebarGroupContent className="flex-1">
+              <ScrollArea className="h-[calc(100vh-14rem)] pr-2">
               {loadingTopics ? (
                 <SidebarSkeleton />
               ) : searchTerm.trim() !== "" ? (
@@ -323,7 +330,7 @@ export function AppSidebar() {
                       >
                         <Link
                           href={`/${item.topicId}?question=${item.questionId}`}
-                          className="flex items-center gap-2 flex-1"
+                          className="flex items-center flex-1"
                         >
                           <span className="truncate">{item.questionText}</span>
                         </Link>
@@ -413,6 +420,7 @@ export function AppSidebar() {
                   저장된 채팅이 없습니다.
                 </div>
               )}
+              </ScrollArea>
             </SidebarGroupContent>
           </SidebarGroup>
         )}

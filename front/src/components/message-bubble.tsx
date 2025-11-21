@@ -1,20 +1,15 @@
 "use client";
 
-import { ChevronDown, ChevronUp, MoreVertical } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { OptimisticAnswer } from "../components/enhanced-breadcrumb-focus-view/OptimisticAnswer";
-import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import React, { useState, useEffect } from "react";
-import { Textarea } from "./ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
+import { Pencil, Check, X, Trash2, ChevronDown, ChevronUp, MoreHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { GlobalMarkdown } from "@/components/GlobalMarkDown"; // 경로에 맞게 수정
+import { toast } from "sonner"; // [추가] sonner toast import
 
 interface MessageBubbleProps {
-  questionText?: string;
+  questionText: string;
   answer?: string;
   isUser?: boolean;
   isToggleable?: boolean;
@@ -25,7 +20,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({
-  questionText = "",
+  questionText,
   answer,
   isUser = false,
   isToggleable = false,
@@ -35,120 +30,165 @@ export function MessageBubble({
   onDelete,
 }: MessageBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(questionText);
+  const [editedText, setEditedText] = useState(questionText);
+  const [isQuestionExpanded, setIsQuestionExpanded] = useState(false);
+  const [showExpandButton, setShowExpandButton] = useState(false);
+  const questionRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    setEditText(questionText);
+    const element = questionRef.current;
+    if (!element) return;
+    const isOverflowing = element.scrollHeight > element.clientHeight + 1;
+    setShowExpandButton(isOverflowing);
   }, [questionText]);
 
   const handleSave = () => {
-    if (onEdit) {
-      onEdit(editText);
+    if (onEdit && editedText.trim() !== "") {
+      onEdit(editedText);
+      setIsEditing(false);
     }
-    setIsEditing(false);
   };
 
   const handleCancel = () => {
+    setEditedText(questionText);
     setIsEditing(false);
-    setEditText(questionText);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSave();
-    }
-  };
+  const confirmDelete = () => {
+    if (!onDelete) return;
 
-  return (
-    <div
-      className={`flex gap-3 p-4 ${
-        isUser ? "bg-transparent justify-end" : "bg-gray-50"
-      } group max-w-full`} // [추가] max-w-full로 전체 너비 제한
-    >
-      {isToggleable && onToggleAnswer && (
-        <div className="flex-shrink-0 pt-1">
-          <Button variant="ghost" size="sm" onClick={onToggleAnswer}>
-            {isAnswerVisible ? (
-              <ChevronUp className="h-4 w-4" />
+    toast("정말 삭제하시겠습니까?", {
+      // 기본 sonner 스타일의 액션 버튼
+      action: {
+        label: "삭제",
+        onClick: () => onDelete(), // 삭제 클릭 시 실제 동작 수행
+      },
+      duration: 5000, // 5초 후 자동 닫힘
+    });
+  };
+  // AI 응답용 글래스모피즘 스타일 (유지)
+  const glassmorphismClasses = "p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-sm";
+
+  // 사용자 질문용 새 스타일 (bg-gray-100 적용)
+  const userBubbleClasses = "p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700";
+
+  if (isUser) {
+    return (
+      <div className="flex flex-col items-end space-y-3 w-full group/bubble">
+        {/* --- 사용자 질문 영역 --- */}
+        <div className="flex items-start w-full justify-end relative">
+          <div className={cn("min-w-0 relative w-[80%]", userBubbleClasses)}>
+            {isEditing ? (
+              <div className="flex flex-col space-y-2">
+                <Textarea
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  className="min-h-[100px] bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button size="sm" variant="ghost" onClick={handleCancel} className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={handleSave} className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                    <Check className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <>
+                <div className="flex flex-col items-start relative">
+                  <p
+                    ref={questionRef}
+                    className={cn(
+                      "text-sm font-medium leading-relaxed break-all whitespace-pre-wrap pr-8", // 편집 버튼 공간 확보
+                      !isQuestionExpanded ? "line-clamp-[7]" : ""
+                    )}
+                  >
+                    {questionText}
+                  </p>
+
+                  {/* '더 보기' 버튼 */}
+                  {showExpandButton && (
+                    <div className="w-full flex justify-end mt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setIsQuestionExpanded(!isQuestionExpanded)}
+                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
+                      >
+                        {isQuestionExpanded ? (
+                          <>접기 <ChevronUp className="h-3 w-3" /></>
+                        ) : (
+                          <>더 보기 <ChevronDown className="h-3 w-3" /></>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* 편집/삭제 버튼 (hover 시 표시) */}
+                {onEdit && !isEditing && (
+                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity pl-2">
+                    <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)} className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    {onDelete && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={confirmDelete} // [수정] onDelete 대신 confirmDelete 호출
+                        className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </>
             )}
-          </Button>
-        </div>
-      )}
-      
-      {/* [핵심 수정] w-full 추가: Flex 아이템이 가용 공간을 꽉 채우도록 강제 */}
-      <div className="flex-1 min-w-0 w-full space-y-2">
-        {isEditing ? (
-          <div className="space-y-2">
-            <Textarea
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="min-h-[80px]"
-            />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleSave}>
-                저장
-              </Button>
-              <Button size="sm" variant="ghost" onClick={handleCancel}>
-                취소
-              </Button>
-            </div>
           </div>
-        ) : (
-          // [핵심 수정] break-words 대신 break-all 사용 고려 (URL이나 긴 영어 단어 때문일 수 있음)
-          // 만약 한글/일반 영어 문장 위주라면 break-words 유지,
-          // 긴 문자열 테스트 중이라면 break-all을 사용하세요.
-          <div className="font-medium text-gray-900 whitespace-pre-wrap break-words w-full">
-            {questionText}
+        </div>
+
+        {/* '답변 보기/숨기기' 버튼 */}
+        {isToggleable && (
+          <div className="pr-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleAnswer}
+              className="text-muted-foreground hover:text-foreground hover:bg-accent transition-colors h-8 px-3 font-normal flex items-center gap-1.5 rounded-full"
+            >
+              {isAnswerVisible ? (
+                <><ChevronDown className="h-4 w-4" /> 답변 숨기기</>
+              ) : (
+                <><MoreHorizontal className="h-4 w-4" /> 답변 보기</>
+              )}
+            </Button>
           </div>
         )}
 
-        {isAnswerVisible && (
-          // [핵심 수정] OptimisticAnswer를 감싸는 div에도 스타일 강제 적용
-          <div className="text-gray-700 leading-relaxed whitespace-pre-wrap break-words w-full [&>*]:max-w-full [&>*]:break-words [&>*]:whitespace-pre-wrap">
-             {/* [&>*]... 구문은 자식 요소(OptimisticAnswer 내부 태그)들에게도 강제로 줄바꿈 스타일을 주입합니다. */}
-            <OptimisticAnswer answer={answer} />
+        {/* AI 답변 영역 */}
+        {isAnswerVisible && answer && (
+          <div className="flex items-start w-full justify-end pl-8"> {/* 왼쪽 여백 추가 */}
+            <div className={cn("flex-1 min-w-0 max-w-full transition-all", glassmorphismClasses)}>
+              <div className="max-w-none break-all prose prose-sm dark:prose-invert">
+                <GlobalMarkdown>{answer}</GlobalMarkdown>
+              </div>
+            </div>
           </div>
         )}
       </div>
+    );
+  }
 
-      {isUser && !isEditing && (
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"> {/* flex-shrink-0 추가 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                수정
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  if (onDelete) {
-                    toast.warning("정말 이 질문을 삭제하시겠습니까?", {
-                      action: {
-                        label: "삭제",
-                        onClick: () => onDelete(),
-                      },
-                      cancel: {
-                        label: "취소",
-                        onClick: () => toast.dismiss(),
-                      },
-                    });
-                  }
-                }}
-              >
-                삭제
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+  // AI 응답 (변경 없음)
+  return (
+    <div className={cn("flex items-start max-w-[90%]", glassmorphismClasses)}>
+      <div className="flex-1 min-w-0 overflow-hidden relative group">
+        <div className="max-w-none break-all prose prose-sm dark:prose-invert">
+          {questionText}
         </div>
-      )}
+      </div>
     </div>
   );
 }

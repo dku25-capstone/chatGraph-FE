@@ -103,6 +103,10 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
     );
   }
 
+  // 글래스 모피즘 스타일 정의 (통일성을 위해 변수로 관리)
+  const glassmorphismAlertStyle =
+    "bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-800/50 shadow-2xl";
+
   if (viewMode === "graph") {
     return (
       <div className="h-screen flex flex-col bg-white">
@@ -124,6 +128,8 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
               setViewMode("chat");
             }}
           />
+
+          {/* 1. 노드 이동 확인 Alert */}
           <AlertDialog
             open={!!reparentRequest}
             onOpenChange={(open) => {
@@ -132,7 +138,7 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
               }
             }}
           >
-            <AlertDialogContent>
+            <AlertDialogContent className={glassmorphismAlertStyle}>
               <AlertDialogHeader>
                 <AlertDialogTitle>노드 이동 확인</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -157,13 +163,14 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* 2. 새 토픽으로 분리 Alert */}
           <AlertDialog
             open={!!splitRequest}
             onOpenChange={(open) => {
               if (!open) cancelModifyMode();
             }}
           >
-            <AlertDialogContent>
+            <AlertDialogContent className={glassmorphismAlertStyle}>
               <AlertDialogHeader>
                 <AlertDialogTitle>새 토픽으로 분리</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -209,13 +216,14 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
             }}
           />
 
+          {/* 3. 다른 토픽으로 이동 확인 Alert */}
           <AlertDialog
             open={!!moveToTopicRequest}
             onOpenChange={(open) => {
               if (!open) setMoveTopicRequest(null);
             }}
           >
-            <AlertDialogContent>
+            <AlertDialogContent className={glassmorphismAlertStyle}>
               <AlertDialogHeader>
                 <AlertDialogTitle>다른 토픽으로 이동 확인</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -242,6 +250,7 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
   }
 
   return (
+    // ... (나머지 리스트 뷰 코드는 동일)
     <div className="h-screen flex flex-col bg-white">
       {/* 1. 헤더 영역: 여기만 sticky 및 z-index 적용 */}
       <div className="sticky top-0 z-20">
