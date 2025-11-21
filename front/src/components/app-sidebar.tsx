@@ -202,9 +202,7 @@ export function AppSidebar() {
     "bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl";
 
   // [변경] 클릭 효과(active:scale) 제거, 호버 효과만 유지
-  const hoverEffectClass = 
-    "transition-all duration-200 hover:bg-white/20 dark:hover:bg-black/20";
-
+  const hoverEffectClass = "hover:bg-gray-100 dark:hover:bg-gray-800 animate-in fade-in slide-in-from-left-1 duration-300"
   return (
     <Sidebar
       collapsible="icon"

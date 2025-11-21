@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, Check, X, Trash2, ChevronDown, ChevronUp, MoreHorizontal } from "lucide-react";
+// [수정] Copy 아이콘 추가
+import { Pencil, Check, X, Trash2, ChevronDown, ChevronUp, MoreHorizontal, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GlobalMarkdown } from "@/components/GlobalMarkDown"; // 경로에 맞게 수정
-import { toast } from "sonner"; // [추가] sonner toast import
+import { GlobalMarkdown } from "@/components/GlobalMarkDown";
+import { toast } from "sonner";
 
 interface MessageBubbleProps {
   questionText: string;
@@ -33,6 +34,8 @@ export function MessageBubble({
   const [editedText, setEditedText] = useState(questionText);
   const [isQuestionExpanded, setIsQuestionExpanded] = useState(false);
   const [showExpandButton, setShowExpandButton] = useState(false);
+  // [추가] 복사 상태 관리 state
+  const [isCopied, setIsCopied] = useState(false);
   const questionRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -58,24 +61,36 @@ export function MessageBubble({
     if (!onDelete) return;
 
     toast("정말 삭제하시겠습니까?", {
-      // 기본 sonner 스타일의 액션 버튼
       action: {
         label: "삭제",
-        onClick: () => onDelete(), // 삭제 클릭 시 실제 동작 수행
+        onClick: () => onDelete(),
       },
-      duration: 5000, // 5초 후 자동 닫힘
+      duration: 5000,
     });
   };
-  // AI 응답용 글래스모피즘 스타일 (유지)
-  const glassmorphismClasses = "p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-sm";
 
-  // 사용자 질문용 새 스타일 (bg-gray-100 적용)
+  // [추가] 복사 핸들러 함수
+  const handleCopy = async (text: string) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setIsCopied(true);
+      toast.success("클립보드에 복사되었습니다.");
+      // 2초 후 아이콘 원래대로 복귀
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      toast.error("복사에 실패했습니다.");
+    }
+  };
+
+
+  const glassmorphismClasses = "p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-sm";
   const userBubbleClasses = "p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700";
 
   if (isUser) {
     return (
       <div className="flex flex-col items-end space-y-3 w-full group/bubble">
-        {/* --- 사용자 질문 영역 --- */}
+        {/* --- 사용자 질문 영역 (기존 코드 동일) --- */}
         <div className="flex items-start w-full justify-end relative">
           <div className={cn("min-w-0 relative w-[80%]", userBubbleClasses)}>
             {isEditing ? (
@@ -100,14 +115,13 @@ export function MessageBubble({
                   <p
                     ref={questionRef}
                     className={cn(
-                      "text-sm font-medium leading-relaxed break-all whitespace-pre-wrap pr-8", // 편집 버튼 공간 확보
+                      "text-sm font-medium leading-relaxed break-all whitespace-pre-wrap pr-8",
                       !isQuestionExpanded ? "line-clamp-[7]" : ""
                     )}
                   >
                     {questionText}
                   </p>
 
-                  {/* '더 보기' 버튼 */}
                   {showExpandButton && (
                     <div className="w-full flex justify-end mt-2">
                       <Button
@@ -126,7 +140,6 @@ export function MessageBubble({
                   )}
                 </div>
 
-                {/* 편집/삭제 버튼 (hover 시 표시) */}
                 {onEdit && !isEditing && (
                   <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity pl-2">
                     <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)} className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
@@ -136,7 +149,7 @@ export function MessageBubble({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={confirmDelete} // [수정] onDelete 대신 confirmDelete 호출
+                        onClick={confirmDelete}
                         className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -149,7 +162,7 @@ export function MessageBubble({
           </div>
         </div>
 
-        {/* '답변 보기/숨기기' 버튼 */}
+        {/* '답변 보기/숨기기' 버튼 (기존 코드 동일) */}
         {isToggleable && (
           <div className="pr-2">
             <Button
@@ -167,12 +180,26 @@ export function MessageBubble({
           </div>
         )}
 
-        {/* AI 답변 영역 */}
+        {/* --- AI 답변 영역 (복사 버튼 추가됨) --- */}
         {isAnswerVisible && answer && (
-          <div className="flex items-start w-full justify-end pl-8"> {/* 왼쪽 여백 추가 */}
-            <div className={cn("flex-1 min-w-0 max-w-full transition-all", glassmorphismClasses)}>
-              <div className="max-w-none break-all prose prose-sm dark:prose-invert">
+          <div className="flex items-start w-full justify-end pl-8">
+            {/* [수정] relative 및 group/answer 클래스 추가 */}
+            <div className={cn("flex-1 min-w-0 max-w-full transition-all relative group/answer", glassmorphismClasses)}>
+              {/* [수정] pr-8 추가하여 버튼 공간 확보 */}
+              <div className="max-w-none break-all prose prose-sm dark:prose-invert pr-8">
                 <GlobalMarkdown>{answer}</GlobalMarkdown>
+              </div>
+
+              {/* [추가] 복사 버튼 */}
+              <div className="absolute top-2 right-2 opacity-0 group-hover/answer:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleCopy(answer)}
+                    className="h-7 w-7 p-0 hover:bg-white/20 dark:hover:bg-black/20 text-muted-foreground hover:text-foreground"
+                  >
+                    {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
               </div>
             </div>
           </div>
@@ -181,13 +208,27 @@ export function MessageBubble({
     );
   }
 
-  // AI 응답 (변경 없음)
+  // --- 단독 AI 응답 영역 (복사 버튼 추가됨) ---
   return (
-    <div className={cn("flex items-start max-w-[90%]", glassmorphismClasses)}>
-      <div className="flex-1 min-w-0 overflow-hidden relative group">
-        <div className="max-w-none break-all prose prose-sm dark:prose-invert">
+    // [수정] relative 및 group/answer 클래스 추가
+    <div className={cn("flex items-start max-w-[70%] relative group/answer", glassmorphismClasses)}>
+      <div className="flex-1 min-w-0 overflow-hidden relative">
+        {/* [수정] pr-8 추가하여 버튼 공간 확보 */}
+        <div className="max-w-none break-all prose prose-sm dark:prose-invert pr-8">
+          {/* 이 경우 questionText가 AI의 답변 내용임 */}
           {questionText}
         </div>
+      </div>
+      {/* [추가] 복사 버튼 */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover/answer:opacity-100 transition-opacity">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => handleCopy(questionText)}
+            className="h-7 w-7 p-0 hover:bg-white/20 dark:hover:bg-black/20 text-muted-foreground hover:text-foreground"
+          >
+            {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          </Button>
       </div>
     </div>
   );

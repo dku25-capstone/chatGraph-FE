@@ -1,10 +1,12 @@
 // components/GlobalMarkdown.tsx
-"use client"; // 만약 클라이언트 컴포넌트로 사용해야 한다면 추가
+"use client";
 
 import ReactMarkdown, { Options } from "react-markdown";
+import remarkGfm from "remark-gfm"; // [추가] GFM 플러그인 임포트
 
-// 모든 마크다운에 공통으로 적용할 CSS 클래스 (Tailwind 예시)
-const CONTAINER_CLASS = "w-full max-w-full overflow-hidden text-gray-800 leading-7 prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert";
+// 모든 마크다운에 공통으로 적용할 CSS 클래스
+const CONTAINER_CLASS =
+  "w-full max-w-full overflow-hidden text-gray-800 leading-7 prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert";
 
 // 모든 마크다운에 공통으로 적용할 인라인 스타일
 const CONTAINER_STYLE = {
@@ -12,19 +14,21 @@ const CONTAINER_STYLE = {
   overflowWrap: "anywhere" as const,
 };
 
-// 커스텀 컴포넌트 정의 (기존 ReactMarkdown의 props를 상속받음)
 interface GlobalMarkdownProps extends Options {
-  className?: string; // 컨테이너에 추가적인 클래스가 필요할 경우를 위해
+  className?: string;
 }
 
-export const GlobalMarkdown = ({ children, className, ...props }: GlobalMarkdownProps) => {
+export const GlobalMarkdown = ({
+  children,
+  className,
+  ...props
+}: GlobalMarkdownProps) => {
   // components prop을 여기서 정의하여 전역적으로 적용되게 합니다.
   const customComponents = {
-    // 1. 문단(p)
+    // --- 기존 컴포넌트 유지 ---
     p: ({ node, ...rest }: any) => (
       <p className="mb-2 whitespace-pre-wrap" {...rest} />
     ),
-    // 2. 링크(a)
     a: ({ node, ...rest }: any) => (
       <a
         className="text-blue-500 hover:underline break-all"
@@ -33,44 +37,93 @@ export const GlobalMarkdown = ({ children, className, ...props }: GlobalMarkdown
         {...rest}
       />
     ),
-    // 3. 코드 블록(pre)
     pre: ({ node, ...rest }: any) => (
       <pre
         className="bg-gray-100 dark:bg-gray-800 rounded p-2 my-2 overflow-x-auto whitespace-pre-wrap break-all"
         {...rest}
       />
     ),
-    // 4. 인라인 코드(code)
     code: ({ node, ...rest }: any) => (
       <code
         className="bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5 break-all whitespace-pre-wrap font-mono text-sm"
         {...rest}
       />
     ),
-    // 리스트 스타일
     ul: ({ node, ...rest }: any) => (
       <ul className="list-disc pl-5 mb-2 space-y-1" {...rest} />
     ),
     ol: ({ node, ...rest }: any) => (
       <ol className="list-decimal pl-5 mb-2 space-y-1" {...rest} />
     ),
-    // 필요한 경우 추가 컴포넌트 정의 (h1, h2, blockquote 등)
-    h1: ({ node, ...rest }: any) => <h1 className="text-2xl font-bold mt-4 mb-2" {...rest} />,
-    h2: ({ node, ...rest }: any) => <h2 className="text-xl font-bold mt-3 mb-2" {...rest} />,
-    blockquote: ({ node, ...rest }: any) => (
-        <blockquote className="border-l-4 border-gray-300 pl-4 italic my-2 text-gray-600" {...rest} />
+    h1: ({ node, ...rest }: any) => (
+      <h1 className="text-2xl font-bold mt-4 mb-2" {...rest} />
     ),
+    h2: ({ node, ...rest }: any) => (
+      <h2 className="text-xl font-bold mt-3 mb-2" {...rest} />
+    ),
+    blockquote: ({ node, ...rest }: any) => (
+      <blockquote
+        className="border-l-4 border-gray-300 pl-4 italic my-2 text-gray-600"
+        {...rest}
+      />
+    ),
+
+    // --- [추가] GFM 테이블 스타일링 ---
+    table: ({ node, ...rest }: any) => (
+      <div className="my-4 w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+        <table
+          className="w-full text-sm text-left text-gray-500 dark:text-gray-400"
+          {...rest}
+        />
+      </div>
+    ),
+    thead: ({ node, ...rest }: any) => (
+      <thead
+        className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 font-medium"
+        {...rest}
+      />
+    ),
+    tbody: ({ node, ...rest }: any) => (
+      <tbody className="divide-y divide-gray-200 dark:divide-gray-700" {...rest} />
+    ),
+    tr: ({ node, ...rest }: any) => (
+      <tr className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" {...rest} />
+    ),
+    th: ({ node, ...rest }: any) => (
+      <th scope="col" className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0" {...rest} />
+    ),
+    td: ({ node, ...rest }: any) => (
+      <td className="px-4 py-3 border-r border-gray-200 dark:border-gray-700 last:border-r-0 break-words" {...rest} />
+    ),
+
+    // --- [추가] GFM 기타 스타일링 ---
+    // 취소선 (strikethrough) ~~text~~
+    del: ({ node, ...rest }: any) => (
+      <del className="line-through text-gray-500 dark:text-gray-400" {...rest} />
+    ),
+    // 작업 목록 체크박스 (Task list styles)
+    input: ({ node, ...rest }: any) => {
+      if (rest.type === 'checkbox') {
+         return <input type="checkbox" className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800" {...rest} disabled={true} />
+      }
+      return <input {...rest} />;
+    },
   };
 
-  // 전달받은 components prop이 있다면 병합합니다 (개별 사용 시 오버라이드 가능하도록)
   const mergedComponents = { ...customComponents, ...(props.components || {}) };
 
   return (
     <div
-      className={`${CONTAINER_CLASS} ${className || ""}`} // 기본 클래스 + 추가 클래스 병합
+      className={`${CONTAINER_CLASS} ${className || ""}`}
       style={CONTAINER_STYLE}
     >
-      <ReactMarkdown components={mergedComponents} {...props}>
+      <ReactMarkdown
+        // [추가] remarkPlugins에 GFM 플러그인 적용
+        // 외부에서 전달된 플러그인이 있다면 병합합니다.
+        remarkPlugins={[remarkGfm, ...(props.remarkPlugins || [])]}
+        components={mergedComponents}
+        {...props}
+      >
         {children}
       </ReactMarkdown>
     </div>
