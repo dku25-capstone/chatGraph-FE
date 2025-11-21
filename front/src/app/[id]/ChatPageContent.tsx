@@ -6,6 +6,7 @@ import { TopicTreeResponse, askQuestion, TopicNode } from "@/api/questions";
 import { getTopicById } from "@/api/questions";
 import { EnhancedBreadcrumbFocusView } from "@/components/enhanced-breadcrumb-focus-view";
 import LoadingSpinner from "@/components/ui/loading-spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTopicStore } from "@/lib/topic-store";
 
 function ChatPageContentInner() {
@@ -148,8 +149,17 @@ function ChatPageContentInner() {
   // --- 7. 렌더링 로직은 동일 ---
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <LoadingSpinner />
+      <div className="flex flex-col h-screen p-4 space-y-4">
+        {/* Header Skeleton */}
+        <Skeleton className="h-16 w-full rounded-lg" />
+        {/* Main Content Skeletons */}
+        <div className="flex-1 space-y-4 pt-16"> {/* Add pt-16 to account for fixed header */}
+          <Skeleton className="h-24 w-3/4 rounded-lg ml-auto" /> {/* User Message */}
+          <Skeleton className="h-32 w-full rounded-lg" /> {/* AI Answer */}
+          <Skeleton className="h-24 w-full rounded-lg" /> {/* AI Answer */}
+        </div>
+        {/* Footer Form Skeleton */}
+        <Skeleton className="h-20 w-full rounded-lg" />
       </div>
     );
   }
@@ -174,8 +184,17 @@ export default function ChatPageContent() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center h-screen">
-          <LoadingSpinner />
+        <div className="flex flex-col h-screen p-4 space-y-4">
+          {/* Header Skeleton */}
+          <Skeleton className="h-16 w-full rounded-lg" />
+          {/* Main Content Skeletons */}
+          <div className="flex-1 space-y-4 pt-16"> {/* Add pt-16 to account for fixed header */}
+            <Skeleton className="h-24 w-3/4 rounded-lg ml-auto" /> {/* User Message */}
+            <Skeleton className="h-32 w-full rounded-lg" /> {/* AI Answer */}
+            <Skeleton className="h-24 w-full rounded-lg" /> {/* AI Answer */}
+          </div>
+          {/* Footer Form Skeleton */}
+          <Skeleton className="h-20 w-full rounded-lg" />
         </div>
       }
     >
