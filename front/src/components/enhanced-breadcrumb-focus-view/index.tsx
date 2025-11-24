@@ -279,7 +279,7 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                   isUser={true}
                   isToggleable={true}
                   isAnswerVisible={isMainAnswerVisible}
-                  isFavorite={currentQuestion.isFavorite}
+                  isFavorite={currentQuestion.favorite}
                   onToggleAnswer={() =>
                     setIsMainAnswerVisible(!isMainAnswerVisible)
                   }
