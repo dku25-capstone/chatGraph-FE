@@ -9,7 +9,7 @@ import {
   copyQuestions,
   deleteQuestionBatch,
   separateQuestions,
-  toggleFavoriteQuestion,
+  toggleFavoriteQuestion as toggleFavoriteQuestionApi,
 } from "@/api/questions";
 import {
   ViewData,
