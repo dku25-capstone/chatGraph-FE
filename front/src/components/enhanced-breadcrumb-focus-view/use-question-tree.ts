@@ -9,6 +9,7 @@ import {
   copyQuestions,
   deleteQuestionBatch,
   separateQuestions,
+  ShareQuestions,
 } from "@/api/questions";
 import {
   ViewData,
@@ -46,13 +47,19 @@ export const useQuestionTree = (
     [initialResponse]
   );
 
-  // 수정 모드가 가질 수 있는 3가지 상태
+  // 수정 모드가 가질 수 있는 6가지 상태
   type ModifyMode =
     | "IDLE"
     | "SELECT_CHILD"
     | "SELECT_PARENT"
     | "SELECT_NODE_TO_MOVE_OTHER"
-    | "SELECT_NODE_TO_SPLIT";
+    | "SELECT_NODE_TO_SPLIT"
+    | "SELECT_NODE_TO_SHARE";
+
+  // 공유 요청 상태(노드 + 이메일 입력 모달용)
+  interface ShareRequest {
+    nodeToShare: ViewData;
+  }
 
   // '부모 변경 확인' 모달에 필요한 데이터 타입 정의
   interface ReparentRequest {
@@ -99,6 +106,7 @@ export const useQuestionTree = (
     useState<MoveToTopicRequest | null>(null);
   // 분리 요청 상태
   const [splitRequest, setSplitRequest] = useState<SplitRequest | null>(null);
+  const [shareRequest, setShareRequest] = useState<ShareRequest | null>(null);
 
   const router = useRouter();
 
@@ -194,6 +202,10 @@ export const useQuestionTree = (
           setSelectedNode(clickedNode);
           break;
 
+        case "SELECT_NODE_TO_SHARE":
+          setShareRequest({ nodeToShare: clickedNode });
+          break;
+
         case "SELECT_NODE_TO_SPLIT":
           toast.info(`'${clickedNode.questionText}' 노드를 선택했습니다.`);
           setSplitRequest({
@@ -271,6 +283,39 @@ export const useQuestionTree = (
       setReparentRequest,
       setSplitRequest,
     ]
+  );
+
+  // 공유 버튼 클릭시
+  const startShareMode = useCallback(() => {
+    setModifyMode("SELECT_NODE_TO_SHARE");
+    toast.info("공유할 노드를 선택하세요.");
+  }, []);
+
+  // 이메일 입력 모달에서 [공유] 클릭 시
+  const confirmShare = useCallback(
+    async (targetEmail: string) => {
+      if (!shareRequest) return;
+      const { nodeToShare } = shareRequest;
+
+      toast.loading(`${targetEmail}님에게 공유하는 중...`);
+
+      try {
+        const allIdsToShare = getAllIdsFromNode(nodeToShare);
+
+        await ShareQuestions({
+          sourceQuestionIds: allIdsToShare,
+          targetUserId: targetEmail,
+        });
+      } catch (error) {
+        console.error("공유 실패:", error);
+        toast.error("공유에 실패했습니다.");
+      } finally {
+        setShareRequest(null);
+        setModifyMode("IDLE");
+        toast.dismiss();
+      }
+    },
+    [shareRequest]
   );
 
   // 다른 토픽으로 이동 버튼을 눌렀을 때 실행할 함수
@@ -699,6 +744,9 @@ export const useQuestionTree = (
       startSplitMode,
       splitRequest,
       confirmSplitTopic,
+      startShareMode,
+      shareRequest,
+      confirmShare,
     }),
     // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
     // useMemo 의존성 배열에서 모달 관련 상태 및 함수들 삭제
@@ -735,6 +783,9 @@ export const useQuestionTree = (
       startSplitMode,
       splitRequest,
       confirmSplitTopic,
+      startShareMode,
+      shareRequest,
+      confirmShare,
     ]
   );
 };
