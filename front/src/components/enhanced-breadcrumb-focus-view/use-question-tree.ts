@@ -297,7 +297,7 @@ export const useQuestionTree = (
       if (!shareRequest) return;
       const { nodeToShare } = shareRequest;
 
-      toast.loading(`${targetEmail}님에게 공유하는 중...`);
+      const toastId = toast.loading(`${targetEmail}님에게 공유하는 중...`);
 
       try {
         const allIdsToShare = getAllIdsFromNode(nodeToShare);
@@ -306,13 +306,14 @@ export const useQuestionTree = (
           sourceQuestionIds: allIdsToShare,
           targetUserId: targetEmail,
         });
+
+        toast.success("공유가 완료되었습니다!", { id: toastId });
       } catch (error) {
         console.error("공유 실패:", error);
-        toast.error("공유에 실패했습니다.");
+        toast.error("공유에 실패했습니다.", { id: toastId });
       } finally {
         setShareRequest(null);
         setModifyMode("IDLE");
-        toast.dismiss();
       }
     },
     [shareRequest]
@@ -747,6 +748,7 @@ export const useQuestionTree = (
       startShareMode,
       shareRequest,
       confirmShare,
+      setShareRequest,
     }),
     // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
     // useMemo 의존성 배열에서 모달 관련 상태 및 함수들 삭제
@@ -786,6 +788,7 @@ export const useQuestionTree = (
       startShareMode,
       shareRequest,
       confirmShare,
+      setShareRequest,
     ]
   );
 };

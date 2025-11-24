@@ -40,6 +40,7 @@ export const FocusViewHeader = ({
     startModifyMode,
     cancelModifyMode,
     moveToOtherMode,
+    startShareMode,
   } = useQuestionTreeContext();
 
   const floatingBarClass = cn(
@@ -123,7 +124,7 @@ export const FocusViewHeader = ({
                     {
                       icon: Share,
                       label: "공유",
-                      // onClick: startSplitMode,
+                      onClick: startShareMode,
                     },
                     {
                       icon: Split,
