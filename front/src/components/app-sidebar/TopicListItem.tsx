@@ -20,7 +20,7 @@ interface TopicListItemProps {
   onStartEdit: (topic: TopicHistoryItem | null) => void;
   onConfirmEdit: () => void;
   onConfirmDelete: (topicId: string) => void;
-  onToggleBookmark: (topicId: string) => void;
+  onToggleFavorite: (topicId: string) => void;
   editingNewName: string;
   setEditingNewName: (name: string) => void;
   glassDropdownClass: string;
@@ -32,7 +32,7 @@ export function TopicListItem({
   onStartEdit,
   onConfirmEdit,
   onConfirmDelete,
-  onToggleBookmark,
+  onToggleFavorite,
   editingNewName,
   setEditingNewName,
   glassDropdownClass,
@@ -70,7 +70,7 @@ export function TopicListItem({
         </div>
       ) : (
         <>
-          {topic.bookmarked && (
+          {topic.favorite && (
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-2" />
           )}
           <Link
@@ -101,12 +101,12 @@ export function TopicListItem({
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    onToggleBookmark(topic.topicId);
+                    onToggleFavorite(topic.topicId);
                   }}
                   className="cursor-pointer gap-2"
                 >
                   <span>
-                    {topic.bookmarked ? "즐겨찾기 해제" : "즐겨찾기"}
+                    {topic.favorite ? "즐겨찾기 해제" : "즐겨찾기"}
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem

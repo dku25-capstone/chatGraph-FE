@@ -65,7 +65,7 @@ export function AppSidebar() {
     updateTopic,
     removeTopic,
     setTopics,
-    toggleBookmark,
+    toggleFavorite,
   } = useTopicStore();
   const [loadingTopics, setLoadingTopics] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -77,10 +77,10 @@ export function AppSidebar() {
   const [searchResults, setSearchResults] = useState<SearchResultNode[]>([]);
   const router = useRouter();
 
-  const [isBookmarkListExpanded, setIsBookmarkListExpanded] = useState(true);
+  const [isFavoriteListExpanded, setIsFavoriteListExpanded] = useState(true);
 
-  const bookmarkedTopics = topics.filter((topic) => topic.bookmarked);
-  const regularTopics = topics.filter((topic) => !topic.bookmarked);
+  const favoriteTopics = topics.filter((topic) => topic.favorite);
+  const nonFavoriteTopics = topics.filter((topic) => !topic.favorite);
 
   const handleSearch = async (term: string) => {
     setSearchTerm(term);
@@ -279,34 +279,34 @@ export function AppSidebar() {
 
         {state === "expanded" && (
           <>
-            {bookmarkedTopics.length > 0 && (
+            {favoriteTopics.length > 0 && (
               <SidebarGroup className="pt-0">
                 <div
                   className="flex items-center justify-between px-2 mb-2 cursor-pointer"
                   onClick={() =>
-                    setIsBookmarkListExpanded(!isBookmarkListExpanded)
+                    setIsFavoriteListExpanded(!isFavoriteListExpanded)
                   }
                 >
                   <SidebarGroupLabel className="text-xs font-semibold text-gray-500/80 dark:text-gray-400/80 uppercase tracking-wider">
-                    BookMarks
+                    Favorites
                   </SidebarGroupLabel>
                   <ChevronDown
                     className={`h-4 w-4 transition-transform ${
-                      isBookmarkListExpanded ? "rotate-180" : ""
+                      isFavoriteListExpanded ? "rotate-180" : ""
                     }`}
                   />
                 </div>
-                {isBookmarkListExpanded && (
+                {isFavoriteListExpanded && (
                   <SidebarGroupContent>
                     <TopicList
-                      topics={bookmarkedTopics}
+                      topics={favoriteTopics}
                       editingTopic={editingTopic}
                       editingNewName={newName}
                       setEditingNewName={setNewName}
                       onStartEdit={handleStartEdit}
                       onConfirmEdit={handleConfirmEdit}
                       onConfirmDelete={handleConfirmDelete}
-                      onToggleBookmark={toggleBookmark}
+                      onToggleFavorite={toggleFavorite}
                       glassDropdownClass={glassDropdownClass}
                     />
                   </SidebarGroupContent>
@@ -327,18 +327,18 @@ export function AppSidebar() {
                       searchResults={searchResults}
                       itemClass={itemClass}
                     />
-                  ) : regularTopics.length > 0 ? (
+                  ) : nonFavoriteTopics.length > 0 ? (
                     <TopicList
-                      topics={regularTopics}
+                      topics={nonFavoriteTopics}
                       editingTopic={editingTopic}
                       editingNewName={newName}
                       setEditingNewName={setNewName}
                       onStartEdit={handleStartEdit}
-                      onConfirmEdit={handleConfirmEdit}
-                      onConfirmDelete={handleConfirmDelete}
-                      onToggleBookmark={toggleBookmark}
-                      glassDropdownClass={glassDropdownClass}
-                    />
+      onConfirmEdit={handleConfirmEdit}
+      onConfirmDelete={handleConfirmDelete}
+      onToggleFavorite={toggleFavorite}
+      glassDropdownClass={glassDropdownClass}
+    />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-32 text-center p-4 border-2 border-dashed border-black/5 dark:border-white/5 rounded-xl mt-2">
                       <p className="text-sm text-gray-500">

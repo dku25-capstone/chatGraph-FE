@@ -4,7 +4,7 @@ export interface TopicHistoryItem {
   topicId: string;
   topicName: string;
   createdAt: string;
-  bookmarked: boolean;
+  favorite: boolean;
 }
 
 // 서버에서 토픽 리스트를 배열 형태로 응답

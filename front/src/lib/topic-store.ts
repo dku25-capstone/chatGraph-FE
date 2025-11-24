@@ -14,7 +14,7 @@ interface TopicState {
   addTopic: (topic: TopicHistoryItem) => void;
   updateTopic: (topicId: string, newName: string) => void;
   removeTopic: (topicId: string) => void;
-  toggleBookmark: (topicId: string) => void;
+  toggleFavorite: (topicId: string) => void;
   fetchTopics: () => Promise<void>;
 }
 
@@ -37,18 +37,18 @@ export const useTopicStore = create<TopicState>((set, get) => ({
     set((state) => ({
       topics: state.topics.filter((t) => t.topicId !== topicId),
     })),
-  toggleBookmark: async (topicId: string) => {
+  toggleFavorite: async (topicId: string) => {
     const originalTopics = get().topics;
     // Optimistic update
     set((state) => ({
       topics: state.topics.map((t) =>
-        t.topicId === topicId ? { ...t, bookmarked: !t.bookmarked } : t
+        t.topicId === topicId ? { ...t, favorite: !t.favorite } : t
       ),
     }));
     try {
       await toggleFavoriteTopic(topicId);
     } catch (error) {
-      console.error("Failed to toggle bookmark:", error);
+      console.error("Failed to toggle favorite:", error);
       // Revert on error
       set({ topics: originalTopics });
     }
