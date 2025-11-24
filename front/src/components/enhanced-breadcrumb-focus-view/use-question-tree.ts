@@ -203,6 +203,14 @@ export const useQuestionTree = (
           break;
 
         case "SELECT_NODE_TO_SHARE":
+          if (clickedNode.id === topicId) {
+            toast.error("토픽 자체는 공유할 수 없습니다.", {
+              description:
+                "공유하고 싶은 '첫 번째 질문 노드'를 선택해주세요. 그 하위 내용은 토픽과 함께 모두 공유됩니다.",
+              duration: 5000,
+            });
+            return; // 모달 띄우지 않고 종료
+          }
           setShareRequest({ nodeToShare: clickedNode });
           break;
 
@@ -282,6 +290,7 @@ export const useQuestionTree = (
       setSelectedNode,
       setReparentRequest,
       setSplitRequest,
+      topicId,
     ]
   );
 
