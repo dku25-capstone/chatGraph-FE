@@ -32,28 +32,20 @@ export const FocusViewHeader = ({
     moveToOtherMode,
   } = useQuestionTreeContext();
 
-  // [강력한 글래스모피즘 플로팅 바 스타일]
-  // w-full이 아닌 max-w를 주어 떠있는 느낌 강조
   const floatingBarClass = cn(
-    "pointer-events-auto", // 클릭 가능
-    "flex items-center justify-between", // 내부 요소 양끝 정렬
-    "w-full max-w-[100%] md:max-w-[98%] min-h-13 lg:max-w-6xl mx-auto", // 너비 제한 및 중앙 정렬
-    "mt-4 p-1.5 pr-3", // 내부 여백 (버튼과 테두리 사이 간격)
-    "rounded-full", // 완전한 알약 모양
-    
-    // [Glassmorphism Effect - Hardcore]
-    "bg-white/60 dark:bg-black/60", // 기본 배경 반투명
-    "backdrop-blur-2xl", // 매우 강한 블러
-    "border border-white/40 dark:border-white/10", // 뚜렷한 유리 테두리
-    "shadow-2xl shadow-black/10", // 깊이감 있는 그림자
-    
-    // [Hover/Interaction]
+    "pointer-events-auto",
+    "flex items-center justify-between",
+    "w-full max-w-[100%] md:max-w-[98%] min-h-13 lg:max-w-6xl mx-auto",
+    "mt-4 p-1.5 pr-3",
+    "rounded-full",
+    "bg-white/60 dark:bg-black/60",
+    "backdrop-blur-2xl",
+    "border border-white/40 dark:border-white/10",
+    "shadow-2xl shadow-black/10",
     "transition-all duration-300 ease-out",
-    "hover:bg-white/70 dark:hover:bg-black/70", // 호버 시 불투명도 증가
-
+    "hover:bg-white/70 dark:hover:bg-black/70"
   );
 
-  // 뷰 모드 전환 버튼 스타일 (왼쪽 원형 버튼)
   const modeToggleBtnClass = cn(
     "rounded-full w-9 h-9 flex items-center justify-center flex-shrink-0",
     "bg-white/50 dark:bg-white/10",
@@ -62,24 +54,27 @@ export const FocusViewHeader = ({
     "transition-all duration-200"
   );
 
-  // 구분선도 더 투명하게
-  const dividerClass = "h-4 w-px bg-gray-400/30 hidden sm:block";
+  const dividerClass = "h-4 w-px bg-gray-400/30 hidden sm:block flex-shrink-0";
 
   return (
-    // [외부 컨테이너] 위치 잡기 (sticky top)
     <div className="sticky top-0 z-50 w-full flex justify-center pointer-events-none pb-4 px-2">
-      {/* [내부 플로팅 바] 실제 UI */}
       <div className={floatingBarClass}>
-        
         {/* [Left Section] 뷰 모드 토글 + 브레드크럼 */}
-        <div className="flex items-center gap-3 flex-1 px-2 min-w-0 overflow-hidden">
+        {/* [수정] overflow-hidden 제거: 자식 요소(브레드크럼)의 스크롤을 방해할 수 있음 */}
+        <div className="flex items-center gap-3 flex-1 px-2 min-w-0">
           {/* 1. 뷰 모드 전환 버튼 */}
-          <SimpleTooltip content={viewMode === "graph" ? "리스트 뷰로 전환" : "그래프 뷰로 전환"}>
+          <SimpleTooltip
+            content={
+              viewMode === "graph" ? "리스트 뷰로 전환" : "그래프 뷰로 전환"
+            }
+          >
             <Button
               variant="ghost"
               size="icon"
               className={modeToggleBtnClass}
-              onClick={() => setViewMode(viewMode === "graph" ? "chat" : "graph")}
+              onClick={() =>
+                setViewMode(viewMode === "graph" ? "chat" : "graph")
+              }
             >
               {viewMode === "graph" ? (
                 <List className="h-4 w-4" />
@@ -89,46 +84,47 @@ export const FocusViewHeader = ({
             </Button>
           </SimpleTooltip>
 
-          {/* 2. 구분선 (Vertical Divider) */}
+          {/* 2. 구분선 */}
           <div className={dividerClass} />
 
-          {/* 3. 브레드크럼 네비게이션 (Chat Mode일 때만 표시하거나 항상 표시) */}
+          {/* 3. 브레드크럼 네비게이션 */}
           {viewMode === "chat" ? (
-            <div className="flex-1 min-w-0">
+            // [수정] flex-1과 min-w-0를 유지하여 남은 공간을 모두 차지하게 함
+            <div className="flex-1 min-w-0 overflow-hidden relative flex items-center">
               <BreadcrumbNavigation
                 currentPath={currentPath}
                 navigateToQuestion={navigateToQuestion}
               />
             </div>
           ) : (
-            <div className="flex-1 px-2 font-medium text-sm text-gray-600 dark:text-gray-300 animate-in fade-in slide-in-from-left-2">
+            <div className="flex-1 px-2 font-medium text-sm text-gray-600 dark:text-gray-300 animate-in fade-in slide-in-from-left-2 truncate">
               Graph Exploration View
             </div>
           )}
         </div>
 
-        {/* [Right Section] 액션 버튼들 or 레벨 배지 */}
+        {/* [Right Section] 액션 버튼들 */}
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
           {viewMode === "graph" ? (
-            // 그래프 모드일 때 액션 버튼들
             modifyMode === "IDLE" ? (
               <>
                 <div className="hidden lg:flex items-center gap-1">
-                  {[{
-                    icon: Edit,
-                    label: "분리",
-                    onClick: startSplitMode
-                  },
-                  {
-                    icon: Edit,
-                    label: "이동",
-                    onClick: moveToOtherMode
-                  },
-                  {
-                    icon: Edit,
-                    label: "관계",
-                    onClick: startModifyMode
-                  },
+                  {[
+                    {
+                      icon: Edit,
+                      label: "분리",
+                      onClick: startSplitMode,
+                    },
+                    {
+                      icon: Edit,
+                      label: "이동",
+                      onClick: moveToOtherMode,
+                    },
+                    {
+                      icon: Edit,
+                      label: "관계",
+                      onClick: startModifyMode,
+                    },
                   ].map((action, i) => (
                     <Button
                       key={i}
@@ -146,21 +142,34 @@ export const FocusViewHeader = ({
                 <div className="lg:hidden">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 hover:bg-black/5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full h-8 w-8 hover:bg-black/5"
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl border-white/20 bg-white/80 backdrop-blur-xl">
-                      <DropdownMenuItem onClick={startSplitMode}>새 토픽으로 분리</DropdownMenuItem>
-                      <DropdownMenuItem onClick={moveToOtherMode}>다른 토픽으로 이동</DropdownMenuItem>
-                      <DropdownMenuItem onClick={startModifyMode}>관계 수정</DropdownMenuItem>
+                    <DropdownMenuContent
+                      align="end"
+                      className="rounded-xl border-white/20 bg-white/80 backdrop-blur-xl"
+                    >
+                      <DropdownMenuItem onClick={startSplitMode}>
+                        새 토픽으로 분리
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={moveToOtherMode}>
+                        다른 토픽으로 이동
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={startModifyMode}>
+                        관계 수정
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
               </>
             ) : (
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 size="sm"
                 onClick={cancelModifyMode}
                 className="rounded-full h-8 px-4 shadow-red-500/20 shadow-lg"
@@ -170,9 +179,8 @@ export const FocusViewHeader = ({
               </Button>
             )
           ) : (
-            // 채팅 모드일 때 레벨 배지
-            <Badge 
-              variant="secondary" 
+            <Badge
+              variant="secondary"
               className="rounded-full px-3 py-1 bg-black/5 dark:bg-white/10 text-xs font-medium border border-black/5"
             >
               <Layers className="w-3 h-3 mr-1 opacity-50" />

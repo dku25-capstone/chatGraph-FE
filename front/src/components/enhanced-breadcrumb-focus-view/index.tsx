@@ -49,7 +49,7 @@ export function EnhancedBreadcrumbFocusView({
   );
 }
 
-function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProps) {
+function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps) {
   const { state, isMobile } = useSidebar();
   const {
     viewData,
@@ -264,11 +264,14 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
       {/* 2. 스크롤 영역: 메시지 버블을 이 안으로 이동 */}
       <div className="relative flex-1 pb-[88px]">
         <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
-          <div className="max-w-4xl mx-auto p-4"> {/* 패딩 추가 권장 */}
-
+          <div className="max-w-4xl mx-auto p-4">
+            {" "}
+            {/* 패딩 추가 권장 */}
             {/* --- [이동됨] 메시지 버블 영역 시작 --- */}
             {currentPath.length > 1 && (
-              <div className="mb-6"> {/* 간격 추가 */}
+              <div className="mb-6">
+                {" "}
+                {/* 간격 추가 */}
                 <MessageBubble
                   questionText={currentQuestion.questionText}
                   answer={currentQuestion.answerText}
@@ -287,7 +290,6 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
               </div>
             )}
             {/* --- [이동됨] 메시지 버블 영역 끝 --- */}
-
             {currentQuestion.children.length > 0 && (
               <SubQuestionList
                 key={currentQuestion.id}
@@ -308,8 +310,8 @@ function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProp
           isMobile
             ? "left-0"
             : state === "expanded"
-              ? "left-[16rem]"
-              : "left-[3rem]"
+            ? "left-[16rem]"
+            : "left-[3rem]"
         )}
       >
         <NewQuestionForm />
