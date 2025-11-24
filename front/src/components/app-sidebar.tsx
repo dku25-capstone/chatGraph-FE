@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Plus, PanelLeftOpen } from "lucide-react";
+import { Plus, PanelLeftOpen, Star, ChevronDown } from "lucide-react";
 
 import {
   Sidebar,
@@ -59,8 +59,14 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { topics, fetchTopics, updateTopic, removeTopic, setTopics } =
-    useTopicStore();
+  const {
+    topics,
+    fetchTopics,
+    updateTopic,
+    removeTopic,
+    setTopics,
+    toggleBookmark,
+  } = useTopicStore();
   const [loadingTopics, setLoadingTopics] = useState(true);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [editingTopic, setEditingTopic] = useState<TopicHistoryItem | null>(
@@ -70,6 +76,11 @@ export function AppSidebar() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResultNode[]>([]);
   const router = useRouter();
+
+  const [isBookmarkListExpanded, setIsBookmarkListExpanded] = useState(true);
+
+  const bookmarkedTopics = topics.filter((topic) => topic.bookmarked);
+  const regularTopics = topics.filter((topic) => !topic.bookmarked);
 
   const handleSearch = async (term: string) => {
     setSearchTerm(term);
@@ -267,40 +278,78 @@ export function AppSidebar() {
         )}
 
         {state === "expanded" && (
-          <SidebarGroup className="pt-0">
-            <SidebarGroupLabel className="text-xs font-semibold text-gray-500/80 dark:text-gray-400/80 px-2 mb-2 uppercase tracking-wider">
-              {searchTerm.trim() !== "" ? "Search Results" : "History"}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <ScrollArea className="h-[calc(100vh-20rem)] w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                {loadingTopics ? (
-                  <SidebarSkeleton />
-                ) : searchTerm.trim() !== "" ? (
-                  <SearchResultsList
-                    searchResults={searchResults}
-                    itemClass={itemClass}
+          <>
+            {bookmarkedTopics.length > 0 && (
+              <SidebarGroup className="pt-0">
+                <div
+                  className="flex items-center justify-between px-2 mb-2 cursor-pointer"
+                  onClick={() =>
+                    setIsBookmarkListExpanded(!isBookmarkListExpanded)
+                  }
+                >
+                  <SidebarGroupLabel className="text-xs font-semibold text-gray-500/80 dark:text-gray-400/80 uppercase tracking-wider">
+                    BookMarks
+                  </SidebarGroupLabel>
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isBookmarkListExpanded ? "rotate-180" : ""
+                    }`}
                   />
-                ) : topics.length > 0 ? (
-                  <TopicList
-                    topics={topics}
-                    editingTopic={editingTopic}
-                    editingNewName={newName}
-                    setEditingNewName={setNewName}
-                    onStartEdit={handleStartEdit}
-                    onConfirmEdit={handleConfirmEdit}
-                    onConfirmDelete={handleConfirmDelete}
-                    glassDropdownClass={glassDropdownClass}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-32 text-center p-4 border-2 border-dashed border-black/5 dark:border-white/5 rounded-xl mt-2">
-                    <p className="text-sm text-gray-500">
-                      저장된 대화가 없습니다
-                    </p>
-                  </div>
+                </div>
+                {isBookmarkListExpanded && (
+                  <SidebarGroupContent>
+                    <TopicList
+                      topics={bookmarkedTopics}
+                      editingTopic={editingTopic}
+                      editingNewName={newName}
+                      setEditingNewName={setNewName}
+                      onStartEdit={handleStartEdit}
+                      onConfirmEdit={handleConfirmEdit}
+                      onConfirmDelete={handleConfirmDelete}
+                      onToggleBookmark={toggleBookmark}
+                      glassDropdownClass={glassDropdownClass}
+                    />
+                  </SidebarGroupContent>
                 )}
-              </ScrollArea>
-            </SidebarGroupContent>
-          </SidebarGroup>
+              </SidebarGroup>
+            )}
+
+            <SidebarGroup className="pt-0">
+              <SidebarGroupLabel className="text-xs font-semibold text-gray-500/80 dark:text-gray-400/80 px-2 mb-2 uppercase tracking-wider">
+                {searchTerm.trim() !== "" ? "Search Results" : "History"}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <ScrollArea className="h-[calc(100vh-20rem)] w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {loadingTopics ? (
+                    <SidebarSkeleton />
+                  ) : searchTerm.trim() !== "" ? (
+                    <SearchResultsList
+                      searchResults={searchResults}
+                      itemClass={itemClass}
+                    />
+                  ) : regularTopics.length > 0 ? (
+                    <TopicList
+                      topics={regularTopics}
+                      editingTopic={editingTopic}
+                      editingNewName={newName}
+                      setEditingNewName={setNewName}
+                      onStartEdit={handleStartEdit}
+                      onConfirmEdit={handleConfirmEdit}
+                      onConfirmDelete={handleConfirmDelete}
+                      onToggleBookmark={toggleBookmark}
+                      glassDropdownClass={glassDropdownClass}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-32 text-center p-4 border-2 border-dashed border-black/5 dark:border-white/5 rounded-xl mt-2">
+                      <p className="text-sm text-gray-500">
+                        저장된 대화가 없습니다
+                      </p>
+                    </div>
+                  )}
+                </ScrollArea>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
         )}
       </SidebarContent>
 
