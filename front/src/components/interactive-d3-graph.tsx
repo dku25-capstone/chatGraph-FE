@@ -109,7 +109,7 @@ export function InteractiveD3Graph({
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force(
         "collision",
-        d3.forceCollide().radius((d) => (d.depth === 0 ? 80 : 55))
+        d3.forceCollide<d3.HierarchyNode<ViewData>>().radius((d) => (d.depth === 0 ? 80 : 55))
       );
 
     const link = g
@@ -225,21 +225,21 @@ export function InteractiveD3Graph({
 
     // --- [마우스 인터랙션] ---
     node
-      .on("mouseover", function (event, d) {
+      .on("mouseover", function (event, d: d3.HierarchyNode<ViewData>) {
         const currentRadius = d.depth === 0 ? rootRadius : baseRadius;
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
           .attr("r", currentRadius + 8)
-          .attr("fill", (d) => {
+          .attr("fill", () => {
             if (d.depth === 0) return "rgba(50, 50, 50, 1)";
             const opacity = Math.max(0.1, 0.7 - d.depth * 0.15);
             return `rgba(50, 50, 50, ${opacity + 0.2})`;
           });
       })
       .on("mousemove", () => { })
-      .on("mouseout", function (event, d) {
+      .on("mouseout", function (event, d: d3.HierarchyNode<ViewData>) {
         const currentRadius = d.depth === 0 ? rootRadius : baseRadius;
         let originalFill;
         if (d.depth === 0) {
@@ -276,7 +276,7 @@ export function InteractiveD3Graph({
         d.fx = null;
         d.fy = null;
       });
-    node.call(drag as any);
+    node.call(drag);
 
     simulation.on("tick", () => {
       link
