@@ -45,6 +45,23 @@ export function InteractiveD3Graph({
       .attr("viewBox", `0 0 ${width} ${height}`)
       .attr("preserveAspectRatio", "xMidYMid meet");
 
+    // Add filter for glow effect
+    const defs = svg.append("defs");
+    const filter = defs
+      .append("filter")
+      .attr("id", "glow")
+      .attr("x", "-50%")
+      .attr("y", "-50%")
+      .attr("width", "200%")
+      .attr("height", "200%");
+    filter
+      .append("feGaussianBlur")
+      .attr("stdDeviation", 4)
+      .attr("result", "coloredBlur");
+    const feMerge = filter.append("feMerge");
+    feMerge.append("feMergeNode").attr("in", "coloredBlur");
+    feMerge.append("feMergeNode").attr("in", "SourceGraphic");
+
     // Create main group for zoom/pan
     const g = svg.append("g");
 
@@ -122,13 +139,16 @@ export function InteractiveD3Graph({
         return isInCurrentPath ? "#1d4ed8" : baseColor;
       })
       .attr("stroke", (d) => {
+        if (d.data.isFavorite) return "#f59e0b"; // amber-500
         const isInCurrentPath = currentPath.some((q) => q.id === d.data.id);
         return isInCurrentPath ? "#1e40af" : "#fff";
       })
       .attr("stroke-width", (d) => {
+        if (d.data.isFavorite) return 4;
         const isInCurrentPath = currentPath.some((q) => q.id === d.data.id);
         return isInCurrentPath ? 4 : 2;
-      });
+      })
+      .style("filter", (d) => (d.data.isFavorite ? "url(#glow)" : null));
 
     // Add text labels
     node

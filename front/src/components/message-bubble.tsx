@@ -13,6 +13,7 @@ import {
   ChevronUp,
   MoreHorizontal,
   Copy,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GlobalMarkdown } from "@/utils/GlobalMarkDown";
@@ -25,9 +26,11 @@ interface MessageBubbleProps {
   isUser?: boolean;
   isToggleable?: boolean;
   isAnswerVisible?: boolean;
+  isFavorite?: boolean;
   onToggleAnswer?: () => void;
   onEdit?: (newText: string) => void;
   onDelete?: () => void;
+  onToggleFavorite?: () => void;
 }
 
 export function MessageBubble({
@@ -36,9 +39,11 @@ export function MessageBubble({
   isUser = false,
   isToggleable = false,
   isAnswerVisible = true,
+  isFavorite = false,
   onToggleAnswer,
   onEdit,
   onDelete,
+  onToggleFavorite,
 }: MessageBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(questionText);
@@ -169,6 +174,23 @@ export function MessageBubble({
 
                 {onEdit && !isEditing && (
                   <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity pl-2">
+                    {onToggleFavorite && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={onToggleFavorite}
+                        className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <Star
+                          className={cn(
+                            "h-4 w-4",
+                            isFavorite
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground"
+                          )}
+                        />
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
