@@ -297,7 +297,7 @@ export const useQuestionTree = (
   // 공유 버튼 클릭시
   const startShareMode = useCallback(() => {
     setModifyMode("SELECT_NODE_TO_SHARE");
-    toast.info("공유할 노드를 선택하세요.");
+    toast.info("공유할 '첫 번째 질문'을 선택하세요.");
   }, []);
 
   // 이메일 입력 모달에서 [공유] 클릭 시
