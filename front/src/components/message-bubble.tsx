@@ -141,7 +141,7 @@ export function MessageBubble({
                   <p
                     ref={questionRef}
                     className={cn(
-                      "text-sm font-medium leading-relaxed break-all whitespace-pre-wrap pr-8",
+                      "text-sm font-medium leading-relaxed break-all whitespace-pre-wrap pr-28",
                       !isQuestionExpanded ? "line-clamp-[7]" : ""
                     )}
                   >
@@ -173,7 +173,7 @@ export function MessageBubble({
                 </div>
 
                 {onEdit && !isEditing && (
-                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity pl-2">
+                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity pr-4">
                     {onToggleFavorite && (
                       <Button
                         size="sm"

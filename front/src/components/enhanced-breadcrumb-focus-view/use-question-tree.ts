@@ -9,6 +9,7 @@ import {
   copyQuestions,
   deleteQuestionBatch,
   separateQuestions,
+  toggleFavoriteQuestion,
 } from "@/api/questions";
 import {
   ViewData,
@@ -660,6 +661,37 @@ export const useQuestionTree = (
     },
     [viewData, currentPath, currentQuestion, setViewData, setCurrentPath] // refreshViewData 제거
   );
+
+  const toggleFavoriteQuestion = useCallback(
+    async (questionId: string) => {
+      if (!viewData) return;
+
+      const originalViewData = viewData;
+
+      const updateFavoriteStatus = (node: ViewData): ViewData => {
+        if (node.id === questionId) {
+          return { ...node, isFavorite: !node.isFavorite };
+        }
+        return {
+          ...node,
+          children: node.children.map(updateFavoriteStatus),
+        };
+      };
+
+      const newViewData = updateFavoriteStatus(viewData);
+      setViewData(newViewData);
+
+      try {
+        await toggleFavoriteQuestion(questionId);
+        toast.success("즐겨찾기 상태가 변경되었습니다.");
+      } catch (error) {
+        console.error("Failed to toggle favorite status:", error);
+        toast.error("즐겨찾기 상태 변경에 실패했습니다.");
+        setViewData(originalViewData); // Rollback on error
+      }
+    },
+    [viewData]
+  );
   return useMemo(
     () => ({
       viewData,
@@ -699,6 +731,7 @@ export const useQuestionTree = (
       startSplitMode,
       splitRequest,
       confirmSplitTopic,
+      toggleFavoriteQuestion,
     }),
     // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
     // useMemo 의존성 배열에서 모달 관련 상태 및 함수들 삭제
@@ -735,6 +768,7 @@ export const useQuestionTree = (
       startSplitMode,
       splitRequest,
       confirmSplitTopic,
+      toggleFavoriteQuestion,
     ]
   );
 };
