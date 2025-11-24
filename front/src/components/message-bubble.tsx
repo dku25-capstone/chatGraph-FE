@@ -88,7 +88,7 @@ export function MessageBubble({
       toast.success("클립보드에 복사되었습니다.");
       // 2초 후 아이콘 원래대로 복귀
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
+    } catch {
       toast.error("복사에 실패했습니다.");
     }
   };

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { cn } from "@/lib/utils"; // Assuming cn is available here
 
 interface SimpleTooltipProps {
   children: React.ReactNode;

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -18,7 +17,7 @@ import { TopicHistoryItem } from "@/api/topics-history";
 interface TopicListItemProps {
   topic: TopicHistoryItem;
   isEditing: boolean;
-  onStartEdit: (topic: TopicHistoryItem) => void;
+  onStartEdit: (topic: TopicHistoryItem | null) => void;
   onConfirmEdit: () => void;
   onConfirmDelete: (topicId: string) => void;
   editingNewName: string;
@@ -54,7 +53,7 @@ export function TopicListItem({
             onChange={(e) => setEditingNewName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") onConfirmEdit();
-              else if (e.key === "Escape") onStartEdit(null as any); // Cancel editing
+              else if (e.key === "Escape") onStartEdit(null); // Cancel editing
             }}
             className="h-8 text-sm bg-white/50 dark:bg-black/50 rounded-md border-none px-2 shadow-inner min-w-0 flex-1"
           />

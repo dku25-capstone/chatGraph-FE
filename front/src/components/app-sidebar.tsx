@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { toast } from "sonner";
+import { Plus, PanelLeftOpen } from "lucide-react";
 
 import {
   Sidebar,
@@ -10,49 +14,27 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
-  SidebarFooter,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarTrigger,
   useSidebar,
-  SidebarInput,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
-import {
-  User2,
-  ChevronUp,
-  Plus,
-  MoreVertical,
-  Search,
-  PanelLeftOpen,
-  LogIn,
-  UserPlus,
-  Check,
-} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { TopicHistoryItem } from "@/api/topics-history";
-import { toast } from "sonner";
-import Image from "next/image";
-import { searchQuestions, QuestionNode } from "@/api/questions";
-
-import { patchTopic, deleteTopic } from "@/api/topics";
-import { useTopicStore } from "@/lib/topic-store";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+
+import { TopicHistoryItem } from "@/api/topics-history";
+import { searchQuestions, QuestionNode } from "@/api/questions";
+import { patchTopic, deleteTopic } from "@/api/topics";
+import { useTopicStore } from "@/lib/topic-store";
 import { cn } from "@/lib/utils";
+
 import { TopicList } from "./app-sidebar/TopicList";
 import { UserFooter } from "./app-sidebar/UserFooter";
 import { SidebarSearchInput } from "./app-sidebar/SidebarSearchInput";
@@ -62,18 +44,16 @@ interface SearchResultNode extends QuestionNode {
   topicId: string;
 }
 
-const SidebarSkeleton = () => {
-  return (
-    <div className="space-y-2 px-2">
-      {[...Array(5)].map((_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-2 h-10 w-full rounded-xl animate-pulse bg-black/5 dark:bg-white/10"
-        />
-      ))}
-    </div>
-  );
-};
+const SidebarSkeleton = () => (
+  <div className="space-y-2 px-2">
+    {[...Array(5)].map((_, i) => (
+      <div
+        key={i}
+        className="flex items-center gap-2 h-10 w-full rounded-xl animate-pulse bg-black/5 dark:bg-white/10"
+      />
+    ))}
+  </div>
+);
 
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
@@ -117,8 +97,7 @@ export function AppSidebar() {
       } else {
         setSearchResults([]);
       }
-    } catch (error) {
-      console.error("Failed to search questions:", error);
+    } catch {
       setSearchResults([]);
       toast.error("검색 중 오류가 발생했습니다.");
     }
@@ -133,21 +112,21 @@ export function AppSidebar() {
   useEffect(() => {
     if (isLoggedIn) {
       setLoadingTopics(true);
-      fetchTopics().finally(() => {
-        setTimeout(() => setLoadingTopics(false), 300);
-      });
+      fetchTopics().finally(() =>
+        setTimeout(() => setLoadingTopics(false), 300)
+      );
     } else {
       setTopics([]);
       setLoadingTopics(false);
     }
   }, [isLoggedIn, fetchTopics, setTopics]);
 
-  const handleStartEdit = (topic: TopicHistoryItem) => {
+  const handleStartEdit = (topic: TopicHistoryItem | null) => {
     setEditingTopic(topic);
     setNewName(topic ? topic.topicName : "");
   };
 
-  const handleEdit = async () => {
+  const handleConfirmEdit = async () => {
     if (!editingTopic || !newName.trim()) return;
     const originalTopics = useTopicStore.getState().topics;
     updateTopic(editingTopic.topicId, newName);
@@ -155,7 +134,7 @@ export function AppSidebar() {
     try {
       await patchTopic(editingTopic.topicId, { newNodeName: newName });
       toast.success("토픽명이 수정되었습니다.");
-    } catch (error) {
+    } catch {
       toast.error("수정에 실패했습니다.");
       setTopics(originalTopics);
     }
@@ -170,14 +149,13 @@ export function AppSidebar() {
       if (window.location.pathname.includes(topicId)) {
         router.push("/");
       }
-    } catch (error) {
-      console.error("Delete failed:", error);
+    } catch {
       toast.error("삭제에 실패했습니다.");
       setTopics(originalTopics);
     }
   };
 
-  const confirmDelete = (topicId: string) => {
+  const handleConfirmDelete = (topicId: string) => {
     if (window.confirm("정말로 이 대화를 삭제하시겠습니까?")) {
       handleDelete(topicId);
     }
@@ -190,7 +168,6 @@ export function AppSidebar() {
     toast.success("로그아웃 되었습니다.");
   };
 
-  // 수정: 너비를 280px로 고정하여 안정적인 레이아웃 확보
   const sidebarClass = cn(
     "ml-3 my-3 h-[calc(100vh-1.5rem)]",
     "w-[300px]",
@@ -273,8 +250,6 @@ export function AppSidebar() {
             handleSearch={handleSearch}
             setIsSearchVisible={setIsSearchVisible}
           />
-
-          {/* 새 채팅 */}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="새 채팅" className={itemClass}>
               <Link href="/">
@@ -312,8 +287,8 @@ export function AppSidebar() {
                     editingNewName={newName}
                     setEditingNewName={setNewName}
                     onStartEdit={handleStartEdit}
-                    onConfirmEdit={handleEdit}
-                    onConfirmDelete={confirmDelete}
+                    onConfirmEdit={handleConfirmEdit}
+                    onConfirmDelete={handleConfirmDelete}
                     glassDropdownClass={glassDropdownClass}
                   />
                 ) : (

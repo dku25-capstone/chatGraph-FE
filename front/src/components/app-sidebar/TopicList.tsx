@@ -10,7 +10,7 @@ interface TopicListProps {
   editingNewName: string;
   glassDropdownClass: string;
   setEditingNewName: (name: string) => void;
-  onStartEdit: (topic: TopicHistoryItem) => void;
+  onStartEdit: (topic: TopicHistoryItem | null) => void;
   onConfirmEdit: () => void;
   onConfirmDelete: (topicId: string) => void;
 }
