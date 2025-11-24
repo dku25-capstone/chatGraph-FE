@@ -1,46 +1,71 @@
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { useRef } from "react";
 import { ChevronRight } from "lucide-react";
-import { ViewData } from "@/lib/data-transformer"; // ViewData 임포트
+import { cn } from "@/lib/utils";
+import { ViewData } from "@/lib/data-transformer";
 
 interface BreadcrumbNavigationProps {
-  currentPath: ViewData[]; // 지금까지 클릭해 들어온 질문 노드 경로
-  navigateToQuestion: (question: ViewData, index: number) => void; // 사용자가 중간 경로 버튼 클릭 시, 해당 질문으로 이동하는 함수
+  currentPath: ViewData[];
+  navigateToQuestion: (question: ViewData, index: number) => void;
 }
 
-// 질문-답변 트리를 탐색할 때 상단에 표시되는 네비게이션 UI
 export const BreadcrumbNavigation = ({
   currentPath,
   navigateToQuestion,
-}: BreadcrumbNavigationProps) => (
-  <div className="px-4 py-3 bg-gray-50 border-b">
-    <ScrollArea className="w-full">
-      <div className="flex items-center gap-2 min-w-max">
-        {currentPath.map((question, index) => (
+}: BreadcrumbNavigationProps) => {
+  const scrollRef = useRef<HTMLElement>(null);
+
+  // 마우스 휠(상하)을 가로 스크롤로 변환
+  const handleWheel = (e: React.WheelEvent) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft += e.deltaY;
+    }
+  };
+
+  return (
+    <nav
+      ref={scrollRef}
+      onWheel={handleWheel}
+      className={cn(
+        "flex items-center text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap overflow-x-auto",
+        // 스크롤바 숨김 처리
+        "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+        // w-full로 부모 영역 채움
+        "w-full min-w-0",
+        "mask-linear-fade"
+      )}
+    >
+      {currentPath.map((item, index) => (
+        <React.Fragment key={item.id}>
+          {index > 0 && (
+            <ChevronRight className="w-3 h-3 mx-1 text-gray-400 opacity-50 flex-shrink-0" />
+          )}
+
           <div
-            key={`${question.id}-${index}`}
-            className="flex items-center gap-2"
-          >
-            {" "}
-            {/* 더 안전한 key 값 */}
-            <Button
-              variant={index === currentPath.length - 1 ? "default" : "ghost"}
-              size="sm"
-              onClick={() => navigateToQuestion(question, index)}
-              className="max-w-[200px] truncate text-xs"
-            >
-              {/* 질문 길이 늘어나면 생략 */}
-              {question.questionText.length > 10
-                ? `${question.questionText.substring(0, 10)}...`
-                : question.questionText}
-            </Button>
-            {/* 현재 렌더링 중인 노드가 마지막 노드가 아니면 구분자 넣음 */}
-            {index < currentPath.length - 1 && (
-              <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            className={cn(
+              "flex items-center p-1.5 rounded-md transition-all duration-200 cursor-pointer m-1",
+              "min-w-0 flex-shrink-0",
+              "hover:bg-gray-100 dark:hover:bg-gray-800",
+              "animate-in fade-in slide-in-from-left-1 duration-300"
             )}
+            onClick={() => navigateToQuestion(item, index)}
+          >
+            <span
+              className={cn(
+                "transition-colors duration-200",
+                "truncate block",
+                index !== currentPath.length - 1 &&
+                  "hover:text-gray-900 dark:hover:text-gray-100 hover:font-medium",
+                index === currentPath.length - 1 &&
+                  "font-semibold text-black dark:text-white"
+              )}
+            >
+              {item.questionText.length > 15
+                ? item.questionText.substring(0, 15) + "..."
+                : item.questionText}
+            </span>
           </div>
-        ))}
-      </div>
-    </ScrollArea>
-  </div>
-);
+        </React.Fragment>
+      ))}
+    </nav>
+  );
+};

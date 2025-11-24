@@ -1,0 +1,45 @@
+"use client";
+
+import { SidebarMenu } from "@/components/ui/sidebar";
+import { TopicHistoryItem } from "@/api/topics-history";
+import { TopicListItem } from "./TopicListItem";
+
+interface TopicListProps {
+  topics: TopicHistoryItem[];
+  editingTopic: TopicHistoryItem | null;
+  editingNewName: string;
+  glassDropdownClass: string;
+  setEditingNewName: (name: string) => void;
+  onStartEdit: (topic: TopicHistoryItem | null) => void;
+  onConfirmEdit: () => void;
+  onConfirmDelete: (topicId: string) => void;
+}
+
+export function TopicList({
+  topics,
+  editingTopic,
+  editingNewName,
+  glassDropdownClass,
+  setEditingNewName,
+  onStartEdit,
+  onConfirmEdit,
+  onConfirmDelete,
+}: TopicListProps) {
+  return (
+    <SidebarMenu className="gap-1 w-full">
+      {topics.map((item) => (
+        <TopicListItem
+          key={item.topicId}
+          topic={item}
+          isEditing={editingTopic?.topicId === item.topicId}
+          onStartEdit={onStartEdit}
+          onConfirmEdit={onConfirmEdit}
+          onConfirmDelete={onConfirmDelete}
+          editingNewName={editingNewName}
+          setEditingNewName={setEditingNewName}
+          glassDropdownClass={glassDropdownClass}
+        />
+      ))}
+    </SidebarMenu>
+  );
+}

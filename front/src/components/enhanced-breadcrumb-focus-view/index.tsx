@@ -7,7 +7,6 @@ import { MessageBubble } from "@/components/message-bubble";
 import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
 import { TopicTreeResponse } from "@/lib/data-transformer";
 import { TopicSelectorModal } from "./TopicSelectorModal";
-
 import {
   AlertDialogAction,
   AlertDialogCancel,
@@ -17,22 +16,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
 import {
   QuestionTreeProvider,
   useQuestionTreeContext,
 } from "./QuestionTreeContext";
 import { FocusViewHeader } from "./focus-view-header";
-import { BreadcrumbNavigation } from "./breadcrumb-navigation";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
-// <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-// EditQuestionDialog 컴포넌트는 더 이상 사용하지 않으므로 import 문 삭제
-// import { EditQuestionDialog } from "./edit-question-dialog";
-// <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
 import QuestionDetailModal from "../QuestionDetailModal";
-import { findPathToNode } from "@/lib/utils";
+import { findPathToNode, cn } from "@/lib/utils";
 import { AlertDialog } from "@radix-ui/react-alert-dialog";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -56,9 +50,7 @@ export function EnhancedBreadcrumbFocusView({
 }
 
 function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps) {
-  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-  // useQuestionTreeContext에서 모달 관련 상태 및 함수(editingQuestion, newQuestion 등) 제거
-  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
+  const { state, isMobile } = useSidebar();
   const {
     viewData,
     currentPath,
@@ -86,7 +78,6 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
     setMoveTopicRequest,
     confirmMoveToOtherTopic,
     splitRequest,
-    // setSplitRequest,
     confirmSplitTopic,
   } = useQuestionTreeContext();
 
@@ -112,10 +103,17 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
     );
   }
 
+  // 글래스 모피즘 스타일 정의 (통일성을 위해 변수로 관리)
+  const glassmorphismAlertStyle =
+    "bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-800/50 shadow-2xl";
+
   if (viewMode === "graph") {
     return (
       <div className="h-screen flex flex-col bg-white">
-        <FocusViewHeader />
+        <FocusViewHeader
+          currentPath={currentPath}
+          navigateToQuestion={navigateToQuestion}
+        />
         <div className="flex-1 p-4">
           <InteractiveD3Graph
             data={viewData}
@@ -130,16 +128,17 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
               setViewMode("chat");
             }}
           />
+
+          {/* 1. 노드 이동 확인 Alert */}
           <AlertDialog
             open={!!reparentRequest}
             onOpenChange={(open) => {
-              // 모달의 X 버튼이나 바깥쪽을 클릭해서 닫을 때
               if (!open) {
                 cancelModifyMode();
               }
             }}
           >
-            <AlertDialogContent>
+            <AlertDialogContent className={glassmorphismAlertStyle}>
               <AlertDialogHeader>
                 <AlertDialogTitle>노드 이동 확인</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -154,11 +153,9 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                {/* "취소" 버튼에 cancelModifyMode 함수 연결 */}
                 <AlertDialogCancel onClick={cancelModifyMode}>
                   취소
                 </AlertDialogCancel>
-                {/* "이동" 버튼에 confirmReparenting 함수 연결 */}
                 <AlertDialogAction onClick={confirmReparenting}>
                   이동
                 </AlertDialogAction>
@@ -166,14 +163,14 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* ✅ 2. [추가] "새 토픽 분리" 확인 모달 */}
+          {/* 2. 새 토픽으로 분리 Alert */}
           <AlertDialog
             open={!!splitRequest}
             onOpenChange={(open) => {
-              if (!open) cancelModifyMode(); // 닫으면 취소 처리
+              if (!open) cancelModifyMode();
             }}
           >
-            <AlertDialogContent>
+            <AlertDialogContent className={glassmorphismAlertStyle}>
               <AlertDialogHeader>
                 <AlertDialogTitle>새 토픽으로 분리</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -198,16 +195,13 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* 토픽 선택 모달 렌더링 */}
           <TopicSelectorModal
             isOpen={isTopicSelectorOpen}
             onClose={cancelModifyMode}
             currentNodeToMove={nodeToMove}
             onNodeSelected={(targetTopic, targetParentNode) => {
-              // 토픽 선택 모달이 성공적으로 부모 노드를 선택했을때
-              setIsTopicSelectorOpen(false); // 토픽 선택 모달 닫기
+              setIsTopicSelectorOpen(false);
               setMoveTopicRequest({
-                // 최종 확인 모달 띄우기
                 movedNode: nodeToMove!,
                 targetTopic: {
                   id: targetTopic.topicId,
@@ -222,14 +216,14 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
             }}
           />
 
-          {/* 다른 토픽으로 이동 최종 확인 모달 */}
+          {/* 3. 다른 토픽으로 이동 확인 Alert */}
           <AlertDialog
             open={!!moveToTopicRequest}
             onOpenChange={(open) => {
               if (!open) setMoveTopicRequest(null);
             }}
           >
-            <AlertDialogContent>
+            <AlertDialogContent className={glassmorphismAlertStyle}>
               <AlertDialogHeader>
                 <AlertDialogTitle>다른 토픽으로 이동 확인</AlertDialogTitle>
                 <AlertDialogDescription>
@@ -256,43 +250,46 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
   }
 
   return (
+    // ... (나머지 리스트 뷰 코드는 동일)
     <div className="h-screen flex flex-col bg-white">
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-sm">
-        <FocusViewHeader />
-        <BreadcrumbNavigation
+      {/* 1. 헤더 영역: 여기만 sticky 및 z-index 적용 */}
+      <div className="sticky top-0 z-20">
+        <FocusViewHeader
           currentPath={currentPath}
           navigateToQuestion={navigateToQuestion}
         />
-        <div className="max-w-4xl mx-auto">
-          {currentPath.length > 1 && (
-            <>
-              <MessageBubble
-                questionText={currentQuestion.questionText}
-                answer={currentQuestion.answerText}
-                isUser={true}
-                isToggleable={true}
-                isAnswerVisible={isMainAnswerVisible}
-                onToggleAnswer={() =>
-                  setIsMainAnswerVisible(!isMainAnswerVisible)
-                }
-                // <<< START: 질문 수정 방식 변경 (인라인) >>>
-                // onEdit prop이 인라인 저장을 처리하는 handleSaveInPlaceEdit 함수를 호출하도록 변경.
-                // 수정된 텍스트(newText)를 인자로 전달.
-                onEdit={(newText) =>
-                  handleSaveInPlaceEdit(currentQuestion.id, newText)
-                }
-                // <<< END: 질문 수정 방식 변경 (인라인) >>>
-                onDelete={() => handleDeleteQuestion(currentQuestion.id)}
-              />
-              <Separator className="my-0" />
-            </>
-          )}
-        </div>
+        {/* MessageBubble 부분은 여기서 제거 */}
       </div>
 
-      <div className="relative flex-1">
+      {/* 2. 스크롤 영역: 메시지 버블을 이 안으로 이동 */}
+      <div className="relative flex-1 pb-[88px]">
         <ScrollArea className="absolute inset-0" ref={scrollAreaRef}>
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto p-4">
+            {" "}
+            {/* 패딩 추가 권장 */}
+            {/* --- [이동됨] 메시지 버블 영역 시작 --- */}
+            {currentPath.length > 1 && (
+              <div className="mb-6">
+                {" "}
+                {/* 간격 추가 */}
+                <MessageBubble
+                  questionText={currentQuestion.questionText}
+                  answer={currentQuestion.answerText}
+                  isUser={true}
+                  isToggleable={true}
+                  isAnswerVisible={isMainAnswerVisible}
+                  onToggleAnswer={() =>
+                    setIsMainAnswerVisible(!isMainAnswerVisible)
+                  }
+                  onEdit={(newText) =>
+                    handleSaveInPlaceEdit(currentQuestion.id, newText)
+                  }
+                  onDelete={() => handleDeleteQuestion(currentQuestion.id)}
+                />
+                <Separator className="my-4" />
+              </div>
+            )}
+            {/* --- [이동됨] 메시지 버블 영역 끝 --- */}
             {currentQuestion.children.length > 0 && (
               <SubQuestionList
                 key={currentQuestion.id}
@@ -306,11 +303,19 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
         </ScrollArea>
       </div>
 
-      <NewQuestionForm />
-
-      {/* <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>> */}
-      {/* EditQuestionDialog 컴포넌트 렌더링 부분 삭제 */}
-      {/* <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>> */}
+      {/* 입력 폼 영역 (그대로 유지) */}
+      <div
+        className={cn(
+          "fixed bottom-0 right-0 z-30",
+          isMobile
+            ? "left-0"
+            : state === "expanded"
+            ? "left-[16rem]"
+            : "left-[3rem]"
+        )}
+      >
+        <NewQuestionForm />
+      </div>
     </div>
   );
 }
