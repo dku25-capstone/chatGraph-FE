@@ -1,7 +1,10 @@
+// components/InteractiveD3Graph.tsx
+
 import { useRef, useEffect } from "react";
 import * as d3 from "d3";
 import { ViewData } from "@/lib/data-transformer";
 import { useQuestionTreeContext } from "./enhanced-breadcrumb-focus-view/QuestionTreeContext";
+import { cn } from "@/lib/utils";
 
 interface InteractiveD3GraphProps {
   data: ViewData;
@@ -16,28 +19,30 @@ export function InteractiveD3Graph({
   const containerRef = useRef<HTMLDivElement>(null);
   const { currentPath } = useQuestionTreeContext();
 
-  // onNodeClick prop이 바뀔때마다 최신버전 함수 저장
   const onNodeClickRef = useRef(onNodeClick);
   useEffect(() => {
     onNodeClickRef.current = onNodeClick;
   }, [onNodeClick]);
 
+  const glassContainerClass = cn(
+    "w-full h-full rounded-[26px] overflow-hidden",
+    "bg-white/60 dark:bg-black/60",
+    "backdrop-blur-2xl",
+    "border border-white/40 dark:border-white/10",
+    "shadow-2xl shadow-black/10",
+    "transition-all duration-300 ease-out"
+  );
+
   useEffect(() => {
     if (!svgRef.current || !containerRef.current) return;
     const { width, height } = containerRef.current.getBoundingClientRect();
 
-    // Clear previous content
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Convert data to D3 hierarchy
     const root = d3.hierarchy(data, (d) => d.children);
     const nodes = root.descendants();
     const links = root.links();
 
-    // 그래프 전체 노드 확인
-    console.log("그래프 전체 노드:", nodes);
-
-    // SVG dimensions and setup
     const svg = d3
       .select(svgRef.current)
       .attr("width", width)
@@ -45,10 +50,42 @@ export function InteractiveD3Graph({
       .attr("viewBox", `0 0 ${width} ${height}`)
       .attr("preserveAspectRatio", "xMidYMid meet");
 
-    // Create main group for zoom/pan
+    const defs = svg.append("defs");
+
+    const dropShadow = defs
+      .append("filter")
+      .attr("id", "drop-shadow")
+      .attr("height", "130%");
+    dropShadow
+      .append("feGaussianBlur")
+      .attr("in", "SourceAlpha")
+      .attr("stdDeviation", 3)
+      .attr("result", "blur");
+    dropShadow
+      .append("feOffset")
+      .attr("in", "blur")
+      .attr("dx", 2)
+      .attr("dy", 2)
+      .attr("result", "offsetBlur");
+    const feMergeShadow = dropShadow.append("feMerge");
+    feMergeShadow.append("feMergeNode").attr("in", "offsetBlur");
+    feMergeShadow.append("feMergeNode").attr("in", "SourceGraphic");
+
+    const strongShadow = defs
+      .append("filter")
+      .attr("id", "strong-shadow")
+      .attr("height", "150%");
+    strongShadow
+      .append("feGaussianBlur")
+      .attr("in", "SourceAlpha")
+      .attr("stdDeviation", 5);
+    strongShadow.append("feOffset").attr("dx", 4).attr("dy", 4);
+    const feMergeStrong = strongShadow.append("feMerge");
+    feMergeStrong.append("feMergeNode");
+    feMergeStrong.append("feMergeNode").attr("in", "SourceGraphic");
+
     const g = svg.append("g");
 
-    // Zoom behavior
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 3])
@@ -56,11 +93,8 @@ export function InteractiveD3Graph({
         g.attr("transform", event.transform);
       });
 
-    svg.call(zoom);
-    // 더블클릭 줌 방지
     svg.call(zoom).on("dblclick.zoom", null);
 
-    // Create force simulation
     const simulation = d3
       .forceSimulation(nodes as d3.SimulationNodeDatum[])
       .force(
@@ -68,26 +102,25 @@ export function InteractiveD3Graph({
         d3
           .forceLink(links)
           .id((d) => (d as d3.HierarchyNode<ViewData>).data.id)
-          .distance(120)
+          .distance((d) => (d.source.depth === 0 ? 180 : 120))
           .strength(0.8)
       )
-      .force("charge", d3.forceManyBody().strength(-1000))
+      .force("charge", d3.forceManyBody().strength(-1200))
       .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(50));
+      .force(
+        "collision",
+        d3.forceCollide<d3.HierarchyNode<ViewData>>().radius((d) => (d.depth === 0 ? 80 : 55))
+      );
 
-    // Create links
     const link = g
       .append("g")
       .selectAll("line")
       .data(links)
       .enter()
       .append("line")
-      .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
-      .attr("stroke-width", 2)
-      .attr("marker-end", "url(#arrowhead)");
+      .attr("stroke", "rgba(156, 163, 175, 0.4)")
+      .attr("stroke-width", 1.5);
 
-    // Create node groups
     const node = g
       .append("g")
       .selectAll("g")
@@ -95,131 +128,138 @@ export function InteractiveD3Graph({
       .enter()
       .append("g")
       .attr("class", "node")
-      .style("cursor", "pointer");
+      .style("cursor", "pointer")
+      .style("isolation", "isolate");
 
-    // Add circles for nodes
-    const fixedRadius = 25;
+    const baseRadius = 35;
+    const rootRadius = 60;
 
-    const circles = node
+    // --- [노드 원형(Circle) 그리기] ---
+    node
       .append("circle")
-      .attr("r", (d) => (d.depth === 0 ? fixedRadius + 5 : fixedRadius))
+      .attr("r", (d) => (d.depth === 0 ? rootRadius : baseRadius))
       .attr("fill", (d) => {
-        const isInCurrentPath = currentPath.some((q) => q.id === d.data.id);
-        const depth = d.depth;
-        const colors = [
-          "#3b82f6", // blue-500
-          "#10b981", // emerald-500
-          "#f59e0b", // amber-500
-          "#ef4444", // red-500
-          "#8b5cf6", // violet-500
-          "#06b6d4", // cyan-500
-          "#f43f5e", // rose-500
-          "#22c55e", // green-500
-          "#eab308", // yellow-500
-          "#0ea5e9", // sky-500
-        ];
-        const baseColor = colors[depth % colors.length];
-        return isInCurrentPath ? "#1d4ed8" : baseColor;
+        if (d.depth === 0) return "rgba(0, 0, 0, 1)";
+        const opacity = Math.max(0.1, 0.7 - d.depth * 0.15);
+        return `rgba(0, 0, 0, ${opacity})`;
       })
-      .attr("stroke", (d) => {
-        const isInCurrentPath = currentPath.some((q) => q.id === d.data.id);
-        return isInCurrentPath ? "#1e40af" : "#fff";
-      })
-      .attr("stroke-width", (d) => {
-        const isInCurrentPath = currentPath.some((q) => q.id === d.data.id);
-        return isInCurrentPath ? 4 : 2;
-      });
+      .style("filter", (d) =>
+        d.depth === 0 ? "url(#strong-shadow)" : "url(#drop-shadow)"
+      );
 
-    // Add text labels
+    // --- [노드 텍스트 라벨] ---
     node
       .append("text")
       .attr("text-anchor", "middle")
-      .attr("dy", (d) => (d.depth === 0 ? "45" : "37"))
-      .attr("fill", "black")
-      .attr("font-size", (d) => (d.depth === 0 ? "13px" : "11px"))
-      .attr("font-weight", "600")
-      .attr("pointer-events", "bold")
+      .attr("dy", (d) => {
+        const r = d.depth === 0 ? rootRadius : baseRadius;
+        return `${r + 18}px`;
+      })
+      .attr("fill", (d) => (d.depth === 0 ? "#000000" : "#1f2937"))
+      .attr("font-size", (d) => (d.depth === 0 ? "16px" : "12px"))
+      .attr("font-weight", (d) => (d.depth === 0 ? "700" : "600"))
+      .attr("pointer-events", "none")
+      .style("text-shadow", "0 1px 3px rgba(255,255,255,0.8)")
       .text((d) => {
         const text = d.data.questionText;
-        if (text.length <= 20) return text;
-        return text.substring(0, 30) + "...";
+        const maxLength = d.depth === 0 ? 25 : 15;
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + "...";
       });
 
-    // Add child count badges
-    node
-      .filter((d) => d.data.children.length > 0)
-      .append("circle")
-      .attr("cx", 20)
-      .attr("cy", -20)
-      .attr("r", 10)
-      .attr("fill", "#ef4444")
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 2);
+    // --- [뱃지 그룹 (즐겨찾기 또는 자식 개수)] ---
+    // ✅ 수정됨: 즐겨찾기이거나 자식이 있는 경우에 뱃지 그룹 생성
+    const badgeGroup = node
+      .filter((d) => d.data.favorite || d.data.children.length > 0)
+      .append("g")
+      .attr("transform", (d) => {
+        const r = d.depth === 0 ? rootRadius : baseRadius;
+        // 우측 상단 45도 위치
+        const angle = -Math.PI / 4;
+        const x = r * Math.cos(angle);
+        const y = r * Math.sin(angle);
+        return `translate(${x}, ${y})`;
+      });
 
-    node
-      .filter((d) => d.data.children.length > 0)
-      .append("text")
-      .attr("x", 20)
-      .attr("y", -20)
-      .attr("text-anchor", "middle")
-      .attr("dy", "0.35em")
-      .attr("fill", "white")
-      .attr("font-size", "10px")
-      .attr("font-weight", "bold")
-      .attr("pointer-events", "none")
-      .text((d) => d.data.children.length);
+    //조건부 뱃지 렌더링
+    badgeGroup.each(function (d) {
+      const group = d3.select(this);
 
-    // Node interactions
+      if (d.data.favorite) {
+        // 1. 즐겨찾기인 경우: 별 아이콘 표시 (우선순위 높음)
+        // 간단한 별 모양 SVG 경로 데이터
+        const starPath =
+          "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
+
+        group
+          .append("path")
+          .attr("d", starPath)
+          // 아이콘 크기 및 위치 조정 (중심점 맞추기)
+          .attr("transform", "translate(-11, -11) scale(0.9)")
+          .attr("fill", "#f59e0b") // amber-500 (황금색)
+          .attr("stroke", "#ffffff") // 흰색 테두리로 선명하게
+          .attr("stroke-width", 1)
+          .style("filter", "url(#drop-shadow)");
+      }
+      // } else {
+      //   // 2. 즐겨찾기가 아니고 자식만 있는 경우: 기존 숫자 뱃지 표시
+      //   group
+      //     .append("circle")
+      //     .attr("r", 11)
+      //     .attr("fill", "rgba(75, 85, 99, 0.9)") // gray-600
+      //     .attr("stroke", "rgba(255, 255, 255, 0.8)")
+      //     .attr("stroke-width", 1.5)
+      //     .style("filter", "url(#drop-shadow)");
+
+      //   group
+      //     .append("text")
+      //     .attr("text-anchor", "middle")
+      //     .attr("dy", "0.35em")
+      //     .attr("fill", "white")
+      //     .attr("font-size", "10px")
+      //     .attr("font-weight", "bold")
+      //     .attr("pointer-events", "none")
+      //     .text(d.data.children.length);
+      // }
+    });
+
+    // --- [마우스 인터랙션] ---
     node
-      .on("mouseover", function (event, d) {
-        const baseRadius = d.depth === 0 ? fixedRadius + 5 : fixedRadius;
+      .on("mouseover", function (event, d: d3.HierarchyNode<ViewData>) {
+        const currentRadius = d.depth === 0 ? rootRadius : baseRadius;
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", baseRadius + 5);
+          .attr("r", currentRadius + 8)
+          .attr("fill", () => {
+            if (d.depth === 0) return "rgba(50, 50, 50, 1)";
+            const opacity = Math.max(0.1, 0.7 - d.depth * 0.15);
+            return `rgba(50, 50, 50, ${opacity + 0.2})`;
+          });
       })
-      .on("mousemove", () => {})
-      .on("mouseout", function (event, d) {
-        const baseRadius = d.depth === 0 ? fixedRadius + 5 : fixedRadius;
+      .on("mousemove", () => { })
+      .on("mouseout", function (event, d: d3.HierarchyNode<ViewData>) {
+        const currentRadius = d.depth === 0 ? rootRadius : baseRadius;
+        let originalFill;
+        if (d.depth === 0) {
+          originalFill = "rgba(0, 0, 0, 1)";
+        } else {
+          const opacity = Math.max(0.1, 0.7 - d.depth * 0.15);
+          originalFill = `rgba(0, 0, 0, ${opacity})`;
+        }
+
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", baseRadius);
+          .attr("r", currentRadius)
+          .attr("fill", originalFill);
       })
       .on("click", function (event, d) {
         onNodeClickRef.current(d.data);
-
-        // 현재 클릭한 노드
-        console.log("클릭된 노드:", d.data.questionText);
-        console.log("클릭한 노드 아이디:", d.data.id);
-        console.log("클릭한 노드 위치:", d.x, d.y);
-
-        // 클릭한 노드의 부모 노드 정보
-        if (d.parent) {
-          console.log("부모 노드:", d.parent.data.id);
-        } else {
-          console.log("루트 노드입니다");
-        }
-
-        // 자식 노드 정보
-        // 자식 배열 존재하고 내용이 0보다 많으면
-        if (d.children && d.children.length > 0) {
-          const childNames = d.children.map((child) => child.data.questionText);
-          console.log("자식 노드 목록:", childNames);
-        } else {
-          console.log("리프 노드입니다.");
-        }
-
-        // Visual feedback
-        circles.attr("stroke-width", 2);
-        d3.select(this).select("circle");
-        // .attr("stroke-width", 4)
-        // .attr("stroke", "#1e40af");
       });
 
-    // Drag behavior
     const drag = d3
       .drag<SVGGElement, d3.HierarchyNode<ViewData> & d3.SimulationNodeDatum>()
       .on("start", (event, d) => {
@@ -233,14 +273,11 @@ export function InteractiveD3Graph({
       })
       .on("end", (event, d) => {
         if (!event.active) simulation.alphaTarget(0);
-
         d.fx = null;
         d.fy = null;
       });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    node.call(drag as any);
+    node.call(drag);
 
-    // Update positions on simulation tick
     simulation.on("tick", () => {
       link
         .attr(
@@ -267,21 +304,16 @@ export function InteractiveD3Graph({
       node.attr(
         "transform",
         (d) =>
-          `translate(${(d as d3.SimulationNodeDatum).x},${
-            (d as d3.SimulationNodeDatum).y
+          `translate(${(d as d3.SimulationNodeDatum).x},${(d as d3.SimulationNodeDatum).y
           })`
       );
     });
 
-    // Cleanup function
-    return () => {};
+    return () => { };
   }, [data, currentPath]);
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border"
-    >
+    <div ref={containerRef} className={glassContainerClass}>
       <svg ref={svgRef} className="w-full h-full"></svg>
     </div>
   );

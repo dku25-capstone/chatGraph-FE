@@ -90,6 +90,7 @@ function ChatPageContentInner() {
               topicId: realResponse.topic,
               topicName: topicNode.topicName,
               createdAt: topicNode.createdAt,
+              favorite: false,
             });
             setPrefetchedResponse(realResponse);
             router.replace(`/${realResponse.topic}`);

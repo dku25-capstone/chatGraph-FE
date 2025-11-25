@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-// [수정] Copy 아이콘 추가
 import {
   Pencil,
   Check,
@@ -13,6 +12,7 @@ import {
   ChevronUp,
   MoreHorizontal,
   Copy,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GlobalMarkdown } from "@/utils/GlobalMarkDown";
@@ -25,9 +25,11 @@ interface MessageBubbleProps {
   isUser?: boolean;
   isToggleable?: boolean;
   isAnswerVisible?: boolean;
+  isFavorite?: boolean;
   onToggleAnswer?: () => void;
   onEdit?: (newText: string) => void;
   onDelete?: () => void;
+  onToggleFavorite?: () => void;
 }
 
 export function MessageBubble({
@@ -36,15 +38,16 @@ export function MessageBubble({
   isUser = false,
   isToggleable = false,
   isAnswerVisible = true,
+  isFavorite = false,
   onToggleAnswer,
   onEdit,
   onDelete,
+  onToggleFavorite,
 }: MessageBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedText, setEditedText] = useState(questionText);
   const [isQuestionExpanded, setIsQuestionExpanded] = useState(false);
   const [showExpandButton, setShowExpandButton] = useState(false);
-  // [추가] 복사 상태 관리 state
   const [isCopied, setIsCopied] = useState(false);
   const questionRef = useRef<HTMLParagraphElement>(null);
 
@@ -79,14 +82,12 @@ export function MessageBubble({
     });
   };
 
-  // [추가] 복사 핸들러 함수
   const handleCopy = async (text: string) => {
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
       setIsCopied(true);
       toast.success("클립보드에 복사되었습니다.");
-      // 2초 후 아이콘 원래대로 복귀
       setTimeout(() => setIsCopied(false), 2000);
     } catch {
       toast.error("복사에 실패했습니다.");
@@ -94,14 +95,13 @@ export function MessageBubble({
   };
 
   const glassmorphismClasses =
-    "p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-sm";
+    "p-4 rounded-2xl bg-white/60 dark:bg-black/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 ";
   const userBubbleClasses =
     "p-4 rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700";
 
   if (isUser) {
     return (
       <div className="flex flex-col items-end space-y-3 w-full group/bubble">
-        {/* --- 사용자 질문 영역 (기존 코드 동일) --- */}
         <div className="flex items-start w-full justify-end relative">
           <div className={cn("min-w-0 relative w-[80%]", userBubbleClasses)}>
             {isEditing ? (
@@ -136,65 +136,96 @@ export function MessageBubble({
                   <p
                     ref={questionRef}
                     className={cn(
-                      "text-sm font-medium leading-relaxed break-all whitespace-pre-wrap pr-8",
+                      "text-sm font-medium leading-relaxed break-all whitespace-pre-wrap",
                       !isQuestionExpanded ? "line-clamp-[7]" : ""
                     )}
                   >
                     {questionText}
                   </p>
-
-                  {showExpandButton && (
-                    <div className="w-full flex justify-end mt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          setIsQuestionExpanded(!isQuestionExpanded)
-                        }
-                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1"
-                      >
-                        {isQuestionExpanded ? (
-                          <>
-                            접기 <ChevronUp className="h-3 w-3" />
-                          </>
-                        ) : (
-                          <>
-                            더 보기 <ChevronDown className="h-3 w-3" />
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
-                {onEdit && !isEditing && (
-                  <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity pl-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setIsEditing(true)}
-                      className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <Pencil className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    {onDelete && (
+                {/* [수정] 하단 버튼 영역 통합 (겹침 해결 및 순서 정렬) */}
+                {/* absolute 제거 -> flex flow로 변경하여 텍스트와 겹치지 않게 함.
+                    justify-end로 오른쪽 정렬.
+                */}
+                <div className="flex items-center justify-end gap-1 mt-2 min-h-[28px]">
+                  
+                  {/* 그룹: 액션 버튼들 (호버 시에만 표시) */}
+                  {onEdit && !isEditing && (
+                    <div className="flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity duration-200">
+                      
+                      {/* 1. 즐겨찾기 버튼 */}
+                      {onToggleFavorite && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={onToggleFavorite}
+                          className="h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          title="즐겨찾기"
+                        >
+                          <Star
+                            className={cn(
+                              "h-4 w-4",
+                              isFavorite
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground"
+                            )}
+                          />
+                        </Button>
+                      )}
+
+                      {/* 2. 수정 버튼 */}
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={confirmDelete}
-                        className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hover:text-destructive"
+                        onClick={() => setIsEditing(true)}
+                        className="h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        title="수정"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>
-                    )}
-                  </div>
-                )}
+
+                      {/* 3. 삭제 버튼 */}
+                      {onDelete && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={confirmDelete}
+                          className="h-7 w-7 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors hover:text-destructive"
+                          title="삭제"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 4. 더 보기/접기 버튼 (필요할 때만 표시, 항상 보임) */}
+                  {showExpandButton && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsQuestionExpanded(!isQuestionExpanded)}
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 ml-1"
+                    >
+                      {isQuestionExpanded ? (
+                        <>
+                          접기 <ChevronUp className="h-3 w-3" />
+                        </>
+                      ) : (
+                        <>
+                          더 보기 <ChevronDown className="h-3 w-3" />
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </>
             )}
           </div>
         </div>
 
-        {/* '답변 보기/숨기기' 버튼 (기존 코드 동일) */}
+        {/* ... (이하 답변 보기/숨기기 버튼 및 AI 응답 영역은 기존과 동일) ... */}
         {isToggleable && (
           <div className="pr-2">
             <Button
@@ -216,7 +247,6 @@ export function MessageBubble({
           </div>
         )}
 
-        {/* --- AI 답변 영역 (로딩 상태 추가) --- */}
         {isAnswerVisible && typeof answer !== "undefined" && (
           <div className="flex items-start w-full justify-end pl-8">
             <div
@@ -256,9 +286,8 @@ export function MessageBubble({
     );
   }
 
-  // --- 단독 AI 응답 영역 (복사 버튼 추가됨) ---
+  // ... (AI 응답 렌더링 부분 동일) ...
   return (
-    // [수정] relative 및 group/answer 클래스 추가
     <div
       className={cn(
         "flex items-start max-w-[70%] relative group/answer",
@@ -266,13 +295,10 @@ export function MessageBubble({
       )}
     >
       <div className="flex-1 min-w-0 overflow-hidden relative">
-        {/* [수정] pr-8 추가하여 버튼 공간 확보 */}
         <div className="max-w-none break-all prose prose-sm dark:prose-invert pr-8">
-          {/* 이 경우 questionText가 AI의 답변 내용임 */}
           {questionText}
         </div>
       </div>
-      {/* [추가] 복사 버튼 */}
       <div className="absolute top-2 right-2 opacity-0 group-hover/answer:opacity-100 transition-opacity">
         <Button
           size="sm"

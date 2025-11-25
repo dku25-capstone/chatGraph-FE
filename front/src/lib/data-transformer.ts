@@ -4,14 +4,16 @@ export interface ViewData {
   questionText: string;
   answerText: string;
   children: ViewData[];
+  favorite: boolean; // 필수 속성
 }
 
-// API 응답 타입
+// API 응답 타입 수정: favorite 속성 추가
 export interface TopicNode {
   topicId: string;
   topicName: string;
   createdAt: string;
   children: string[];
+  favorite?: boolean; // API에서 올 수도 있고 안 올 수도 있으므로 옵셔널 처리
 }
 
 export interface QuestionNode {
@@ -21,6 +23,7 @@ export interface QuestionNode {
   level: number;
   createdAt: string;
   children: string[];
+  favorite?: boolean; // API에서 올 수도 있고 안 올 수도 있으므로 옵셔널 처리
 }
 
 export interface TopicTreeResponse {
@@ -32,7 +35,6 @@ export interface TopicTreeResponse {
  * API 응답 (TopicTreeResponse)을 EnhancedBreadcrumbFocusView가 사용하는
  * 재귀적인 ViewData 형태로 변환하는 함수.
  */
-// API 응답에서 topicId를 루트 노드, 자식 노드를 ViewData 형태로 반환
 export const transformApiDataToViewData = (
   apiData: TopicTreeResponse
 ): ViewData => {
@@ -51,22 +53,27 @@ export const transformApiDataToViewData = (
         questionText: "Error: Missing node",
         answerText: "This node is missing from the response.",
         children: [],
+        favorite: false, // [수정] 변수 없이 사용된 것을 false로 고정
       };
     }
 
     let viewDataId = "";
     let questionText = "";
     let answerText = "";
+    // [수정] favorite 값을 가져오거나 기본값 false 설정
+    let isFavorite = false;
 
     // node 객체가 TopicNode인지 QuestionNode인지 구분
     if ("topicName" in node) {
       viewDataId = node.topicId;
-      questionText = node.topicName; // 토픽 제목
+      questionText = node.topicName;
       answerText = `토픽 질문: ${node.topicName}`;
+      isFavorite = node.favorite || false;
     } else {
       viewDataId = node.questionId;
       questionText = node.questionText;
       answerText = node.answerText;
+      isFavorite = node.favorite || false;
     }
 
     const children = node.children?.map(buildTree) || [];
@@ -76,6 +83,7 @@ export const transformApiDataToViewData = (
       questionText: questionText,
       answerText: answerText,
       children,
+      favorite: isFavorite, // [수정] ViewData에 필수인 favorite 속성 할당
     };
   };
 
@@ -99,5 +107,6 @@ export const transformApiDataToViewData = (
     questionText: rootNode.topicName,
     answerText: `토픽 질문: ${rootNode.topicName}`,
     children: [...directChildren, ...additionalChildren],
+    favorite: rootNode.favorite || false, // [수정] 루트 노드에도 favorite 할당
   };
 };

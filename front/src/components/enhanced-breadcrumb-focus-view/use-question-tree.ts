@@ -10,6 +10,7 @@ import {
   deleteQuestionBatch,
   separateQuestions,
   ShareQuestions,
+  toggleFavoriteQuestion, // 별칭 없이 원래 이름으로 import
 } from "@/api/questions";
 import {
   ViewData,
@@ -85,11 +86,6 @@ export const useQuestionTree = (
   const [viewMode, setViewMode] = useState<"chat" | "graph">("chat");
   const [prompt, setPrompt] = useState(""); // follow-up 입력값
   const [isLoading, setIsLoading] = useState(false);
-  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-  // 모달 방식에 사용되던 아래 상태들(editingQuestion, newQuestion)은 인라인 방식으로 변경되면서 삭제됨.
-  // const [editingQuestion, setEditingQuestion] = useState<ViewData | null>(null);
-  // const [newQuestion, setNewQuestion] = useState("");
-  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<ViewData | null>(null);
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
@@ -165,11 +161,6 @@ export const useQuestionTree = (
       }
     }
   }, [viewMode, viewData, currentPath.length, setCurrentPath]);
-
-  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-  // 브레드크럼 이동 시 모달 데이터 동기화를 위해 사용했던 useEffect는
-  // 모달 방식이 삭제됨에 따라 함께 삭제됨.
-  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
 
   const currentQuestion = useMemo(
     () => (currentPath.length > 0 ? currentPath[currentPath.length - 1] : null),
@@ -459,6 +450,7 @@ export const useQuestionTree = (
       questionText: optimisticPrompt,
       answerText: "", // Empty answer for now
       children: [],
+      favorite: false,
     };
 
     // 2. Optimistically update the UI
@@ -551,10 +543,6 @@ export const useQuestionTree = (
     setIsLoading,
   ]);
 
-  // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-  // 모달 방식에 사용되던 handleEditQuestion, handleSaveEdit 함수는 삭제됨.
-  // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-
   // 인라인 수정을 위한 저장 함수. MessageBubble과 SubQuestionList에서 사용됨.
   const handleSaveInPlaceEdit = useCallback(
     async (questionId: string, newText: string) => {
@@ -630,7 +618,6 @@ export const useQuestionTree = (
   }, [splitRequest, router, cancelModifyMode, fetchTopics]);
 
   // 질문 삭제 함수
-  // currentPath나 전체 트리에서 해당 질문 노드를 찾아 제거하고, 상태 업데이트 로직 필요
   const handleDeleteQuestion = useCallback(
     async (questionId: string) => {
       // 롤백을 위해 원본 상태 저장
@@ -713,8 +700,60 @@ export const useQuestionTree = (
         setCurrentPath(originalCurrentPath);
       }
     },
-    [viewData, currentPath, currentQuestion, setViewData, setCurrentPath] // refreshViewData 제거
+    [viewData, currentPath, currentQuestion, setViewData, setCurrentPath]
   );
+
+  // [수정] 함수 이름 변경 및 내부에서 API 함수 호출 방식 변경
+  const handleToggleFavoriteQuestion = useCallback(
+    async (questionId: string) => {
+      // viewData뿐만 아니라 currentPath도 체크
+      if (!viewData || currentPath.length === 0) return;
+
+      const originalViewData = viewData;
+      // 롤백을 위해 현재 경로도 백업
+      const originalCurrentPath = currentPath;
+
+      // 낙관적 업데이트 (UI 먼저 변경)
+      const updateFavoriteStatus = (node: ViewData): ViewData => {
+        if (node.id === questionId) {
+          return { ...node, favorite: !node.favorite };
+        }
+        return {
+          ...node,
+          children: node.children.map(updateFavoriteStatus),
+        };
+      };
+
+      // 1. 전체 트리 데이터 업데이트
+      const newViewData = updateFavoriteStatus(viewData);
+      setViewData(newViewData);
+
+      // 2. [추가됨] 현재 경로 업데이트
+      // 변경된 새 트리(newViewData)에서 현재 보고 있는 마지막 질문(currentPath의 마지막 요소)까지의 경로를 다시 찾습니다.
+      const currentQuestionId = currentPath[currentPath.length - 1].id;
+      const newPath = findPathToNode(newViewData, currentQuestionId);
+
+      if (newPath) {
+        setCurrentPath(newPath);
+      }
+
+      try {
+        // [수정 완료] import한 API 함수(toggleFavoriteQuestion)를 호출
+        await toggleFavoriteQuestion(questionId);
+        toast.success("즐겨찾기 상태가 변경되었습니다.");
+      } catch (error) {
+        console.error("Failed to toggle favorite status:", error);
+        toast.error("즐겨찾기 상태 변경에 실패했습니다.");
+        // 롤백
+        setViewData(originalViewData);
+        // [추가됨] 경로도 롤백
+        setCurrentPath(originalCurrentPath);
+      }
+    },
+    // 의존성 배열에 currentPath 추가
+    [viewData, currentPath]
+  );
+
   return useMemo(
     () => ({
       viewData,
@@ -758,10 +797,9 @@ export const useQuestionTree = (
       shareRequest,
       confirmShare,
       setShareRequest,
+      // [수정] 변경된 함수 이름으로 반환
+      toggleFavoriteQuestion: handleToggleFavoriteQuestion,
     }),
-    // <<< START: 질문 수정 방식 변경 (모달 -> 인라인) >>>
-    // useMemo 의존성 배열에서 모달 관련 상태 및 함수들 삭제
-    // <<< END: 질문 수정 방식 변경 (모달 -> 인라인) >>>
     [
       viewData,
       currentPath,
@@ -798,6 +836,8 @@ export const useQuestionTree = (
       shareRequest,
       confirmShare,
       setShareRequest,
+      // [수정] 변경된 함수 이름으로 의존성 배열에 추가
+      handleToggleFavoriteQuestion,
     ]
   );
 };

@@ -11,7 +11,7 @@ import {
 import { SidebarMenuItem, SidebarInput } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { MoreVertical, Check } from "lucide-react";
+import { MoreVertical, Check, Star } from "lucide-react";
 import { TopicHistoryItem } from "@/api/topics-history";
 
 interface TopicListItemProps {
@@ -20,6 +20,7 @@ interface TopicListItemProps {
   onStartEdit: (topic: TopicHistoryItem | null) => void;
   onConfirmEdit: () => void;
   onConfirmDelete: (topicId: string) => void;
+  onToggleFavorite: (topicId: string) => void;
   editingNewName: string;
   setEditingNewName: (name: string) => void;
   glassDropdownClass: string;
@@ -31,6 +32,7 @@ export function TopicListItem({
   onStartEdit,
   onConfirmEdit,
   onConfirmDelete,
+  onToggleFavorite,
   editingNewName,
   setEditingNewName,
   glassDropdownClass,
@@ -68,6 +70,9 @@ export function TopicListItem({
         </div>
       ) : (
         <>
+          {topic.favorite && (
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-2" />
+          )}
           <Link
             href={`/${topic.topicId}`}
             title={topic.topicName}
@@ -93,6 +98,17 @@ export function TopicListItem({
                 align="start"
                 className={glassDropdownClass}
               >
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFavorite(topic.topicId);
+                  }}
+                  className="cursor-pointer gap-2"
+                >
+                  <span>
+                    {topic.favorite ? "즐겨찾기 해제" : "즐겨찾기"}
+                  </span>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();

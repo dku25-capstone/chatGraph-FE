@@ -178,3 +178,11 @@ export const ShareQuestions = async (
   );
   return response.data;
 };
+
+// 질문 즐겨찾기 (POST /api/questions/{questionId}/favorite)
+// 특정 질문의 즐겨찾기 상태를 토글합니다.
+export const toggleFavoriteQuestion = async (
+  questionId: string
+): Promise<void> => {
+  await api.post(`/api/questions/${questionId}/favorite`);
+};
