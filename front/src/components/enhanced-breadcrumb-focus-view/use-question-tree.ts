@@ -9,6 +9,7 @@ import {
   copyQuestions,
   deleteQuestionBatch,
   separateQuestions,
+  ShareQuestions,
   toggleFavoriteQuestion, // 별칭 없이 원래 이름으로 import
 } from "@/api/questions";
 import {
@@ -47,13 +48,19 @@ export const useQuestionTree = (
     [initialResponse]
   );
 
-  // 수정 모드가 가질 수 있는 3가지 상태
+  // 수정 모드가 가질 수 있는 6가지 상태
   type ModifyMode =
     | "IDLE"
     | "SELECT_CHILD"
     | "SELECT_PARENT"
     | "SELECT_NODE_TO_MOVE_OTHER"
-    | "SELECT_NODE_TO_SPLIT";
+    | "SELECT_NODE_TO_SPLIT"
+    | "SELECT_NODE_TO_SHARE";
+
+  // 공유 요청 상태(노드 + 이메일 입력 모달용)
+  interface ShareRequest {
+    nodeToShare: ViewData;
+  }
 
   // '부모 변경 확인' 모달에 필요한 데이터 타입 정의
   interface ReparentRequest {
@@ -95,6 +102,7 @@ export const useQuestionTree = (
     useState<MoveToTopicRequest | null>(null);
   // 분리 요청 상태
   const [splitRequest, setSplitRequest] = useState<SplitRequest | null>(null);
+  const [shareRequest, setShareRequest] = useState<ShareRequest | null>(null);
 
   const router = useRouter();
 
@@ -185,6 +193,18 @@ export const useQuestionTree = (
           setSelectedNode(clickedNode);
           break;
 
+        case "SELECT_NODE_TO_SHARE":
+          if (clickedNode.id === topicId) {
+            toast.error("토픽 자체는 공유할 수 없습니다.", {
+              description:
+                "공유하고 싶은 '첫 번째 질문 노드'를 선택해주세요. 그 하위 내용은 토픽과 함께 모두 공유됩니다.",
+              duration: 5000,
+            });
+            return; // 모달 띄우지 않고 종료
+          }
+          setShareRequest({ nodeToShare: clickedNode });
+          break;
+
         case "SELECT_NODE_TO_SPLIT":
           toast.info(`'${clickedNode.questionText}' 노드를 선택했습니다.`);
           setSplitRequest({
@@ -261,7 +281,42 @@ export const useQuestionTree = (
       setSelectedNode,
       setReparentRequest,
       setSplitRequest,
+      topicId,
     ]
+  );
+
+  // 공유 버튼 클릭시
+  const startShareMode = useCallback(() => {
+    setModifyMode("SELECT_NODE_TO_SHARE");
+    toast.info("공유할 '첫 번째 질문'을 선택하세요.");
+  }, []);
+
+  // 이메일 입력 모달에서 [공유] 클릭 시
+  const confirmShare = useCallback(
+    async (targetEmail: string) => {
+      if (!shareRequest) return;
+      const { nodeToShare } = shareRequest;
+
+      const toastId = toast.loading(`${targetEmail}님에게 공유하는 중...`);
+
+      try {
+        const allIdsToShare = getAllIdsFromNode(nodeToShare);
+
+        await ShareQuestions({
+          sourceQuestionIds: allIdsToShare,
+          targetUserId: targetEmail,
+        });
+
+        toast.success("공유가 완료되었습니다!", { id: toastId });
+      } catch (error) {
+        console.error("공유 실패:", error);
+        toast.error("공유에 실패했습니다.", { id: toastId });
+      } finally {
+        setShareRequest(null);
+        setModifyMode("IDLE");
+      }
+    },
+    [shareRequest]
   );
 
   // 다른 토픽으로 이동 버튼을 눌렀을 때 실행할 함수
@@ -395,7 +450,7 @@ export const useQuestionTree = (
       questionText: optimisticPrompt,
       answerText: "", // Empty answer for now
       children: [],
-      favorite: false
+      favorite: false,
     };
 
     // 2. Optimistically update the UI
@@ -738,6 +793,10 @@ export const useQuestionTree = (
       startSplitMode,
       splitRequest,
       confirmSplitTopic,
+      startShareMode,
+      shareRequest,
+      confirmShare,
+      setShareRequest,
       // [수정] 변경된 함수 이름으로 반환
       toggleFavoriteQuestion: handleToggleFavoriteQuestion,
     }),
@@ -773,6 +832,10 @@ export const useQuestionTree = (
       startSplitMode,
       splitRequest,
       confirmSplitTopic,
+      startShareMode,
+      shareRequest,
+      confirmShare,
+      setShareRequest,
       // [수정] 변경된 함수 이름으로 의존성 배열에 추가
       handleToggleFavoriteQuestion,
     ]

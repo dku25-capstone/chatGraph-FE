@@ -50,6 +50,17 @@ export interface TopicTreeResponse {
   };
 }
 
+// 서브트리 공유
+export interface ShareQuestionsRequest {
+  sourceQuestionIds: string[];
+  targetUserId: string;
+}
+
+export interface ShareQuestionsResponse {
+  success: boolean;
+  message?: string;
+}
+
 // 질문 전송 (새 질문 or 후속 질문)
 export const askQuestion = async (
   data: QuestionRequest
@@ -157,9 +168,21 @@ export const separateQuestions = async (
   return response.data;
 };
 
-// 질문 즐겨찾기 (POST /api/questions/{questionId}/favorite)
-// 특정 질문의 즐겨찾기 상태를 토글합니다.
-export const toggleFavoriteQuestion = async (questionId: string): Promise<void> => {
-  await api.post(`/api/questions/${questionId}/favorite`);
+// 선택한 질문 노드 줄기를 다른 사용자에게 공유(복제)
+export const ShareQuestions = async (
+  data: ShareQuestionsRequest
+): Promise<ShareQuestionsResponse> => {
+  const response = await api.post<ShareQuestionsResponse>(
+    "/api/questions/share",
+    data
+  );
+  return response.data;
 };
 
+// 질문 즐겨찾기 (POST /api/questions/{questionId}/favorite)
+// 특정 질문의 즐겨찾기 상태를 토글합니다.
+export const toggleFavoriteQuestion = async (
+  questionId: string
+): Promise<void> => {
+  await api.post(`/api/questions/${questionId}/favorite`);
+};

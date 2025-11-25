@@ -27,6 +27,7 @@ import QuestionDetailModal from "../QuestionDetailModal";
 import { findPathToNode, cn } from "@/lib/utils";
 import { AlertDialog } from "@radix-ui/react-alert-dialog";
 import { useSidebar } from "@/components/ui/sidebar";
+import { ShareEmailModal } from "../ShareEmailModal";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -79,6 +80,9 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
     confirmMoveToOtherTopic,
     splitRequest,
     confirmSplitTopic,
+    shareRequest,
+    setShareRequest,
+    confirmShare,
     toggleFavoriteQuestion,
   } = useQuestionTreeContext();
 
@@ -128,6 +132,11 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
               setSelectedNode(null);
               setViewMode("chat");
             }}
+          />
+          <ShareEmailModal
+            isOpen={!!shareRequest}
+            onClose={() => setShareRequest(null)}
+            onConfirm={(email) => confirmShare(email)}
           />
 
           {/* 1. 노드 이동 확인 Alert */}

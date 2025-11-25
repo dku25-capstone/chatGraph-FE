@@ -1,6 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Network, List, Edit, X, MoreVertical, Layers } from "lucide-react";
+import {
+  Network,
+  List,
+  Edit,
+  X,
+  MoreVertical,
+  Layers,
+  Split,
+  Move,
+  Share,
+} from "lucide-react";
 import { useQuestionTreeContext } from "./QuestionTreeContext";
 import {
   DropdownMenu,
@@ -30,6 +40,7 @@ export const FocusViewHeader = ({
     startModifyMode,
     cancelModifyMode,
     moveToOtherMode,
+    startShareMode,
   } = useQuestionTreeContext();
 
   const floatingBarClass = cn(
@@ -104,19 +115,24 @@ export const FocusViewHeader = ({
         </div>
 
         {/* [Right Section] 액션 버튼들 */}
-        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+        <div className="flex items-center gap-2 shrink-0 ml-2">
           {viewMode === "graph" ? (
             modifyMode === "IDLE" ? (
               <>
                 <div className="hidden lg:flex items-center gap-1">
                   {[
                     {
-                      icon: Edit,
+                      icon: Share,
+                      label: "공유",
+                      onClick: startShareMode,
+                    },
+                    {
+                      icon: Split,
                       label: "분리",
                       onClick: startSplitMode,
                     },
                     {
-                      icon: Edit,
+                      icon: Move,
                       label: "이동",
                       onClick: moveToOtherMode,
                     },
