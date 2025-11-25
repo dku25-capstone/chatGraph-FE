@@ -259,28 +259,50 @@ export function InteractiveD3Graph({
     // --- [마우스 인터랙션] ---
     node
       .on("mouseover", function (event, d: d3.HierarchyNode<ViewData>) {
-        const currentRadius = d.depth === 0 ? rootRadius : baseRadius;
-        d3.select(this)
-          .select("circle")
-          .transition()
-          .duration(200)
-          .attr("r", currentRadius + 8)
-          .attr("fill", () => {
-            // 호버 시 색상을 약간 밝게 변경하여 강조
-            const currentColor = d3.color(getNodeColor(d));
-            return currentColor ? currentColor.brighter(0.6).toString() : "#fff";
-          });
-      })
-      .on("mousemove", () => {})
-      .on("mouseout", function (event, d: d3.HierarchyNode<ViewData>) {
-        const currentRadius = d.depth === 0 ? rootRadius : baseRadius;
+        // 1. 호버된 노드 및 그 하위 노드들의 ID를 Set으로 만듭니다.
+        const subtreeNodeIds = new Set(d.descendants().map((n) => n.data.id));
 
+        // 2. 모든 노드를 선택하여 색상을 업데이트합니다.
+        g.selectAll<SVGGElement, d3.HierarchyNode<ViewData>>("g.node")
+          .select("circle")
+          .transition()
+          .duration(300)
+          .attr("fill", (n) => {
+            if (subtreeNodeIds.has(n.data.id)) {
+              // 3. 호버된 줄기에 속한 경우:
+              // 직접 호버된 노드는 더 밝게 강조합니다.
+              if (n.data.id === d.data.id) {
+                const color = d3.color(getNodeColor(n));
+                return color ? color.brighter(0.7).toString() : "#fff";
+              }
+              // 그 외 하위 노드들은 원래 색상을 유지합니다.
+              return getNodeColor(n);
+            } else {
+              // 4. 호버된 줄기에 속하지 않는 경우: 흑백으로 처리합니다.
+              const originalColor = d3.color(getNodeColor(n));
+              if (!originalColor) return "#374151"; // gray-700 fallback
+              const hsl = d3.hsl(originalColor);
+              hsl.s = 0.05; // 채도를 매우 낮게 설정
+              hsl.l = 0.35; // 밝기를 어둡게 설정
+              return hsl.toString();
+            }
+          });
+
+        // 5. 직접 호버된 노드의 반지름을 키웁니다.
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
-          .attr("r", currentRadius)
-          .attr("fill", getNodeColor); // 원래 색상으로 복원
+          .attr("r", (d.depth === 0 ? rootRadius : baseRadius) + 8);
+      })
+      .on("mouseout", function () {
+        // 모든 노드의 색상과 반지름을 원래대로 복원합니다.
+        g.selectAll<SVGGElement, d3.HierarchyNode<ViewData>>("g.node")
+          .select("circle")
+          .transition()
+          .duration(300)
+          .attr("fill", (n) => getNodeColor(n))
+          .attr("r", (n) => (n.depth === 0 ? rootRadius : baseRadius));
       })
       .on("click", function (event, d) {
         onNodeClickRef.current(d.data);
