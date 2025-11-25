@@ -13,6 +13,7 @@ interface TopicListProps {
   onStartEdit: (topic: TopicHistoryItem | null) => void;
   onConfirmEdit: () => void;
   onConfirmDelete: (topicId: string) => void;
+  onToggleFavorite: (topicId: string) => void;
 }
 
 export function TopicList({
@@ -24,6 +25,7 @@ export function TopicList({
   onStartEdit,
   onConfirmEdit,
   onConfirmDelete,
+  onToggleFavorite,
 }: TopicListProps) {
   return (
     <SidebarMenu className="gap-1 w-full">
@@ -35,6 +37,7 @@ export function TopicList({
           onStartEdit={onStartEdit}
           onConfirmEdit={onConfirmEdit}
           onConfirmDelete={onConfirmDelete}
+          onToggleFavorite={onToggleFavorite}
           editingNewName={editingNewName}
           setEditingNewName={setEditingNewName}
           glassDropdownClass={glassDropdownClass}

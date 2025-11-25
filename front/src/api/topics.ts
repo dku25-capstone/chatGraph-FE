@@ -20,7 +20,7 @@ export const patchTopic = async (
     `/api/topics/${topicId}`,
     data
   );
-    console.log(response.data)
+  console.log(response.data)
   return response.data;
 };
 
@@ -29,3 +29,9 @@ export const patchTopic = async (
 export const deleteTopic = async (topicId: string): Promise<void> => {
   await api.delete(`/api/topics/${topicId}`);
 };
+
+//토픽 즐겨찾기 (POST /api/topics/{topicId}/favorite)                            
+// 특정 토픽의 즐겨찾기 상태를 토글합니다.                                        
+export const toggleFavoriteTopic = async (topicId: string): Promise<void> => {    
+  await api.post(`/api/topics/${topicId}/favorite`);                              
+};                                                                                

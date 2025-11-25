@@ -79,6 +79,7 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
     confirmMoveToOtherTopic,
     splitRequest,
     confirmSplitTopic,
+    toggleFavoriteQuestion,
   } = useQuestionTreeContext();
 
   const [isMainAnswerVisible, setIsMainAnswerVisible] = useState(true);
@@ -278,6 +279,7 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                   isUser={true}
                   isToggleable={true}
                   isAnswerVisible={isMainAnswerVisible}
+                  isFavorite={currentQuestion.favorite}
                   onToggleAnswer={() =>
                     setIsMainAnswerVisible(!isMainAnswerVisible)
                   }
@@ -285,6 +287,9 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
                     handleSaveInPlaceEdit(currentQuestion.id, newText)
                   }
                   onDelete={() => handleDeleteQuestion(currentQuestion.id)}
+                  onToggleFavorite={() =>
+                    toggleFavoriteQuestion(currentQuestion.id)
+                  }
                 />
                 <Separator className="my-4" />
               </div>

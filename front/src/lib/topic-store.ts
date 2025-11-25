@@ -1,6 +1,7 @@
-import { create } from 'zustand';
-import { TopicTreeResponse } from '@/api/questions';
-import { getTopicsHistory, TopicHistoryItem } from '@/api/topics-history';
+import { create } from "zustand";
+import { TopicTreeResponse } from "@/api/questions";
+import { getTopicsHistory, TopicHistoryItem } from "@/api/topics-history";
+import { toggleFavoriteTopic } from "@/api/topics";
 
 interface TopicState {
   currentTopicId: string | null;
@@ -13,10 +14,11 @@ interface TopicState {
   addTopic: (topic: TopicHistoryItem) => void;
   updateTopic: (topicId: string, newName: string) => void;
   removeTopic: (topicId: string) => void;
+  toggleFavorite: (topicId: string) => void;
   fetchTopics: () => Promise<void>;
 }
 
-export const useTopicStore = create<TopicState>((set) => ({
+export const useTopicStore = create<TopicState>((set, get) => ({
   currentTopicId: null,
   currentTopicName: null,
   setTopic: (id, name) => set({ currentTopicId: id, currentTopicName: name }),
@@ -35,6 +37,22 @@ export const useTopicStore = create<TopicState>((set) => ({
     set((state) => ({
       topics: state.topics.filter((t) => t.topicId !== topicId),
     })),
+  toggleFavorite: async (topicId: string) => {
+    const originalTopics = get().topics;
+    // Optimistic update
+    set((state) => ({
+      topics: state.topics.map((t) =>
+        t.topicId === topicId ? { ...t, favorite: !t.favorite } : t
+      ),
+    }));
+    try {
+      await toggleFavoriteTopic(topicId);
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+      // Revert on error
+      set({ topics: originalTopics });
+    }
+  },
   fetchTopics: async () => {
     try {
       const fetchedTopics = await getTopicsHistory();
