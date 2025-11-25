@@ -50,6 +50,41 @@ export function InteractiveD3Graph({
       .attr("viewBox", `0 0 ${width} ${height}`)
       .attr("preserveAspectRatio", "xMidYMid meet");
 
+    // --- [색상 정의 로직] ---
+    // 줄기(Stem)별로 다른 색상을 할당하기 위한 스케일
+    const stemColorScale = d3.scaleOrdinal(d3.schemeTableau10);
+
+    // 각 노드의 줄기(root 바로 아래 자식)를 찾는 헬퍼 함수
+    const getStem = (
+      d: d3.HierarchyNode<ViewData>
+    ): d3.HierarchyNode<ViewData> => {
+      let stem = d;
+      while (stem.depth > 1) {
+        stem = stem.parent!;
+      }
+      return stem;
+    };
+
+    // 노드의 최종 색상을 결정하는 함수
+    const getNodeColor = (d: d3.HierarchyNode<ViewData>): string => {
+      // Root 노드는 회색으로 처리
+      if (d.depth === 0) {
+        return "#6b7280"; // gray-500
+      }
+
+      // 1. 노드의 줄기를 찾음
+      const stem = getStem(d);
+
+      // 2. 줄기의 ID를 기반으로 기본 색상 가져오기
+      const baseColor = d3.color(stemColorScale(stem.data.id));
+      if (!baseColor) return "#9ca3af"; // gray-400 (fallback)
+
+      // 3. 깊이에 따라 명암 조절 (깊어질수록 어두워짐)
+      // (d.depth - 1)을 사용하여 줄기(depth:1)는 기본 색상을 유지
+      const darkeningFactor = (d.depth - 1) * 0.4;
+      return baseColor.darker(darkeningFactor).toString();
+    };
+
     const defs = svg.append("defs");
 
     const dropShadow = defs
@@ -109,7 +144,9 @@ export function InteractiveD3Graph({
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force(
         "collision",
-        d3.forceCollide<d3.HierarchyNode<ViewData>>().radius((d) => (d.depth === 0 ? 80 : 55))
+        d3
+          .forceCollide<d3.HierarchyNode<ViewData>>()
+          .radius((d) => (d.depth === 0 ? 80 : 55))
       );
 
     const link = g
@@ -138,11 +175,7 @@ export function InteractiveD3Graph({
     node
       .append("circle")
       .attr("r", (d) => (d.depth === 0 ? rootRadius : baseRadius))
-      .attr("fill", (d) => {
-        if (d.depth === 0) return "rgba(0, 0, 0, 1)";
-        const opacity = Math.max(0.1, 0.7 - d.depth * 0.15);
-        return `rgba(0, 0, 0, ${opacity})`;
-      })
+      .attr("fill", getNodeColor) // 새로운 색상 함수 적용
       .style("filter", (d) =>
         d.depth === 0 ? "url(#strong-shadow)" : "url(#drop-shadow)"
       );
@@ -233,28 +266,21 @@ export function InteractiveD3Graph({
           .duration(200)
           .attr("r", currentRadius + 8)
           .attr("fill", () => {
-            if (d.depth === 0) return "rgba(50, 50, 50, 1)";
-            const opacity = Math.max(0.1, 0.7 - d.depth * 0.15);
-            return `rgba(50, 50, 50, ${opacity + 0.2})`;
+            // 호버 시 색상을 약간 밝게 변경하여 강조
+            const currentColor = d3.color(getNodeColor(d));
+            return currentColor ? currentColor.brighter(0.6).toString() : "#fff";
           });
       })
-      .on("mousemove", () => { })
+      .on("mousemove", () => {})
       .on("mouseout", function (event, d: d3.HierarchyNode<ViewData>) {
         const currentRadius = d.depth === 0 ? rootRadius : baseRadius;
-        let originalFill;
-        if (d.depth === 0) {
-          originalFill = "rgba(0, 0, 0, 1)";
-        } else {
-          const opacity = Math.max(0.1, 0.7 - d.depth * 0.15);
-          originalFill = `rgba(0, 0, 0, ${opacity})`;
-        }
 
         d3.select(this)
           .select("circle")
           .transition()
           .duration(200)
           .attr("r", currentRadius)
-          .attr("fill", originalFill);
+          .attr("fill", getNodeColor); // 원래 색상으로 복원
       })
       .on("click", function (event, d) {
         onNodeClickRef.current(d.data);
@@ -304,12 +330,13 @@ export function InteractiveD3Graph({
       node.attr(
         "transform",
         (d) =>
-          `translate(${(d as d3.SimulationNodeDatum).x},${(d as d3.SimulationNodeDatum).y
+          `translate(${(d as d3.SimulationNodeDatum).x},${
+            (d as d3.SimulationNodeDatum).y
           })`
       );
     });
 
-    return () => { };
+    return () => {};
   }, [data, currentPath]);
 
   return (
