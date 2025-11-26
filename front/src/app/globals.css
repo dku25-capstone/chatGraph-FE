@@ -1,6 +1,6 @@
 
 html {
-  font-size: 18px; /* Increase base font size by 2px from typical 16px */
+  font-size: 14px; /* Increase base font size by 2px from typical 16px */
 }
 
 @import "tailwindcss";

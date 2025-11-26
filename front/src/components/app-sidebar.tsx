@@ -206,7 +206,7 @@ export function AppSidebar() {
   // 사이드바 전체 스타일 (글래스모피즘 적용)
   const sidebarClass = cn(
     "ml-3 my-3 h-[calc(100vh-1.5rem)]",
-    "w-[300px]",
+    "w-[260px]",
     "rounded-[26px]",
     "border-0",
     "bg-white/60 dark:bg-black/60", // 반투명 배경
