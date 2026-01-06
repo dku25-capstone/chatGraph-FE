@@ -10,7 +10,8 @@ module.exports = async (browser, context) => {
 
     const page = await browser.newPage();
     try {
-        await page.goto('http://localhost:3000/login');
+        // Increase timeout to 60s for CI environments
+        await page.goto('http://localhost:3000/login', { waitUntil: 'networkidle0', timeout: 60000 });
 
         // Selectors - ADJUST THESE TO MATCH YOUR ACTUAL DOM
         const emailSelector = 'input[name="email"], input[type="email"]';
@@ -18,8 +19,8 @@ module.exports = async (browser, context) => {
         const submitSelector = 'button[type="submit"]';
 
         await page.waitForSelector(emailSelector);
-        await page.type(emailSelector, 'test@example.com'); // Replace with valid test creds
-        await page.type(passwordSelector, 'password123');
+        await page.type(emailSelector, 'lee@dku.ac.kr'); // Replace with valid test creds
+        await page.type(passwordSelector, 'Test1111!');
 
         await Promise.all([
             page.click(submitSelector),
