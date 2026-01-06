@@ -26,7 +26,7 @@ module.exports = async (browser, context) => {
 
         await Promise.all([
             page.click(submitSelector),
-            page.waitForNavigation({ waitUntil: 'networkidle0' }), // Wait for redirect
+            page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }), // Wait for redirect (60s timeout)
         ]);
 
         // Setup cookies/localStorage for the actual Lighthouse run
