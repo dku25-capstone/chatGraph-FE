@@ -1,6 +1,6 @@
 const dotenv = require('dotenv');
 // Load environment variables from .env file (if it exists)
-dotenv.config();
+dotenv.config({ quiet: true });
 
 module.exports = async (browser, context) => {
     const page = await browser.newPage();
