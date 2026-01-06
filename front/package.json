@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && lhci autorun && node scripts/process-lh-report.js",
+    "build": "next build",
+    "build:analyze": "next build && lhci autorun && node scripts/process-lh-report.js",
     "start": "next start",
     "lint": "next lint"
   },

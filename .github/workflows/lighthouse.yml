@@ -30,17 +30,15 @@ jobs:
           npm install -g @lhci/cli
         working-directory: ./front
 
-      - name: Build
-        run: npm run build
-        working-directory: ./front
-
-      - name: Run Lighthouse CI
-        run: lhci autorun
+      - name: Build and Analyze
+        run: npm run build:analyze
         working-directory: ./front
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
           LHCI_USER_EMAIL: ${{ secrets.LHCI_USER_EMAIL }}
           LHCI_USER_PASSWORD: ${{ secrets.LHCI_USER_PASSWORD }}
+
+
 
       - name: Upload Report to Artifacts
         if: always()
