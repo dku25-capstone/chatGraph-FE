@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import { useQuestionTree } from "./use-question-tree";
+import { useQuestionTree } from "../../hooks/use-question-tree";
 import { TopicTreeResponse } from "@/lib/data-transformer";
 
 // useQuestionTree 훅의 반환 타입 정의

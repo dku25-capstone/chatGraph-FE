@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,10 +19,10 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { InteractiveD3Graph } from "../interactive-d3-graph"; // D3 그래프 재사용
 // 토픽 목록 API 경로
-import { getTopicById } from "@/api/questions";
-import { getTopicsHistory } from "@/api/topics-history";
-import { ViewData, transformApiDataToViewData } from "@/lib/data-transformer";
-import { useQuestionTreeContext } from "./QuestionTreeContext";
+// 토픽 목록 API 경로 제거 (Hooks에서 사용)
+import { ViewData } from "@/lib/data-transformer";
+import { useQuestionTreeContext } from "./question-tree-context";
+import { useTopicSelector } from "@/features/graph/hooks/use-topic-selector"; // Import the custom hook
 
 // API 응답 타입
 interface TopicHistoryItem {
@@ -47,62 +47,29 @@ export function TopicSelectorModal({
   onNodeSelected,
 }: TopicSelectorModalProps) {
   const { viewData } = useQuestionTreeContext();
-
   const currentTopicId = viewData ? viewData.id : null;
 
-  const [step, setStep] = useState<"SELECT_TOPIC" | "SELECT_NODE">(
-    "SELECT_TOPIC"
-  );
+  // Custom Hook으로 로직 분리 (React Query 사용)
+  const {
+    step,
+    topics,
+    selectedTopic,
+    targetTopicGraph,
+    isLoading,
+    handleTopicSelect,
+    resetSelection,
+  } = useTopicSelector(isOpen);
 
-  // 토픽 목록
-  const [topics, setTopics] = useState<TopicHistoryItem[]>([]);
-  const [selectedTopic, setSelectedTopic] = useState<TopicHistoryItem | null>(
-    null
-  );
-
-  // 선택한 토픽의 그래프 데이터
-  const [targetTopicGraph, setTargetTopicGraph] = useState<ViewData | null>(
-    null
-  );
-  const [isLoading, setIsLoading] = useState(false);
-
-  // 모달이 열릴 때 토픽 목록(history)을 불러옴
+  // 모달이 닫히거나 열릴 때 초기화 로직은 훅 내부 상태나 useEffect로 처리할 수도 있지만,
+  // 여기서는 isOpen 변경 시 훅의 상태를 리셋하는 방식을 사용하거나, 
+  // 훅 내부에서 isOpen 의존성을 처리하도록 위임했습니다.
+  // 다만, 모달을 닫았다 열었을 때 초기 화면으로 돌아가게 하려면:
   useEffect(() => {
     if (isOpen) {
-      // 모달이 열릴 때마다 초기화
-      setStep("SELECT_TOPIC");
-      setSelectedTopic(null);
-      setTargetTopicGraph(null);
-
-      const fetchTopics = async () => {
-        setIsLoading(true);
-        try {
-          // 'getTopicsHistory' API가 토픽 목록을 반환
-          const topicList = await getTopicsHistory();
-          setTopics(topicList);
-        } catch (error) {
-          console.error("토픽 목록을 불러오는 데 실패했습니다.", error);
-        }
-        setIsLoading(false);
-      };
-      fetchTopics();
+      resetSelection();
     }
-  }, [isOpen]);
+  }, [isOpen, resetSelection]);
 
-  // 사용자가 토픽을 선택했을 때 해당 토픽의 그래프 데이터를 불러옴
-  const handleTopicSelect = async (topic: TopicHistoryItem) => {
-    setSelectedTopic(topic);
-    setIsLoading(true);
-    try {
-      // 'getTopicById' API가 해당 토픽의 전체 트리를 반환
-      const topicTree = await getTopicById(topic.topicId);
-      setTargetTopicGraph(transformApiDataToViewData(topicTree));
-      setStep("SELECT_NODE");
-    } catch (error) {
-      console.error("토픽 그래프를 불러오는 데 실패했습니다.", error);
-    }
-    setIsLoading(false);
-  };
 
   // 미니 그래프에서 부모 노드를 선택했을 때
   const handleNodeSelect = (node: ViewData) => {

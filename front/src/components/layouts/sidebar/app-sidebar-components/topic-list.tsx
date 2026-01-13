@@ -2,7 +2,7 @@
 
 import { SidebarMenu } from "@/components/ui/sidebar";
 import { TopicHistoryItem } from "@/api/topics-history";
-import { TopicListItem } from "./TopicListItem";
+import { TopicListItem } from "./topic-list-item";
 
 interface TopicListProps {
   topics: TopicHistoryItem[];

@@ -25,7 +25,7 @@ export function ShareEmailModal({
 }: ShareEmailModalProps) {
   const [email, setEmail] = useState("");
 
-  const handleSubmit = () => {
+  const handleShare = () => {
     if (email.trim()) {
       onConfirm(email);
       setEmail(""); // 초기화
@@ -59,7 +59,7 @@ export function ShareEmailModal({
           <Button variant="secondary" onClick={onClose}>
             취소
           </Button>
-          <Button onClick={handleSubmit}>공유</Button>
+          <Button onClick={handleShare}>공유</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

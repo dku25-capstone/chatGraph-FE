@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ViewData } from "@/lib/data-transformer";
-import { QuestionCard } from "@/components/enhanced-breadcrumb-focus-view/QuestionCard";
+import { QuestionCard } from "@/features/graph/components/breadcrumb-view/question-card";
 
 interface QuestionDetailModalProps {
   question: ViewData | null;

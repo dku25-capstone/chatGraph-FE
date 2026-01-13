@@ -10,7 +10,7 @@ import { ViewData } from "@/lib/data-transformer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GlobalMarkdown } from "@/utils/GlobalMarkDown";
-import { OptimisticAnswer } from "./OptimisticAnswer";
+import { OptimisticAnswer } from "./optimistic-answer";
 
 // 스타일 정의
 const glassmorphismClasses =
@@ -124,7 +124,7 @@ export const QuestionCard = ({
           {/* 2. 답변 보기/숨기기 버튼 (항상 표시) */}
           <div className="flex justify-end pr-2">
             {typeof question.answerText === "string" &&
-            question.answerText !== "" ? (
+              question.answerText !== "" ? (
               <Button
                 variant="ghost"
                 size="sm"

@@ -11,7 +11,7 @@ import {
   Move,
   Share,
 } from "lucide-react";
-import { useQuestionTreeContext } from "./QuestionTreeContext";
+import { useQuestionTreeContext } from "./question-tree-context";
 import {
   DropdownMenu,
   DropdownMenuContent,

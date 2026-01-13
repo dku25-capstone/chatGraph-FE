@@ -3,13 +3,20 @@
 import { useRef, useEffect } from "react";
 import * as d3 from "d3";
 import { ViewData } from "@/lib/data-transformer";
-import { useQuestionTreeContext } from "./enhanced-breadcrumb-focus-view/QuestionTreeContext";
+import { useQuestionTreeContext } from "./breadcrumb-view/question-tree-context";
 import { cn } from "@/lib/utils";
 
 interface InteractiveD3GraphProps {
   data: ViewData;
   onNodeClick: (question: ViewData) => void;
 }
+
+import { GRAPH_CONFIG } from "@/constants/ui-constants";
+
+// ... imports remain the same
+
+// ... imports
+
 
 export function InteractiveD3Graph({
   data,
@@ -123,7 +130,7 @@ export function InteractiveD3Graph({
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 3])
+      .scaleExtent([GRAPH_CONFIG.ZOOM.MIN, GRAPH_CONFIG.ZOOM.MAX])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
       });
@@ -137,16 +144,16 @@ export function InteractiveD3Graph({
         d3
           .forceLink(links)
           .id((d) => (d as d3.HierarchyNode<ViewData>).data.id)
-          .distance((d) => (d.source.depth === 0 ? 180 : 120))
-          .strength(0.8)
+          .distance((d) => (d.source.depth === 0 ? GRAPH_CONFIG.LINK.DISTANCE.ROOT : GRAPH_CONFIG.LINK.DISTANCE.DEFAULT))
+          .strength(GRAPH_CONFIG.LINK.STRENGTH)
       )
-      .force("charge", d3.forceManyBody().strength(-1200))
+      .force("charge", d3.forceManyBody().strength(GRAPH_CONFIG.FORCE.CHARGE_STRENGTH))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force(
         "collision",
         d3
           .forceCollide<d3.HierarchyNode<ViewData>>()
-          .radius((d) => (d.depth === 0 ? 80 : 55))
+          .radius((d) => (d.depth === 0 ? GRAPH_CONFIG.FORCE.COLLISION_RADIUS.ROOT : GRAPH_CONFIG.FORCE.COLLISION_RADIUS.DEFAULT))
       );
 
     const link = g
@@ -168,19 +175,19 @@ export function InteractiveD3Graph({
       .style("cursor", "pointer")
       .style("isolation", "isolate");
 
-    const baseRadius = 35;
-    const rootRadius = 60;
+    const baseRadius = GRAPH_CONFIG.NODE.RADIUS.DEFAULT;
+    const rootRadius = GRAPH_CONFIG.NODE.RADIUS.ROOT;
 
-    // --- [노드 원형(Circle) 그리기] ---
+    // --- [Node Circle Drawing] ---
     node
       .append("circle")
       .attr("r", (d) => (d.depth === 0 ? rootRadius : baseRadius))
-      .attr("fill", getNodeColor) // 새로운 색상 함수 적용
+      .attr("fill", getNodeColor)
       .style("filter", (d) =>
         d.depth === 0 ? "url(#strong-shadow)" : "url(#drop-shadow)"
       );
 
-    // --- [노드 텍스트 라벨] ---
+    // --- [Node Text Label] ---
     node
       .append("text")
       .attr("text-anchor", "middle")
@@ -200,107 +207,69 @@ export function InteractiveD3Graph({
         return text.substring(0, maxLength) + "...";
       });
 
-    // --- [뱃지 그룹 (즐겨찾기 또는 자식 개수)] ---
-    // ✅ 수정됨: 즐겨찾기이거나 자식이 있는 경우에 뱃지 그룹 생성
+    // --- [Badge Group] ---
     const badgeGroup = node
       .filter((d) => d.data.favorite || d.data.children.length > 0)
       .append("g")
       .attr("transform", (d) => {
         const r = d.depth === 0 ? rootRadius : baseRadius;
-        // 우측 상단 45도 위치
         const angle = -Math.PI / 4;
         const x = r * Math.cos(angle);
         const y = r * Math.sin(angle);
         return `translate(${x}, ${y})`;
       });
 
-    //조건부 뱃지 렌더링
     badgeGroup.each(function (d) {
       const group = d3.select(this);
-
       if (d.data.favorite) {
-        // 1. 즐겨찾기인 경우: 별 아이콘 표시 (우선순위 높음)
-        // 간단한 별 모양 SVG 경로 데이터
-        const starPath =
-          "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
-
-        group
-          .append("path")
+        const starPath = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
+        group.append("path")
           .attr("d", starPath)
-          // 아이콘 크기 및 위치 조정 (중심점 맞추기)
           .attr("transform", "translate(-11, -11) scale(0.9)")
-          .attr("fill", "#f59e0b") // amber-500 (황금색)
-          .attr("stroke", "#ffffff") // 흰색 테두리로 선명하게
+          .attr("fill", "#f59e0b")
+          .attr("stroke", "#ffffff")
           .attr("stroke-width", 1)
           .style("filter", "url(#drop-shadow)");
       }
-      // } else {
-      //   // 2. 즐겨찾기가 아니고 자식만 있는 경우: 기존 숫자 뱃지 표시
-      //   group
-      //     .append("circle")
-      //     .attr("r", 11)
-      //     .attr("fill", "rgba(75, 85, 99, 0.9)") // gray-600
-      //     .attr("stroke", "rgba(255, 255, 255, 0.8)")
-      //     .attr("stroke-width", 1.5)
-      //     .style("filter", "url(#drop-shadow)");
-
-      //   group
-      //     .append("text")
-      //     .attr("text-anchor", "middle")
-      //     .attr("dy", "0.35em")
-      //     .attr("fill", "white")
-      //     .attr("font-size", "10px")
-      //     .attr("font-weight", "bold")
-      //     .attr("pointer-events", "none")
-      //     .text(d.data.children.length);
-      // }
     });
 
-    // --- [마우스 인터랙션] ---
+    // --- [Mouse Interactions] ---
     node
       .on("mouseover", function (event, d: d3.HierarchyNode<ViewData>) {
-        // 1. 호버된 노드 및 그 하위 노드들의 ID를 Set으로 만듭니다.
         const subtreeNodeIds = new Set(d.descendants().map((n) => n.data.id));
 
-        // 2. 모든 노드를 선택하여 색상을 업데이트합니다.
         g.selectAll<SVGGElement, d3.HierarchyNode<ViewData>>("g.node")
           .select("circle")
           .transition()
-          .duration(300)
+          .duration(GRAPH_CONFIG.TRANSITION.DURATION.DEFAULT)
           .attr("fill", (n) => {
             if (subtreeNodeIds.has(n.data.id)) {
-              // 3. 호버된 줄기에 속한 경우:
-              // 직접 호버된 노드는 더 밝게 강조합니다.
               if (n.data.id === d.data.id) {
                 const color = d3.color(getNodeColor(n));
                 return color ? color.brighter(0.7).toString() : "#fff";
               }
-              // 그 외 하위 노드들은 원래 색상을 유지합니다.
               return getNodeColor(n);
             } else {
-              // 4. 호버된 줄기에 속하지 않는 경우: 흑백으로 처리합니다.
               const originalColor = d3.color(getNodeColor(n));
-              if (!originalColor) return "#374151"; // gray-700 fallback
+              if (!originalColor) return "#374151";
               const hsl = d3.hsl(originalColor);
-              hsl.s = 0.05; // 채도를 매우 낮게 설정
-              hsl.l = 0.35; // 밝기를 어둡게 설정
+              hsl.s = 0.05;
+              hsl.l = 0.35;
               return hsl.toString();
             }
           });
 
-        // 5. 직접 호버된 노드의 반지름을 키웁니다.
         d3.select(this)
           .select("circle")
           .transition()
-          .duration(200)
-          .attr("r", (d.depth === 0 ? rootRadius : baseRadius) + 8);
+          .duration(GRAPH_CONFIG.TRANSITION.DURATION.FAST)
+          .attr("r", (d.depth === 0 ? rootRadius : baseRadius) + GRAPH_CONFIG.NODE.RADIUS.HOVER_INCREASE);
       })
       .on("mouseout", function () {
-        // 모든 노드의 색상과 반지름을 원래대로 복원합니다.
         g.selectAll<SVGGElement, d3.HierarchyNode<ViewData>>("g.node")
           .select("circle")
           .transition()
-          .duration(300)
+          .duration(GRAPH_CONFIG.TRANSITION.DURATION.DEFAULT)
           .attr("fill", (n) => getNodeColor(n))
           .attr("r", (n) => (n.depth === 0 ? rootRadius : baseRadius));
       })
@@ -327,38 +296,20 @@ export function InteractiveD3Graph({
     node.call(drag);
 
     simulation.on("tick", () => {
+      // ... (tick logic remains the same)
       link
-        .attr(
-          "x1",
-          (d) =>
-            (d.source as d3.SimulationNodeDatum & { x: number; y: number }).x
-        )
-        .attr(
-          "y1",
-          (d) =>
-            (d.source as d3.SimulationNodeDatum & { x: number; y: number }).y
-        )
-        .attr(
-          "x2",
-          (d) =>
-            (d.target as d3.SimulationNodeDatum & { x: number; y: number }).x
-        )
-        .attr(
-          "y2",
-          (d) =>
-            (d.target as d3.SimulationNodeDatum & { x: number; y: number }).y
-        );
+        .attr("x1", (d) => (d.source as d3.SimulationNodeDatum).x!)
+        .attr("y1", (d) => (d.source as d3.SimulationNodeDatum).y!)
+        .attr("x2", (d) => (d.target as d3.SimulationNodeDatum).x!)
+        .attr("y2", (d) => (d.target as d3.SimulationNodeDatum).y!);
 
-      node.attr(
-        "transform",
-        (d) =>
-          `translate(${(d as d3.SimulationNodeDatum).x},${
-            (d as d3.SimulationNodeDatum).y
-          })`
-      );
+      node.attr("transform", (d) => {
+        const simNode = d as d3.SimulationNodeDatum;
+        return `translate(${simNode.x},${simNode.y})`;
+      });
     });
 
-    return () => {};
+    return () => { };
   }, [data, currentPath]);
 
   return (

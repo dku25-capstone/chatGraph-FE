@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ArrowUp } from "lucide-react";
-import { useQuestionTreeContext } from "./QuestionTreeContext";
+import { useQuestionTreeContext } from "./question-tree-context";
 import { cn } from "@/lib/utils";
 
 export const NewQuestionForm = () => {
@@ -20,9 +20,8 @@ export const NewQuestionForm = () => {
   }, [prompt]);
 
   const placeholderText = currentQuestion
-    ? `"${currentQuestion.questionText.substring(0, 30)}${
-        currentQuestion.questionText.length > 30 ? "..." : ""
-      }" 의 하위 질문 입력...`
+    ? `"${currentQuestion.questionText.substring(0, 30)}${currentQuestion.questionText.length > 30 ? "..." : ""
+    }" 의 하위 질문 입력...`
     : "질문을 입력하세요...";
 
   // [FocusViewHeader와 동일한 Glassmorphism 스타일 정의]

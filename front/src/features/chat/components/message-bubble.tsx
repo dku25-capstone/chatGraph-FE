@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { GlobalMarkdown } from "@/utils/GlobalMarkDown";
 import { toast } from "sonner";
-import { OptimisticAnswer } from "@/components/enhanced-breadcrumb-focus-view/OptimisticAnswer";
+import { OptimisticAnswer } from "@/features/graph/components/breadcrumb-view/optimistic-answer";
 
 interface MessageBubbleProps {
   questionText: string;
@@ -149,11 +149,11 @@ export function MessageBubble({
                     justify-end로 오른쪽 정렬.
                 */}
                 <div className="flex items-center justify-end gap-1 mt-2 min-h-[28px]">
-                  
+
                   {/* 그룹: 액션 버튼들 (호버 시에만 표시) */}
                   {onEdit && !isEditing && (
                     <div className="flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity duration-200">
-                      
+
                       {/* 1. 즐겨찾기 버튼 */}
                       {onToggleFavorite && (
                         <Button

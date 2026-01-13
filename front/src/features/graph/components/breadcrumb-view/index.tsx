@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageBubble } from "@/components/message-bubble";
-import { InteractiveD3Graph } from "@/components/interactive-d3-graph";
+import { MessageBubble } from "@/features/chat/components/message-bubble";
+import { InteractiveD3Graph } from "../interactive-d3-graph";
 import { TopicTreeResponse } from "@/lib/data-transformer";
-import { TopicSelectorModal } from "./TopicSelectorModal";
+import { TopicSelectorModal } from "./topic-selector-modal";
 import {
   AlertDialogAction,
   AlertDialogCancel,
@@ -19,15 +19,15 @@ import {
 import {
   QuestionTreeProvider,
   useQuestionTreeContext,
-} from "./QuestionTreeContext";
+} from "./question-tree-context";
 import { FocusViewHeader } from "./focus-view-header";
 import { SubQuestionList } from "./sub-question-list";
 import { NewQuestionForm } from "./new-question-form";
-import QuestionDetailModal from "../QuestionDetailModal";
+import QuestionDetailModal from "@/features/chat/components/question-detail-modal";
 import { findPathToNode, cn } from "@/lib/utils";
 import { AlertDialog } from "@radix-ui/react-alert-dialog";
 import { useSidebar } from "@/components/ui/sidebar";
-import { ShareEmailModal } from "../ShareEmailModal";
+import { ShareEmailModal } from "@/features/share/components/share-email-modal";
 
 interface EnhancedBreadcrumbFocusViewProps {
   initialResponse: TopicTreeResponse;
@@ -50,7 +50,7 @@ export function EnhancedBreadcrumbFocusView({
   );
 }
 
-function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps) {
+function EnhancedBreadcrumbFocusViewContent({ }: EnhancedBreadcrumbFocusViewProps) {
   const { state, isMobile } = useSidebar();
   const {
     viewData,
@@ -324,8 +324,8 @@ function EnhancedBreadcrumbFocusViewContent({}: EnhancedBreadcrumbFocusViewProps
           isMobile
             ? "left-0"
             : state === "expanded"
-            ? "left-[16rem]"
-            : "left-[3rem]"
+              ? "left-[16rem]"
+              : "left-[3rem]"
         )}
       >
         <NewQuestionForm />
